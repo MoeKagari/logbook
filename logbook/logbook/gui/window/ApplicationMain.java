@@ -4,6 +4,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.ShellAdapter;
@@ -28,6 +31,7 @@ import logbook.config.AppConstants;
 import logbook.context.update.GlobalContext;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.TrayItemMenuListener;
+import logbook.gui.logic.DeckBuilder;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.table.CreateItemTable;
 import logbook.gui.window.table.CreateShipTable;
@@ -343,30 +347,27 @@ public class ApplicationMain {
 			MenuItem ship = new MenuItem(cmdMenu, SWT.CHECK);
 			ship.setText("所有舰娘");
 			this.shipListTable = new ShipListTable(this, ship, ship.getText());
-		}
-		{
+
 			MenuItem item = new MenuItem(cmdMenu, SWT.CHECK);
 			item.setText("所有装备");
 			this.itemListTable = new ItemListTable(this, item, item.getText());
-		}
-		{
+
 			MenuItem quest = new MenuItem(cmdMenu, SWT.CHECK);
 			quest.setText("任务列表");
 			this.questTable = new QuestTable(this, quest, quest.getText());
-		}
-		new MenuItem(cmdMenu, SWT.SEPARATOR);
-		{
+
+			new MenuItem(cmdMenu, SWT.SEPARATOR);
+
 			MenuItem battle = new MenuItem(cmdMenu, SWT.CHECK);
 			battle.setText("战斗");
 			this.battleWindow = new BattleWindow(this, battle, battle.getText());
-		}
-		{
+
 			MenuItem mapinfo = new MenuItem(cmdMenu, SWT.CHECK);
 			mapinfo.setText("地图详情");
 			this.mapinfoWindow = new MapinfoWindow(this, mapinfo, mapinfo.getText());
-		}
-		new MenuItem(cmdMenu, SWT.SEPARATOR);
-		{
+
+			new MenuItem(cmdMenu, SWT.SEPARATOR);
+
 			MenuItem dispose = new MenuItem(cmdMenu, SWT.NONE);
 			dispose.setText("退出");
 			dispose.addSelectionListener(new ControlSelectionListener(ev -> this.shell.close()));
@@ -380,29 +381,25 @@ public class ApplicationMain {
 			MenuItem createship = new MenuItem(recordMenu, SWT.CHECK);
 			createship.setText("建造记录");
 			this.createShipTable = new CreateShipTable(this, createship, createship.getText());
-		}
-		{
+
 			MenuItem createitem = new MenuItem(recordMenu, SWT.CHECK);
 			createitem.setText("开发记录");
 			this.createItemTable = new CreateItemTable(this, createitem, createitem.getText());
-		}
-		{
+
 			MenuItem mission = new MenuItem(recordMenu, SWT.CHECK);
 			mission.setText("远征记录");
 			this.missionResultTable = new MissionResultTable(this, mission, mission.getText());
-		}
-		{
+
 			MenuItem material = new MenuItem(recordMenu, SWT.CHECK);
 			material.setText("资源记录");
 			this.materialRecordTable = new MaterialRecordTable(this, material, material.getText());
-		}
-		new MenuItem(recordMenu, SWT.SEPARATOR);
-		{
+
+			new MenuItem(recordMenu, SWT.SEPARATOR);
+
 			MenuItem destroyShip = new MenuItem(recordMenu, SWT.CHECK);
 			destroyShip.setText("解体记录");
 			this.destroyShipTable = new DestroyShipTable(this, destroyShip, destroyShip.getText());
-		}
-		{
+
 			MenuItem destroyItem = new MenuItem(recordMenu, SWT.CHECK);
 			destroyItem.setText("废弃记录");
 			this.destroyItemTable = new DestroyItemTable(this, destroyItem, destroyItem.getText());
@@ -433,8 +430,7 @@ public class ApplicationMain {
 			MenuItem expcalu = new MenuItem(calcMenu, SWT.CHECK);
 			expcalu.setText("经验计算器");
 			this.calcuExpWindow = new CalcuExpWindow(this, expcalu, expcalu.getText());
-		}
-		{
+
 			MenuItem practiceexpcalu = new MenuItem(calcMenu, SWT.CHECK);
 			practiceexpcalu.setText("演习经验计算器");
 			this.calcuPracticeExpWindow = new CalcuPracticeExpWindow(this, practiceexpcalu, practiceexpcalu.getText());
@@ -445,7 +441,9 @@ public class ApplicationMain {
 		Menu etcMenu = new Menu(etcMenuItem);
 		etcMenuItem.setMenu(etcMenu);
 		{
-
+			MenuItem deckbuilder = new MenuItem(etcMenu, SWT.PUSH);
+			deckbuilder.setText("DeckBuilder");
+			deckbuilder.addSelectionListener(new ControlSelectionListener(ev -> new Clipboard(this.display).setContents(new Object[] { DeckBuilder.build() }, new Transfer[] { TextTransfer.getInstance() })));
 		}
 	}
 

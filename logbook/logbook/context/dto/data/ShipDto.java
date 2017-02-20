@@ -27,6 +27,7 @@ public class ShipDto {
 	private int soku;
 	private int[] ndockCost;
 	private int[] exp;
+	private int[] luck;
 	private int shipId;
 
 	public ShipDto(JsonObject json) {
@@ -48,6 +49,7 @@ public class ShipDto {
 		this.ndockCost = JsonUtils.getIntArray(this.json, "api_ndock_item");
 		this.exp = JsonUtils.getIntArray(json, "api_exp");
 		this.shipId = this.json.getInt("api_ship_id");
+		this.luck = JsonUtils.getIntArray(json, "api_lucky");
 	}
 
 	/** 加入镇守府时的编号 */
@@ -142,6 +144,14 @@ public class ShipDto {
 			"api_lucky": [12,
 			59],
 	 */
+
+	public int getNowLuck() {
+		return this.luck[0];
+	}
+
+	public int getMaxLuck() {
+		return this.luck[1];
+	}
 
 	public boolean isLocked() {
 		return this.locked;

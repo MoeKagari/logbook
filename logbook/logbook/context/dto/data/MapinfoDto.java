@@ -17,31 +17,59 @@ public class MapinfoDto {
 		array.forEach(value -> this.maps.add(new OneMap((JsonObject) value)));
 	}
 
+	public ArrayList<OneMap> getMaps() {
+		return this.maps;
+	}
+
 	public class OneMap {
-		private final int area;
-		private final int no;
+		private final int id;
 		private final boolean clear;
 		private final boolean exboss;
 		private final int defeatCount;
 		private final int airBaseDeckCount;
-		private final EventMapInfo eventMapInfo;
+		private final EventMap eventMapInfo;
 
 		public OneMap(JsonObject json) {
-			this.area = json.getInt("api_id") / 10;
-			this.no = json.getInt("api_id") % 10;
+			this.id = json.getInt("api_id");
 			this.clear = json.getInt("api_cleared") == 1;
 			this.exboss = json.getInt("api_exboss_flag") == 1;
 			this.defeatCount = json.containsKey("api_defeat_count") ? json.getInt("api_defeat_count") : -1;
 			this.airBaseDeckCount = json.containsKey("api_air_base_decks") ? json.getInt("api_air_base_decks") : -1;
-			this.eventMapInfo = json.containsKey("api_eventmap") ? new EventMapInfo(json.getJsonObject("api_eventmap")) : null;
+			this.eventMapInfo = json.containsKey("api_eventmap") ? new EventMap(json.getJsonObject("api_eventmap")) : null;
 		}
 
 		public int getArea() {
-			return this.area;
+			return this.id / 10;
 		}
 
 		public int getNo() {
-			return this.no;
+			return this.id % 10;
+		}
+
+		public int getMaxCount() {
+			switch (this.id) {
+				case 62:
+					return 3;
+				case 15:
+				case 25:
+				case 35:
+				case 44:
+				case 52:
+				case 63:
+					return 4;
+				case 45:
+				case 53:
+				case 54:
+				case 55:
+				case 64:
+					return 5;
+				case 65:
+					return 6;
+				case 16:
+					return 7;
+				default:
+					return 1;
+			}
 		}
 
 		public int getDefeatCount() {
@@ -64,23 +92,23 @@ public class MapinfoDto {
 			return this.eventMapInfo != null;
 		}
 
-		public EventMapInfo getEventMapInfo() {
+		public EventMap getEventMap() {
 			return this.eventMapInfo;
 		}
 	}
 
-	public class EventMapInfo {
+	public class EventMap {
 		private final int nowhp;
 		private final int maxhp;
 		private final int state;
 		private final int rank;
 		private final int hptype;
 
-		public EventMapInfo(JsonObject json) {
-			this.nowhp = json.getInt("");
-			this.maxhp = json.getInt("");
-			this.state = json.getInt("");
-			this.rank = json.getInt("");
+		public EventMap(JsonObject json) {
+			this.nowhp = json.getInt("api_now_maphp");
+			this.maxhp = json.getInt("api_max_maphp");
+			this.state = json.getInt("api_state");
+			this.rank = json.getInt("api_selected_rank");
 			this.hptype = json.containsKey("api_gauge_type") ? json.getInt("api_gauge_type") : -1;
 		}
 
@@ -98,6 +126,8 @@ public class MapinfoDto {
 
 		public String getRank() {
 			switch (this.rank) {
+				case 0:
+					return "未选择";
 				case 1:
 					return "丙";
 				case 2:
@@ -105,7 +135,7 @@ public class MapinfoDto {
 				case 3:
 					return "甲";
 				default:
-					return null;
+					return "";
 			}
 		}
 
@@ -116,7 +146,7 @@ public class MapinfoDto {
 				case 3:
 					return "TP血条";
 				default:
-					return null;
+					return "";
 			}
 		}
 	}

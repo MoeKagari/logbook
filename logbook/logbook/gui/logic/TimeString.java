@@ -76,7 +76,7 @@ public class TimeString {
 		return Calendar.getInstance().getTimeInMillis();
 	}
 
-	public static Object timeToStringForTable(long time) {
+	public static String timeToStringForTable(long time) {
 		return AppConstants.TABLE_TIME_FORMAT.format(new Date(time));
 	}
 

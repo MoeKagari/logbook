@@ -3,21 +3,20 @@ package logbook.context.dto.data;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.json.JsonArray;
 import javax.json.JsonObject;
 
 import logbook.util.JsonUtils;
 
 public class MasterDataDto {
+	private final JsonObject json;
 	private final Map<Integer, MasterShipDataDto> masterShipDataMap = new HashMap<>();
 	private final Map<Integer, MasterShipDataDto> masterEnemyDataMap = new HashMap<>();
 	private final Map<Integer, MasterSlotitemDataDto> masterSlotitemDataMap = new HashMap<>();
+	private final Map<Integer, MasterMissionDataDto> masterMissionDataMap = new HashMap<>();
 
 	public MasterDataDto(JsonObject json) {
-		JsonArray array;
-
-		array = json.getJsonArray("api_mst_ship");
-		array.forEach(obj -> {
+		this.json = json;
+		json.getJsonArray("api_mst_ship").forEach(obj -> {
 			MasterShipDataDto ship = new MasterShipDataDto((JsonObject) obj);
 			if (ship.isEnemy()) {
 				this.masterEnemyDataMap.put(ship.getId(), ship);
@@ -25,12 +24,18 @@ public class MasterDataDto {
 				this.masterShipDataMap.put(ship.getId(), ship);
 			}
 		});
-
-		array = json.getJsonArray("api_mst_slotitem");
-		array.forEach(obj -> {
+		json.getJsonArray("api_mst_slotitem").forEach(obj -> {
 			MasterSlotitemDataDto item = new MasterSlotitemDataDto((JsonObject) obj);
 			this.masterSlotitemDataMap.put(item.getId(), item);
 		});
+		json.getJsonArray("api_mst_mission").forEach(obj -> {
+			MasterMissionDataDto item = new MasterMissionDataDto((JsonObject) obj);
+			this.masterMissionDataMap.put(item.getId(), item);
+		});
+	}
+
+	public JsonObject getJson() {
+		return this.json;
 	}
 
 	public Map<Integer, MasterShipDataDto> getMasterShipDataMap() {
@@ -43,6 +48,10 @@ public class MasterDataDto {
 
 	public Map<Integer, MasterSlotitemDataDto> getMasterSlotitemDataMap() {
 		return this.masterSlotitemDataMap;
+	}
+
+	public Map<Integer, MasterMissionDataDto> getMasterMissionDataMap() {
+		return this.masterMissionDataMap;
 	}
 
 	public class MasterShipDataDto {
@@ -65,7 +74,7 @@ public class MasterDataDto {
 		}
 
 		public int getGaizhaoAfterId() {
-			return this.json.getInt("api_aftershipid");
+			return Integer.parseInt(this.json.getString("api_aftershipid"));
 		}
 
 		public int[] getTaik() {
@@ -125,6 +134,22 @@ public class MasterDataDto {
 			return this.json.getString("api_name");
 		}
 
+	}
+
+	public class MasterMissionDataDto {
+		private final JsonObject json;
+
+		public MasterMissionDataDto(JsonObject json) {
+			this.json = json;
+		}
+
+		public int getId() {
+			return this.json.getInt("api_id");
+		}
+
+		public String getName() {
+			return this.json.getString("api_name");
+		}
 	}
 
 }

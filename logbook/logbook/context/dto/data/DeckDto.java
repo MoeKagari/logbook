@@ -7,7 +7,9 @@ import javax.json.JsonObject;
 
 import org.apache.commons.lang3.StringUtils;
 
-import logbook.context.GlobalContext;
+import logbook.context.dto.data.MasterDataDto.MasterMissionDataDto;
+import logbook.context.dto.translator.ShipDtoTranslator;
+import logbook.context.update.GlobalContext;
 import logbook.util.JsonUtils;
 
 /**
@@ -76,7 +78,7 @@ public class DeckDto {
 	public boolean isAkashiFlagship() {
 		ShipDto flagship = GlobalContext.getShipmap().get(this.ships[0]);
 		if (flagship != null) {
-			String flagshipname = flagship.getName();
+			String flagshipname = ShipDtoTranslator.getName(flagship);
 			if (StringUtils.equals(flagshipname, "明石") || StringUtils.equals(flagshipname, "明石改")) {
 				return true;
 			}
@@ -111,9 +113,18 @@ public class DeckDto {
 	/** 舰队远征信息 */
 	public static class DeckMissionDto {
 		private final JsonArray json;
+		private final String name;
 
 		public DeckMissionDto(JsonArray json) {
 			this.json = json;
+
+			MasterDataDto mdd = GlobalContext.getMasterData();
+			MasterMissionDataDto mmdd = mdd != null ? mdd.getMasterMissionDataMap().get(this.getId()) : null;
+			this.name = mmdd != null ? mmdd.getName() : "";
+		}
+
+		public String getName() {
+			return this.name;
 		}
 
 		//远征状态0=未出撃, 1=遠征中, 2=遠征帰投, 3=強制帰投中

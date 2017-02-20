@@ -7,7 +7,7 @@ import java.util.function.Function;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 
-import logbook.context.data.Data;
+import logbook.context.update.data.Data;
 import logbook.util.JsonUtils;
 import logbook.util.ToolUtils;
 
@@ -30,7 +30,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			}
 		}
 		if (json.containsKey("api_stage_flag")) {
-			this.battleDayStage.add(new Kouko(JsonUtils.getIntArray(json, "api_stage_flag"), json.getJsonObject("api_kouku")));
+			this.battleDayStage.add(new Kouko(1, JsonUtils.getIntArray(json, "api_stage_flag"), json.getJsonObject("api_kouku")));
+		}
+		if (json.containsKey("api_stage_flag2")) {
+			this.battleDayStage.add(new Kouko(2, JsonUtils.getIntArray(json, "api_stage_flag2"), json.getJsonObject("api_kouku2")));
 		}
 		if (json.containsKey("api_support_flag") && json.getInt("api_support_flag") != 0) {
 			this.battleDayStage.add(new SupportAttack(json.getInt("api_support_flag"), json.getJsonObject("api_support_info")));
@@ -50,11 +53,17 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			};
 			int raigekiIndex = this.getRaigekiIndex() - 1;
 			for (int index = 0; index < raigekiIndex; index++) {
-				if (hourai_flags[index] == 1) hougekis[index].run();
+				if (hourai_flags[index] == 1) {
+					hougekis[index].run();
+				}
 			}
-			if (hourai_flags[raigekiIndex] == 1) this.battleDayStage.add(new Raigeki(json.getJsonObject("api_raigeki")));
+			if (hourai_flags[raigekiIndex] == 1) {
+				this.battleDayStage.add(new Raigeki(json.getJsonObject("api_raigeki")));
+			}
 			for (int index = raigekiIndex; index < hougekis.length; index++) {
-				if (hourai_flags[index + 1] == 1) hougekis[index].run();
+				if (hourai_flags[index + 1] == 1) {
+					hougekis[index].run();
+				}
 			}
 		}
 	}
@@ -296,13 +305,15 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 	}
 
 	public class Kouko extends BattleDayStage {
+		private final int index;
 		private boolean[] stages = null;
 		private Integer seiku = null;
 		private int[] touch = null;
 		private int[][] planeLostStage1 = new int[][] { null, null };
 		private int[][] planeLostStage2 = new int[][] { null, null };
 
-		public Kouko(int[] flags, JsonObject json) {
+		public Kouko(int index, int[] flags, JsonObject json) {
+			this.index = index;
 			this.stages = new boolean[] { flags[0] == 1, flags[1] == 1, flags[2] == 1 };
 			if (this.stages[0]) {
 				JsonObject stage1 = json.getJsonObject("api_stage1");
@@ -350,6 +361,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			this.geteAttackDamage().getDamage(edmg);
 			this.getfAttackDamagecombine().getDamage(fdmgco);
 			this.geteAttackDamagecombine().getDamage(edmgco);
+		}
+
+		public int getIndex() {
+			return this.index;
 		}
 
 		public boolean[] getStages() {

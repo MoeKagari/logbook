@@ -1,5 +1,5 @@
 package logbook.context.dto.battle;
 
-public abstract class AbstractInfoBattle implements BattleDto {
+public abstract class AbstractInfoBattle extends BattleDto {
 
 }

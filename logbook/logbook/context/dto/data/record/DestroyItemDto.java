@@ -1,6 +1,7 @@
 package logbook.context.dto.data.record;
 
 import logbook.context.dto.data.ItemDto;
+import logbook.context.dto.translator.ItemDtoTranslator;
 
 /**
  * 废弃装备
@@ -20,7 +21,7 @@ public class DestroyItemDto implements RecordDto {
 		this.time = time;
 		this.event = event;
 		this.id = item.getId();
-		this.name = item.getName();
+		this.name = ItemDtoTranslator.getName(item);
 		this.lv = item.getLevel();
 		this.alv = item.getAlv();
 		this.group = group;

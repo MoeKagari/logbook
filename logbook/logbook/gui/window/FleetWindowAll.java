@@ -6,7 +6,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.context.data.DataType;
+import logbook.context.update.data.DataType;
 import logbook.util.SwtUtils;
 
 public class FleetWindowAll extends WindowBase {

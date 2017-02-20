@@ -2,9 +2,9 @@ package logbook.context.dto.battle;
 
 import javax.json.JsonObject;
 
-import logbook.context.data.Data;
+import logbook.context.update.data.Data;
 
-public abstract class AbstractInfoBattleResult extends AbstractInfoBattle{
+public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
 	private final String rank;
 
 	private final String questName;
@@ -30,6 +30,11 @@ public abstract class AbstractInfoBattleResult extends AbstractInfoBattle{
 			this.newShipId = -1;
 			this.newShipTypeName = null;
 		}
+	}
+
+	@Override
+	public boolean hasDownArrow(BattleDto pre) {
+		return false;
 	}
 
 	public String getRank() {

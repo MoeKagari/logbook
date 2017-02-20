@@ -2,11 +2,12 @@ package logbook.context.dto.battle.info;
 
 import javax.json.JsonObject;
 
-import logbook.context.data.Data;
-import logbook.context.dto.battle.AbstractInfoBattleNext;
+import logbook.context.dto.battle.AbstractInfoBattleStartNext;
+import logbook.context.dto.battle.BattleDto;
 import logbook.context.dto.battle.BattleType;
+import logbook.context.update.data.Data;
 
-public class InfoBattleStartDto extends AbstractInfoBattleNext {
+public class InfoBattleStartDto extends AbstractInfoBattleStartNext {
 
 	private final int deckId;
 	private final int start;
@@ -30,4 +31,8 @@ public class InfoBattleStartDto extends AbstractInfoBattleNext {
 		return BattleType.INFOBATTLE_START;
 	}
 
+	@Override
+	public boolean hasDownArrow(BattleDto pre) {
+		return false;
+	}
 }

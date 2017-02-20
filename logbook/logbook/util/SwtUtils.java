@@ -110,14 +110,12 @@ public final class SwtUtils {
 	}
 
 	public static void setText(Label label, String text) {
-		if (text == null) text = "";
 		if (!text.equals(label.getText())) {
 			label.setText(text);
 		}
 	}
 
 	public static void setToolTipText(Label label, String text) {
-		if (text == null) text = "";
 		if (!text.equals(label.getToolTipText())) {
 			label.setToolTipText(text);
 		}

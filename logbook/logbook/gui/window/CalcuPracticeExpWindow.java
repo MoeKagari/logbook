@@ -8,13 +8,13 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Spinner;
 
-import logbook.context.GlobalContext;
-import logbook.context.data.DataType;
 import logbook.context.dto.data.PracticeEnemyDto.PracticeEnemyShip;
+import logbook.context.update.GlobalContext;
+import logbook.context.update.data.DataType;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.SpinnerMouseWheelListener;
 import logbook.gui.logic.CalcuPracticeExp;
-import logbook.gui.logic.data.ShipExpTable;
+import logbook.gui.logic.data.ShipExpMap;
 import logbook.util.SwtUtils;
 
 public class CalcuPracticeExpWindow extends WindowBase {
@@ -53,7 +53,7 @@ public class CalcuPracticeExpWindow extends WindowBase {
 		SwtUtils.initLabel(this.shipNameLabels[0], this.shipNames[0], new GridData(), 60);
 
 		this.firstShipLevel = new Spinner(practiceinfo, SWT.BORDER | SWT.CENTER);
-		this.firstShipLevel.setMaximum(ShipExpTable.getMaxLevel());
+		this.firstShipLevel.setMaximum(ShipExpMap.getMaxLevel());
 		this.firstShipLevel.setMinimum(1);
 		this.firstShipLevel.setSelection(1);
 		SwtUtils.initControl(this.firstShipLevel, new GridData(), 45);
@@ -64,7 +64,7 @@ public class CalcuPracticeExpWindow extends WindowBase {
 		SwtUtils.initLabel(this.shipNameLabels[1], this.shipNames[1], new GridData(), 60);
 
 		this.secondShipLevel = new Spinner(practiceinfo, SWT.BORDER | SWT.CENTER);
-		this.secondShipLevel.setMaximum(ShipExpTable.getMaxLevel());
+		this.secondShipLevel.setMaximum(ShipExpMap.getMaxLevel());
 		this.secondShipLevel.setMinimum(1);
 		this.firstShipLevel.setSelection(1);
 		SwtUtils.initControl(this.secondShipLevel, new GridData(), 45);

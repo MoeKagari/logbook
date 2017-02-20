@@ -2,8 +2,6 @@ package logbook.context.dto.data;
 
 import javax.json.JsonObject;
 
-import logbook.gui.logic.data.ShipDataMap;
-import logbook.gui.logic.data.ShipDataMap.ShipData;
 import logbook.util.JsonUtils;
 
 /**
@@ -31,8 +29,6 @@ public class ShipDto {
 	private int[] exp;
 	private int shipId;
 
-	private String name;
-
 	public ShipDto(JsonObject json) {
 		this.json = json;
 
@@ -52,18 +48,15 @@ public class ShipDto {
 		this.ndockCost = JsonUtils.getIntArray(this.json, "api_ndock_item");
 		this.exp = JsonUtils.getIntArray(json, "api_exp");
 		this.shipId = this.json.getInt("api_ship_id");
-
-		ShipData shipData = ShipDataMap.get(this.shipId);
-		this.name = shipData != null ? shipData.getName() : "";
-	}
-
-	public String getName() {
-		return this.name;
 	}
 
 	/** 加入镇守府时的编号 */
 	public int getId() {
 		return this.id;
+	}
+
+	public int getShipId() {
+		return this.shipId;
 	}
 
 	public int getLv() {

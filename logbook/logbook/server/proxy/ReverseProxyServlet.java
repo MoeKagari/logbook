@@ -20,8 +20,8 @@ import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.swt.widgets.Display;
 
 import logbook.config.AppConfig;
-import logbook.context.GlobalContextUpdater;
-import logbook.context.data.UndefinedData;
+import logbook.context.update.GlobalContextUpdater;
+import logbook.context.update.data.UndefinedData;
 
 /**
  * リバースプロキシ

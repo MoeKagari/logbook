@@ -6,7 +6,7 @@ import java.util.function.BiFunction;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 
-import logbook.context.data.Data;
+import logbook.context.update.data.Data;
 import logbook.util.JsonUtils;
 
 public abstract class AbstractBattleMidnight extends AbstractBattle {
@@ -66,28 +66,6 @@ public abstract class AbstractBattleMidnight extends AbstractBattle {
 				int sp = sp_list.getInt(x);
 				this.battleAttacks.add(new BattleOneAttack(at_index, df_index, da, sp));
 			}
-
-			int[] fdmg = new int[6];
-			int[] fatt = new int[6];
-			int[] edmg = new int[6];
-			int[] eatt = new int[6];
-			for (BattleOneAttack baoi : this.getBattleAttacks()) {
-				Boolean enemyAttack = baoi.isEnemyAttack();
-				int attackIndex = baoi.getAttackIndex();
-				int[] defenseIndexs = baoi.getDefenseIndexs();
-				int[] damages = baoi.getDamages();
-				for (int i = 0; i < damages.length; i++) {
-					int da = damages[i] < 0 ? 0 : damages[i];
-					if (enemyAttack == null) {//6vs6
-						new int[][] { fatt, eatt }[(attackIndex - 1) / 6][(attackIndex - 1) % 6] += da;
-						new int[][] { fdmg, edmg }[(defenseIndexs[i] - 1) / 6][(defenseIndexs[i] - 1) % 6] += da;
-					}
-				}
-			}
-			this.getfAttackDamage().getDamage(fdmg);
-			this.getfAttackDamage().setAttack(fatt);
-			this.geteAttackDamage().getDamage(edmg);
-			this.geteAttackDamage().setAttack(eatt);
 
 			BattleOneAttackSimulator boas = new BattleOneAttackSimulator();
 			this.battleAttacks.forEach(boa -> boas.accept(boa, false));

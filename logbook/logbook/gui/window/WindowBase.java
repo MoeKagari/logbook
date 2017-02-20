@@ -8,8 +8,8 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 
-import logbook.context.GlobalContextUpdater;
-import logbook.context.data.EventListener;
+import logbook.context.update.GlobalContextUpdater;
+import logbook.context.update.data.EventListener;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.NotCloseButHiddenShellListener;
 import logbook.util.SwtUtils;
@@ -42,7 +42,6 @@ public abstract class WindowBase implements EventListener {
 
 		this.menuBar = new Menu(this.shell, SWT.BAR);
 		this.shell.setMenuBar(this.menuBar);
-
 		GlobalContextUpdater.addEventListener(this);
 	}
 
@@ -61,12 +60,12 @@ public abstract class WindowBase implements EventListener {
 	}
 
 	public void setVisible(boolean visible) {
-		this.shell.setVisible(visible);
 		this.menuItem.setSelection(visible);
 		if (visible) {
 			this.shell.setMinimized(false);
 			this.shell.forceActive();
 		}
+		this.shell.setVisible(visible);
 	}
 
 	public boolean isVisible() {

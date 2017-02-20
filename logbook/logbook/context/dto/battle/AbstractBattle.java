@@ -11,7 +11,7 @@ import javax.json.JsonValue;
 import logbook.util.JsonUtils;
 import logbook.util.ToolUtils;
 
-public abstract class AbstractBattle implements BattleDto {
+public abstract class AbstractBattle extends BattleDto {
 	private BattleDeck fDeck = null;
 	private BattleDeck fDeckCombine = null;
 	private BattleDeck eDeck = null;
@@ -53,21 +53,25 @@ public abstract class AbstractBattle implements BattleDto {
 		}
 	}
 
+	@Override
+	public boolean hasDownArrow(BattleDto pre) {
+		return pre != null && (pre instanceof AbstractInfoBattle);
+	}
+
 	public boolean isMidnight() {
 		return false;
 	}
 
-	public boolean isPracticeBattle() {
-		return false;
-	}
-
-	public String[] getFormation() {
+	public String[] getZhenxin() {
 		return this.formation == null ? null
 				: new String[] {//
 						BattleDto.getZhenxin(this.formation[0]),//
-						BattleDto.getZhenxin(this.formation[1]),//
-						BattleDto.getHangxiang(this.formation[2])//
+						BattleDto.getZhenxin(this.formation[1])//
 				};
+	}
+
+	public String getHangxiang() {
+		return this.formation == null ? null : BattleDto.getHangxiang(this.formation[2]);
 	}
 
 	public String[] getSearch() {
@@ -95,25 +99,25 @@ public abstract class AbstractBattle implements BattleDto {
 	}
 
 	public static int[] dissociateIntarray(JsonObject json, String key) {
-		if (json.containsKey(key) == false) return null;
-
-		JsonArray array = json.getJsonArray(key);
-		int size = array.size();
-		int[] formation = new int[size];
-		for (int i = 0; i < size; i++) {
-			JsonValue value = array.get(i);
-			switch (value.getValueType()) {
-				case STRING:
-					formation[i] = Integer.parseInt(((JsonString) value).getString());
-					break;
-				case NUMBER:
-					formation[i] = ((JsonNumber) value).intValue();
-					break;
-				default:
-					break;
+		int[] intArray = null;
+		if (json.containsKey(key)) {
+			JsonArray array = json.getJsonArray(key);
+			intArray = new int[array.size()];
+			for (int i = 0; i < array.size(); i++) {
+				JsonValue value = array.get(i);
+				switch (value.getValueType()) {
+					case STRING:
+						intArray[i] = Integer.parseInt(((JsonString) value).getString());
+						break;
+					case NUMBER:
+						intArray[i] = ((JsonNumber) value).intValue();
+						break;
+					default:
+						break;
+				}
 			}
 		}
-		return formation;
+		return intArray;
 	}
 
 }

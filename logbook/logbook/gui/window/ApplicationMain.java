@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.TrayItem;
 
 import logbook.config.AppConfig;
 import logbook.config.AppConstants;
+import logbook.context.update.GlobalContext;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.TrayItemMenuListener;
 import logbook.gui.logic.TimeString;
@@ -75,6 +76,7 @@ public class ApplicationMain {
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
 			main = new ApplicationMain();
 			new SyncExecApplicationMain(main).start();
+			GlobalContext.load();
 			ProxyServer.start();
 			main.display();//程序堵塞在这里
 		} catch (Exception | Error e) {
@@ -128,6 +130,9 @@ public class ApplicationMain {
 	private ShipListTable shipListTable;
 	/** 所有装备 */
 	private ItemListTable itemListTable;
+
+	/** 地图详情 */
+	private MapinfoWindow mapinfoWindow;
 
 	/*------------------------------------------------------------------------------------------------------*/
 
@@ -355,6 +360,11 @@ public class ApplicationMain {
 			battle.setText("战斗");
 			this.battleWindow = new BattleWindow(this, battle, battle.getText());
 		}
+		{
+			MenuItem mapinfo = new MenuItem(cmdMenu, SWT.CHECK);
+			mapinfo.setText("地图详情");
+			this.mapinfoWindow = new MapinfoWindow(this, mapinfo, mapinfo.getText());
+		}
 		new MenuItem(cmdMenu, SWT.SEPARATOR);
 		{
 			MenuItem dispose = new MenuItem(cmdMenu, SWT.NONE);
@@ -434,6 +444,9 @@ public class ApplicationMain {
 		etcMenuItem.setText("其它");
 		Menu etcMenu = new Menu(etcMenuItem);
 		etcMenuItem.setMenu(etcMenu);
+		{
+
+		}
 	}
 
 	/*----------------------------------------------------------------------------------------------------------------*/
@@ -512,9 +525,14 @@ public class ApplicationMain {
 		return this.battleWindow;
 	}
 
-	public RecordTable<?>[] getRecordTables() {
-		return new RecordTable[] {//
-				this.createItemTable, this.createShipTable, this.missionResultTable, this.materialRecordTable, //
+	public MapinfoWindow getMapinfoWindow() {
+		return this.mapinfoWindow;
+	}
+
+	public AbstractTable<?>[] getRecordTables() {
+		return new AbstractTable[] {//
+				this.createItemTable, this.createShipTable, //
+				this.missionResultTable, this.materialRecordTable, //
 				this.questTable, this.shipListTable, this.itemListTable,//
 				this.destroyShipTable, this.destroyItemTable,//
 		};

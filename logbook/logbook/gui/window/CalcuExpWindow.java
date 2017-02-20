@@ -14,16 +14,17 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Spinner;
 
 import logbook.config.AppConfig;
-import logbook.context.GlobalContext;
-import logbook.context.data.DataType;
 import logbook.context.dto.data.DeckDto;
 import logbook.context.dto.data.ShipDto;
+import logbook.context.dto.translator.ShipDtoTranslator;
+import logbook.context.update.GlobalContext;
+import logbook.context.update.data.DataType;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.SpinnerMouseWheelListener;
 import logbook.gui.logic.CalcuExp;
 import logbook.gui.logic.data.EvalMap;
 import logbook.gui.logic.data.SeaExpMap;
-import logbook.gui.logic.data.ShipExpTable;
+import logbook.gui.logic.data.ShipExpMap;
 import logbook.util.SwtUtils;
 
 public class CalcuExpWindow extends WindowBase {
@@ -71,7 +72,7 @@ public class CalcuExpWindow extends WindowBase {
 				GridData gdBeforelv = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
 				gdBeforelv.widthHint = SwtUtils.DPIAwareWidth(45);
 				this.beforelv.setLayoutData(gdBeforelv);
-				this.beforelv.setMaximum(ShipExpTable.getMaxLevel());
+				this.beforelv.setMaximum(ShipExpMap.getMaxLevel());
 				this.beforelv.setMinimum(1);
 			}
 			SwtUtils.initLabel(new Label(plan, SWT.NONE), "", new GridData(), 10);
@@ -86,7 +87,7 @@ public class CalcuExpWindow extends WindowBase {
 				GridData gdAfterlv = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
 				gdAfterlv.widthHint = SwtUtils.DPIAwareWidth(45);
 				this.afterlv.setLayoutData(gdAfterlv);
-				this.afterlv.setMaximum(ShipExpTable.getMaxLevel());
+				this.afterlv.setMaximum(ShipExpMap.getMaxLevel());
 				this.afterlv.setMinimum(1);
 			}
 			SwtUtils.initLabel(new Label(plan, SWT.NONE), "", new GridData(), 10);
@@ -176,13 +177,13 @@ public class CalcuExpWindow extends WindowBase {
 		}));
 
 		this.beforelv.addMouseWheelListener(new SpinnerMouseWheelListener(this.beforelv, ev -> {
-			this.beforexp.setText(Integer.toString(ShipExpTable.getExp(this.beforelv.getSelection())));
+			this.beforexp.setText(Integer.toString(ShipExpMap.getExp(this.beforelv.getSelection())));
 			this.calcu();
 		}));
 		this.beforelv.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
 
 		this.afterlv.addMouseWheelListener(new SpinnerMouseWheelListener(this.afterlv, ev -> {
-			this.afterexp.setText(Integer.toString(ShipExpTable.getExp(this.afterlv.getSelection())));
+			this.afterexp.setText(Integer.toString(ShipExpMap.getExp(this.afterlv.getSelection())));
 			this.calcu();
 		}));
 		this.afterlv.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
@@ -219,7 +220,7 @@ public class CalcuExpWindow extends WindowBase {
 		if (size <= 0) return;
 		for (int i = 0; i < size; i++) {
 			ShipDto ship = this.ships.get(i);
-			this.shipcombo.add(ship.getName() + "(" + ship.getLv() + ")");
+			this.shipcombo.add(ShipDtoTranslator.getName(ship) + "(" + ship.getLv() + ")");
 		}
 
 		this.selectSecretaryShip();
@@ -246,7 +247,7 @@ public class CalcuExpWindow extends WindowBase {
 		this.afterlv.setSelection(afterlv);
 
 		int beforexp = ship.getCurrentExp();
-		int afterexp = ShipExpTable.getExp(afterlv);
+		int afterexp = ShipExpMap.getExp(afterlv);
 		this.beforexp.setText(Integer.toString(beforexp));
 		this.afterexp.setText(Integer.toString(afterexp));
 	}

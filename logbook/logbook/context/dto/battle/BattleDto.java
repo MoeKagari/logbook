@@ -3,24 +3,28 @@ package logbook.context.dto.battle;
 import java.awt.Point;
 import java.util.ArrayList;
 
+import logbook.gui.logic.TimeString;
+
 /**
  * 出击之后到回港之前所有dto的超类
  * @author MoeKagari
  */
-public interface BattleDto {
+public abstract class BattleDto implements HasDownArrow<BattleDto> {
 
 	public static String getSearch(int id) {
 		switch (id) {
 			case 1:
+				return "成功(无损)";
 			case 2://有未归还
+				return "成功(有损)";
 			case 3://全部未归还
-				return "成功";
+				return "成功(全损)";
 			case 4:
-				return "失败";
+				return "失败(有)";
 			case 5://没有舰载机
-				return "成功";
+				return "成功(无)";
 			case 6://没有舰载机
-				return "失败";
+				return "失败(无)";
 			default:
 				return Integer.toString(id);
 		}
@@ -53,6 +57,14 @@ public interface BattleDto {
 				return "梯形阵";
 			case 5:
 				return "单横阵";
+			case 11:
+				return "第一警戒航行序列";
+			case 12:
+				return "第二警戒航行序列";
+			case 13:
+				return "第三警戒航行序列";
+			case 14:
+				return "第四警戒航行序列";
 			default:
 				return Integer.toString(id);
 		}
@@ -179,8 +191,17 @@ public interface BattleDto {
 	}
 
 	/*-----------------------------------------------------------------------------*/
+	private final long time = TimeString.getCurrentTime();
 
-	public BattleType getBattleType();
+	public long getTime() {
+		return this.time;
+	}
+
+	public abstract BattleType getBattleType();
+
+	public boolean isPracticeBattle() {
+		return false;
+	}
 
 	/**
 	 * 战斗时的舰队的信息
@@ -204,7 +225,7 @@ public interface BattleDto {
 		}
 
 		public boolean exist() {
-			for (int nowhp : nowhps) {
+			for (int nowhp : this.nowhps) {
 				if (nowhp != -1) {
 					return true;
 				}
@@ -213,13 +234,13 @@ public interface BattleDto {
 		}
 
 		public ArrayList<Integer> getEscapes() {
-			return escapes;
+			return this.escapes;
 		}
 
 		public int getShipCount() {
 			int count = 0;
 			for (int i = 0; i < 6; i++) {
-				if (nowhps[i] != -1) {
+				if (this.nowhps[i] != -1) {
 					count++;
 				}
 			}
@@ -276,27 +297,27 @@ public interface BattleDto {
 		}
 
 		public Boolean isEnemyAttack() {
-			return enemyAttack;
+			return this.enemyAttack;
 		}
 
 		public int getAttackType() {
-			return attackType;
+			return this.attackType;
 		}
 
 		public boolean isMidnight() {
-			return isMidnight;
+			return this.isMidnight;
 		}
 
 		public int getAttackIndex() {
-			return attackIndex;
+			return this.attackIndex;
 		}
 
 		public int[] getDefenseIndexs() {
-			return defenseIndexs;
+			return this.defenseIndexs;
 		}
 
 		public int[] getDamages() {
-			return dmgs;
+			return this.dmgs;
 		}
 	}
 
@@ -329,14 +350,14 @@ public interface BattleDto {
 				Point p1 = new Point((attackIndex - 1) / 6, (attackIndex - 1) % 6);
 				Point p2 = new Point((defenseIndexs[i] - 1) / 6, (defenseIndexs[i] - 1) % 6);
 				if (enemyAttack == null && fcombine != null) {//敌方非联合舰队
-					new int[][] { fcombine ? fattco : fatt, eatt }[p1.x][p1.y] += da;
-					new int[][] { fcombine ? fdmgco : fdmg, edmg }[p2.x][p2.y] += da;
+					new int[][] { fcombine ? this.fattco : this.fatt, this.eatt }[p1.x][p1.y] += da;
+					new int[][] { fcombine ? this.fdmgco : this.fdmg, this.edmg }[p2.x][p2.y] += da;
 				} else if (enemyAttack == false) {//敌联合舰队,我方攻击
-					new int[][] { fatt, fattco }[p1.x][p1.y] += da;
-					new int[][] { edmg, edmgco }[p2.x][p2.y] += da;
+					new int[][] { this.fatt, this.fattco }[p1.x][p1.y] += da;
+					new int[][] { this.edmg, this.edmgco }[p2.x][p2.y] += da;
 				} else if (enemyAttack == true) {//敌联合舰队,敌方攻击
-					new int[][] { eatt, eattco }[p1.x][p1.y] += da;
-					new int[][] { fdmg, fdmgco }[p2.x][p2.y] += da;
+					new int[][] { this.eatt, this.eattco }[p1.x][p1.y] += da;
+					new int[][] { this.fdmg, this.fdmgco }[p2.x][p2.y] += da;
 				} else {
 					System.out.println("enemyAttack == null && fcombine == null");
 				}
@@ -344,35 +365,35 @@ public interface BattleDto {
 		}
 
 		public int[] getFdmg() {
-			return fdmg;
+			return this.fdmg;
 		}
 
 		public int[] getFatt() {
-			return fatt;
+			return this.fatt;
 		}
 
 		public int[] getEdmg() {
-			return edmg;
+			return this.edmg;
 		}
 
 		public int[] getEatt() {
-			return eatt;
+			return this.eatt;
 		}
 
 		public int[] getFdmgco() {
-			return fdmgco;
+			return this.fdmgco;
 		}
 
 		public int[] getFattco() {
-			return fattco;
+			return this.fattco;
 		}
 
 		public int[] getEdmgco() {
-			return edmgco;
+			return this.edmgco;
 		}
 
 		public int[] getEattco() {
-			return eattco;
+			return this.eattco;
 		}
 	}
 
@@ -398,7 +419,7 @@ public interface BattleDto {
 		 */
 		public void getDamage(int[] gd) {
 			for (int i = 0; i < 6; i++) {
-				dmg[i] += gd[i];
+				this.dmg[i] += gd[i];
 			}
 		}
 
@@ -407,14 +428,14 @@ public interface BattleDto {
 		 */
 		public void setAttack(int[] sa) {
 			for (int i = 0; i < 6; i++) {
-				attack[i] += sa[i];
+				this.attack[i] += sa[i];
 			}
 		}
 
 		public BattleDeckAttackDamage add(BattleDeckAttackDamage next) {
 			for (int i = 0; i < 6; i++) {
-				dmg[i] = dmg[i] + next.dmg[i];
-				attack[i] = attack[i] + next.attack[i];
+				this.dmg[i] = this.dmg[i] + next.dmg[i];
+				this.attack[i] = this.attack[i] + next.attack[i];
 			}
 			return this;
 		}

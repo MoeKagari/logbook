@@ -3,8 +3,7 @@ package logbook.context.dto.data;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 
-import logbook.gui.logic.data.ShipDataMap;
-import logbook.gui.logic.data.ShipDataMap.ShipData;
+import logbook.context.dto.translator.ShipDtoTranslator;
 
 /**
  * 演习对象
@@ -36,8 +35,7 @@ public class PracticeEnemyDto {
 			this.id = json.getInt("api_id");
 			this.lv = json.getInt("api_level", 0);
 			if (this.exist()) {
-				ShipData shipData = ShipDataMap.get(json.getInt("api_ship_id", -1));
-				this.name = shipData != null ? shipData.getName() : ("新船ID:" + this.id);
+				this.name = ShipDtoTranslator.getName(json.getInt("api_ship_id"));
 			} else {
 				this.name = "";
 			}

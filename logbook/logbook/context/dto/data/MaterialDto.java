@@ -10,7 +10,7 @@ public class MaterialDto {
 	/**
 	 * 油弹钢铝,高修建造材,桶,开发资材,螺丝
 	 */
-	private int fuel, ammo, metal, bauxite, burner, bucket, research, screw;
+	private final int fuel, ammo, metal, bauxite, burner, bucket, research, screw;
 
 	public MaterialDto(int[] material) {
 		this.fuel = material[0];
@@ -23,12 +23,12 @@ public class MaterialDto {
 		this.screw = material[7];
 	}
 
-	public int[] getMaterial() {
-		return new int[] { this.fuel, this.ammo, this.metal, this.bauxite, this.burner, this.bucket, this.research, this.screw };
-	}
-
 	public int[] getMaterialForWindow() {
 		return new int[] { this.fuel, this.metal, this.bucket, this.research, this.ammo, this.bauxite, this.screw, this.burner };
+	}
+
+	public int[] getMaterial() {
+		return new int[] { this.fuel, this.ammo, this.metal, this.bauxite, this.burner, this.bucket, this.research, this.screw };
 	}
 
 	public static String[] getMaterialStrings() {

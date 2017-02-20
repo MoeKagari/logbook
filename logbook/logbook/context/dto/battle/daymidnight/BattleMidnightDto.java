@@ -2,9 +2,9 @@ package logbook.context.dto.battle.daymidnight;
 
 import javax.json.JsonObject;
 
-import logbook.context.data.Data;
 import logbook.context.dto.battle.AbstractBattleMidnight;
 import logbook.context.dto.battle.BattleType;
+import logbook.context.update.data.Data;
 
 public class BattleMidnightDto extends AbstractBattleMidnight {
 

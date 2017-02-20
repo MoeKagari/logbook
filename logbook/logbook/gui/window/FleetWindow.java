@@ -1,8 +1,9 @@
 package logbook.gui.window;
 
 import java.util.ArrayList;
-import java.util.function.BiConsumer;
+import java.util.Arrays;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -11,15 +12,17 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
 import logbook.config.AppConstants;
-import logbook.context.GlobalContext;
-import logbook.context.GlobalContextUpdater;
-import logbook.context.data.DataType;
-import logbook.context.data.EventListener;
 import logbook.context.dto.data.DeckDto;
 import logbook.context.dto.data.ItemDto;
 import logbook.context.dto.data.ShipDto;
+import logbook.context.dto.translator.DeckDtoTranslator;
+import logbook.context.dto.translator.ItemDtoTranslator;
+import logbook.context.dto.translator.ShipDtoTranslator;
+import logbook.context.update.GlobalContext;
+import logbook.context.update.GlobalContextUpdater;
+import logbook.context.update.data.DataType;
+import logbook.context.update.data.EventListener;
 import logbook.gui.logic.HPMessage;
-import logbook.gui.logic.ShipTranslator;
 import logbook.gui.logic.TimeString;
 import logbook.internal.TrayMessageBox;
 import logbook.util.SwtUtils;
@@ -41,31 +44,23 @@ public class FleetWindow implements EventListener {
 	/** 总等级 */
 	private Label totallvLabel;
 
-	private final Composite[] upsideBases = new Composite[MAXCHARA];
-	private final Label[] iconLabels = new Label[MAXCHARA];
-	private final Label[] nameLabels = new Label[MAXCHARA];
-	private final Label[] lvLabels = new Label[MAXCHARA];
-	private final Label[] hpLabels = new Label[MAXCHARA];
-	private final Label[] hpmsgLabels = new Label[MAXCHARA];
-	private final Label[][] equipsLabels = new Label[MAXCHARA][MAXEQUIP];
-	private final Label[] condLabels = new Label[MAXCHARA];
+	private final ShipComposite[] shipComposites = new ShipComposite[MAXCHARA];
 
 	private int id;//1,2,3,4
 	private final String defaultFleetName;
-	private Composite composite;
-	private final FleetAkashiTimer akashiTimer;
-	private boolean notifiyAkashitimer = true;
-
-	public FleetWindow(Composite composite, int id, boolean notifiyAkashitimer) {
-		this(composite, id);
-		this.notifiyAkashitimer = notifiyAkashitimer;
-	}
+	private final Composite composite;
+	private final boolean notifiyAkashitimer;
+	private final FleetAkashiTimer akashiTimer = new FleetAkashiTimer();
 
 	public FleetWindow(Composite composite, int id) {
+		this(composite, id, true);
+	}
+
+	public FleetWindow(Composite composite, int id, boolean notifiyAkashitimer) {
 		this.id = id;
 		this.defaultFleetName = AppConstants.DEFAULT_FLEET_NAME[id - 1];
 		this.composite = composite;
-		this.akashiTimer = new FleetAkashiTimer();
+		this.notifiyAkashitimer = notifiyAkashitimer;
 		this.init();
 		GlobalContextUpdater.addEventListener(this);
 	}
@@ -134,7 +129,7 @@ public class FleetWindow implements EventListener {
 		{
 			this.akashiLabel = new Label(infoComposite2, SWT.RIGHT);
 			this.akashiLabel.setToolTipText("泊地修理");
-			SwtUtils.initLabel(this.akashiLabel, "000时00分00秒", new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1), 87);
+			SwtUtils.initLabel(this.akashiLabel, "000时00分00秒", new GridData(), 87);
 		}
 	}
 
@@ -144,79 +139,8 @@ public class FleetWindow implements EventListener {
 		fleetComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		for (int i = 0; i < MAXCHARA; i++) {
-			this.initOneShipComposite(i, fleetComposite);
+			this.shipComposites[i] = new ShipComposite(fleetComposite);
 		}
-	}
-
-	private void initOneShipComposite(int i, Composite fleetComposite) {
-		Composite shipComposite = new Composite(fleetComposite, SWT.NONE);
-		shipComposite.setLayout(SwtUtils.makeGridLayout(2, 0, 0, 0, 0));
-		shipComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-		Label iconlabel, namelabel, lvlabel, hplabel, hpmsglabel, condlabel;
-		Label[] equipslabel;
-		Composite upsideBase, downsideBase, equipBase;
-
-		iconlabel = new Label(shipComposite, SWT.CENTER);
-		SwtUtils.initLabel(iconlabel, "!", new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 2), 16);
-
-		upsideBase = new Composite(shipComposite, SWT.NONE);
-		GridLayout upsideBaseGridLayout = SwtUtils.makeGridLayout(5, 0, 0, 0, 0);
-		upsideBaseGridLayout.marginTop = 1;
-		upsideBaseGridLayout.marginBottom = -1;
-		upsideBase.setLayout(upsideBaseGridLayout);
-		upsideBase.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		{
-			namelabel = new Label(upsideBase, SWT.LEFT);
-			SwtUtils.initLabel(namelabel, "名前", new GridData(GridData.FILL_HORIZONTAL));
-		}
-		SwtUtils.insertBlank(upsideBase, 5);
-		{
-			hplabel = new Label(upsideBase, SWT.RIGHT);
-			SwtUtils.initLabel(hplabel, "000/000", new GridData(), 48);
-		}
-		SwtUtils.insertBlank(upsideBase, 5);
-		{
-			hpmsglabel = new Label(upsideBase, SWT.CENTER);
-			SwtUtils.initLabel(hpmsglabel, "健在", new GridData(), 24);
-		}
-
-		downsideBase = new Composite(shipComposite, SWT.NONE);
-		GridLayout downsideBaseGridLayout = SwtUtils.makeGridLayout(4, 0, 0, 0, 0);
-		downsideBaseGridLayout.marginTop = -2;
-		downsideBaseGridLayout.marginBottom = -2;
-		downsideBase.setLayout(downsideBaseGridLayout);
-		downsideBase.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		{
-			lvlabel = new Label(downsideBase, SWT.LEFT);
-			SwtUtils.initLabel(lvlabel, "Lv.100", new GridData(), 40);
-		}
-		{
-			int len = MAXEQUIP;
-			equipBase = new Composite(downsideBase, SWT.NONE);
-			equipBase.setLayout(SwtUtils.makeGridLayout(len, 0, 0, 0, 0));
-			{
-				equipslabel = new Label[len];
-				for (int j = 0; j < equipslabel.length; j++) {
-					equipslabel[j] = new Label(equipBase, SWT.CENTER);
-					SwtUtils.initLabel(equipslabel[j], "装", new GridData(), 12);
-				}
-			}
-		}
-		SwtUtils.insertBlank(downsideBase);
-		{
-			condlabel = new Label(downsideBase, SWT.RIGHT);
-			SwtUtils.initLabel(condlabel, "100", new GridData(), 24);
-		}
-
-		this.iconLabels[i] = iconlabel;
-		this.nameLabels[i] = namelabel;
-		this.lvLabels[i] = lvlabel;
-		this.hpLabels[i] = hplabel;
-		this.hpmsgLabels[i] = hpmsglabel;
-		this.equipsLabels[i] = equipslabel;
-		this.condLabels[i] = condlabel;
-		this.upsideBases[i] = upsideBase;
 	}
 
 	/*------------------------------------------------------------------------------------------------------------------------------------*/
@@ -228,8 +152,7 @@ public class FleetWindow implements EventListener {
 		switch (type) {
 			case UPDATEDECKNAME:
 				if (deck != null) {
-					String deckName = deck.getName();
-					this.updateDeckName(deckName);
+					SwtUtils.setText(this.fleetNameLabel, deck.getName());
 				}
 				return;
 			case PORT:
@@ -245,89 +168,56 @@ public class FleetWindow implements EventListener {
 		}
 
 		this.composite.setRedraw(false);
-		this.updateDeck();
+		this.updateDeck(deck);
 		this.composite.setRedraw(true);
 	}
 
-	private void updateDeck() {
-		DeckDto deck = this.getDeck();
+	private void updateDeck(DeckDto deck) {
 		if (deck == null) return;
-
 		//舰队名
-		this.updateDeckName(deck.getName());
-
-		//每一艘船的information
-		int suodi = 0, zhikong = 0, totallv = 0;
-		boolean highspeed = true;
-
+		SwtUtils.setText(this.fleetNameLabel, deck.getName());
+		//制空,索敌,总等级,舰队速度
+		SwtUtils.setText(this.zhikongLabel, String.valueOf(DeckDtoTranslator.getZhikong(deck)));
+		SwtUtils.setText(this.suodiLabel, String.valueOf(DeckDtoTranslator.getSuodi(deck)));
+		SwtUtils.setText(this.totallvLabel, String.valueOf(DeckDtoTranslator.getTotalLv(deck)));
+		SwtUtils.setText(this.sokuLabel, DeckDtoTranslator.highspeed(deck) ? "高速" : "低速");
+		//ship 状态
 		int[] ships = deck.getShips();
 		for (int i = 0; i < ships.length; i++) {
 			ShipDto ship = GlobalContext.getShipmap().get(ships[i]);
-			this.updateShipInformation(i, ship);
-			if (ship != null) {
-				suodi += ShipTranslator.getSuodi(ship);
-				zhikong += ShipTranslator.getZhikong(ship);
-				totallv += ship.getLv();
-				highspeed &= ShipTranslator.highspeed(ship);
-			}
-		}
-
-		//舰队速度,制空,索敌,总等级
-		SwtUtils.setText(this.sokuLabel, highspeed ? "高速" : "低速");
-		SwtUtils.setText(this.suodiLabel, String.valueOf(suodi));
-		SwtUtils.setText(this.zhikongLabel, String.valueOf(zhikong));
-		SwtUtils.setText(this.totallvLabel, String.valueOf(totallv));
-	}
-
-	private void updateDeckName(String deckName) {
-		if (deckName != null) {
-			SwtUtils.setText(this.fleetNameLabel, deckName);
+			FleetWindow.updateShipInformation(this.shipComposites[i], ship);
 		}
 	}
 
-	private void updateShipInformation(int i, ShipDto ship) {
-		String iconText = "", nameText = "", hpText = "", hpmsgText = "", lvText = "", condText = "";
-		ArrayList<String> equipTooltipTexts = new ArrayList<>();
+	private static void updateShipInformation(ShipComposite shipComposite, ShipDto ship) {
+		SwtUtils.setText(shipComposite.iconlabel, "");
+		SwtUtils.setText(shipComposite.namelabel, ship != null ? ShipDtoTranslator.getName(ship) : "");
+		SwtUtils.setToolTipText(shipComposite.namelabel, ship != null ? ShipDtoTranslator.getName(ship) : "");
+		SwtUtils.setText(shipComposite.hplabel, ship != null ? (ship.getNowHP() + "/" + ship.getMaxHp()) : "");
+		SwtUtils.setText(shipComposite.hpmsglabel, ship != null ? HPMessage.get(ship.getNowHP() * 1.0 / ship.getMaxHp()) : "");
+		SwtUtils.setText(shipComposite.lvlabel, ship != null ? ("Lv." + ship.getLv()) : "");
+		SwtUtils.setText(shipComposite.condlabel, ship != null ? String.valueOf(ship.getCond()) : "");
+
+		//五个装备
 		Character[] equipTexts = new Character[MAXEQUIP];
-
-		BiConsumer<ItemDto, Integer> addNewItem = (item, index) -> {
-			int star = item.getLevel();
-			int alv = item.getAlv();
-			equipTexts[index] = item.getOneWordName();
-			equipTooltipTexts.add(item.getName() + (alv > 0 ? (" 熟" + alv) : "") + (star > 0 ? (" ★" + star) : ""));
-		};
+		ArrayList<String> equipTooltipTexts = new ArrayList<>();
 		if (ship != null) {
-			nameText = ship.getName();
-			hpText = ship.getNowHP() + "/" + ship.getMaxHp();
-			hpmsgText = HPMessage.get(ship.getNowHP() * 1.0 / ship.getMaxHp());
-			lvText = "Lv." + ship.getLv();
-			condText = "" + ship.getCond();
-			//4个装备
-			int[] equips = ship.getSlots();
-			for (int index = 0; index < equips.length; index++) {
-				ItemDto item = GlobalContext.getItemMap().get(equips[index]);
-				if (item != null) addNewItem.accept(item, index);
-			}
-			//ex装备
-			int equipex = ship.getSlotex();
-			if (equipex > 0) {
-				ItemDto item = GlobalContext.getItemMap().get(equipex);
-				if (item != null) addNewItem.accept(item, 4);
+			int[] slots = ArrayUtils.addAll(Arrays.copyOfRange(ship.getSlots(), 0, 4), ship.getSlotex());
+			for (int index = 0; index < slots.length; index++) {
+				ItemDto item = GlobalContext.getItemMap().get(slots[index]);
+				if (item != null) {
+					int star = item.getLevel();
+					int alv = item.getAlv();
+					equipTexts[index] = ItemDtoTranslator.getOneWordName(item);
+					equipTooltipTexts.add(ItemDtoTranslator.getName(item) + (alv > 0 ? (" 熟" + alv) : "") + (star > 0 ? (" ★" + star) : ""));
+				}
 			}
 		}
-
-		SwtUtils.setText(this.iconLabels[i], iconText);
-		SwtUtils.setText(this.nameLabels[i], nameText);
-		SwtUtils.setToolTipText(this.nameLabels[i], nameText);
-		SwtUtils.setText(this.hpLabels[i], hpText);
-		SwtUtils.setText(this.hpmsgLabels[i], hpmsgText);
-		SwtUtils.setText(this.lvLabels[i], lvText);
-		SwtUtils.setText(this.condLabels[i], condText);
 		String tooltip = StringUtils.join(equipTooltipTexts, "\n");
 		for (int index = 0; index < MAXEQUIP; index++) {
-			Label label = this.equipsLabels[i][index];
+			Label label = shipComposite.equipslabel[index];
 			Character ch = equipTexts[index];
-			SwtUtils.setText(label, ch != null ? String.valueOf(ch) : "");
+			SwtUtils.setText(label, ch != null ? ch.toString() : "");
 			label.setToolTipText(ch != null ? tooltip : "");
 		}
 	}
@@ -384,6 +274,70 @@ public class FleetWindow implements EventListener {
 
 		public void resetAkashiFlagship() {
 			this.time = TimeString.getCurrentTime();
+		}
+	}
+
+	private class ShipComposite extends Composite {
+		Label iconlabel, namelabel, lvlabel, hplabel, hpmsglabel, condlabel;
+		Label[] equipslabel;
+		Composite upsideBase, downsideBase, equipBase;
+
+		public ShipComposite(Composite fleetComposite) {
+			super(fleetComposite, SWT.NONE);
+			this.setLayout(SwtUtils.makeGridLayout(2, 0, 0, 0, 0));
+			this.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+			this.iconlabel = new Label(this, SWT.CENTER);
+			SwtUtils.initLabel(this.iconlabel, "!", new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 2), 16);
+
+			this.upsideBase = new Composite(this, SWT.NONE);
+			GridLayout upsideBaseGridLayout = SwtUtils.makeGridLayout(5, 0, 0, 0, 0);
+			upsideBaseGridLayout.marginTop = 1;
+			upsideBaseGridLayout.marginBottom = -1;
+			this.upsideBase.setLayout(upsideBaseGridLayout);
+			this.upsideBase.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			{
+				this.namelabel = new Label(this.upsideBase, SWT.LEFT);
+				SwtUtils.initLabel(this.namelabel, "舰娘名", new GridData(GridData.FILL_HORIZONTAL));
+			}
+			SwtUtils.insertBlank(this.upsideBase, 5);
+			{
+				this.hplabel = new Label(this.upsideBase, SWT.RIGHT);
+				SwtUtils.initLabel(this.hplabel, "000/000", new GridData(), 48);
+			}
+			SwtUtils.insertBlank(this.upsideBase, 5);
+			{
+				this.hpmsglabel = new Label(this.upsideBase, SWT.RIGHT);
+				SwtUtils.initLabel(this.hpmsglabel, "健在", new GridData(), 24);
+			}
+
+			this.downsideBase = new Composite(this, SWT.NONE);
+			GridLayout downsideBaseGridLayout = SwtUtils.makeGridLayout(4, 0, 0, 0, 0);
+			downsideBaseGridLayout.marginTop = -2;
+			downsideBaseGridLayout.marginBottom = -2;
+			this.downsideBase.setLayout(downsideBaseGridLayout);
+			this.downsideBase.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			{
+				this.lvlabel = new Label(this.downsideBase, SWT.LEFT);
+				SwtUtils.initLabel(this.lvlabel, "Lv.100", new GridData(), 40);
+			}
+			{
+				int len = MAXEQUIP;
+				this.equipBase = new Composite(this.downsideBase, SWT.NONE);
+				this.equipBase.setLayout(SwtUtils.makeGridLayout(len, 0, 0, 0, 0));
+				{
+					this.equipslabel = new Label[len];
+					for (int j = 0; j < this.equipslabel.length; j++) {
+						this.equipslabel[j] = new Label(this.equipBase, SWT.CENTER);
+						SwtUtils.initLabel(this.equipslabel[j], "装", new GridData(), 12);
+					}
+				}
+			}
+			SwtUtils.insertBlank(this.downsideBase);
+			{
+				this.condlabel = new Label(this.downsideBase, SWT.RIGHT);
+				SwtUtils.initLabel(this.condlabel, "100", new GridData(), 24);
+			}
 		}
 	}
 

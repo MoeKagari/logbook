@@ -2,9 +2,9 @@ package logbook.context.dto.battle.info;
 
 import javax.json.JsonObject;
 
-import logbook.context.data.Data;
 import logbook.context.dto.battle.AbstractInfoBattleResult;
 import logbook.context.dto.battle.BattleType;
+import logbook.context.update.data.Data;
 
 public class InfoBattleResultDto extends AbstractInfoBattleResult {
 

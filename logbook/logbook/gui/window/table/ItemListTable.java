@@ -48,7 +48,7 @@ public class ItemListTable extends AbstractTable<ItemSort> {
 	protected List<ItemSort> getList() {
 		Function<ItemDto, ShipDto> whichShipWithItem = item -> {
 			int id = item.getId();
-			for (ShipDto ship : GlobalContext.getShipmap().values()) {
+			for (ShipDto ship : GlobalContext.getShipMap().values()) {
 				for (int slot : ship.getSlots()) {
 					if (slot == id) {
 						return ship;

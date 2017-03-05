@@ -26,7 +26,7 @@ public class DeckBuilder {
 		JsonObjectBuilder fleetBuilder = Json.createObjectBuilder();
 
 		for (int i = 0; i < 6; i++) {
-			ShipDto ship = GlobalContext.getShipmap().get(deck.getShips()[i]);
+			ShipDto ship = GlobalContext.getShipMap().get(deck.getShips()[i]);
 			if (ship != null) fleetBuilder.add("s" + (i + 1), getShipBuilder(ship));
 		}
 

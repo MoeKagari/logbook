@@ -26,6 +26,7 @@ import logbook.gui.logic.HPMessage;
 import logbook.gui.logic.TimeString;
 import logbook.internal.TrayMessageBox;
 import logbook.util.SwtUtils;
+import logbook.util.ToolUtils;
 
 public class FleetWindow implements EventListener {
 	private static final int MAXCHARA = 6;
@@ -93,25 +94,26 @@ public class FleetWindow implements EventListener {
 		infoCompositeGridData.marginBottom = -2;
 		infoComposite.setLayout(infoCompositeGridData);
 		infoComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-		SwtUtils.initLabel(new Label(infoComposite, SWT.NONE), "制空:", new GridData());
 		{
+			SwtUtils.initLabel(new Label(infoComposite, SWT.NONE), "制空:", new GridData());
+
 			this.zhikongLabel = new Label(infoComposite, SWT.LEFT);
 			SwtUtils.initLabel(this.zhikongLabel, "0000", new GridData(), 32);
-		}
-		SwtUtils.insertBlank(infoComposite, 5);
-		SwtUtils.initLabel(new Label(infoComposite, SWT.NONE), "索敌:", new GridData());
-		{
+
+			SwtUtils.insertBlank(infoComposite, 5);
+			SwtUtils.initLabel(new Label(infoComposite, SWT.NONE), "索敌:", new GridData());
+
 			this.suodiLabel = new Label(infoComposite, SWT.LEFT);
 			SwtUtils.initLabel(this.suodiLabel, "000", new GridData(), 24);
-		}
-		SwtUtils.insertBlank(infoComposite, 5);
-		SwtUtils.initLabel(new Label(infoComposite, SWT.NONE), "总等级:", new GridData());
-		{
+
+			SwtUtils.insertBlank(infoComposite, 5);
+			SwtUtils.initLabel(new Label(infoComposite, SWT.NONE), "总等级:", new GridData());
+
 			this.totallvLabel = new Label(infoComposite, SWT.LEFT);
 			SwtUtils.initLabel(this.totallvLabel, "000", new GridData(), 24);
+
+			SwtUtils.insertBlank(infoComposite);
 		}
-		SwtUtils.insertBlank(infoComposite);
 	}
 
 	private void initInfoComposite2() {
@@ -124,9 +126,9 @@ public class FleetWindow implements EventListener {
 		{
 			this.sokuLabel = new Label(infoComposite2, SWT.NONE);
 			SwtUtils.initLabel(this.sokuLabel, "高速", new GridData());
-		}
-		SwtUtils.insertBlank(infoComposite2);
-		{
+
+			SwtUtils.insertBlank(infoComposite2);
+
 			this.akashiLabel = new Label(infoComposite2, SWT.RIGHT);
 			this.akashiLabel.setToolTipText("泊地修理");
 			SwtUtils.initLabel(this.akashiLabel, "000时00分00秒", new GridData(), 87);
@@ -151,9 +153,7 @@ public class FleetWindow implements EventListener {
 
 		switch (type) {
 			case UPDATEDECKNAME:
-				if (deck != null) {
-					SwtUtils.setText(this.fleetNameLabel, deck.getName());
-				}
+				ToolUtils.notNullThenHandle(deck, d -> SwtUtils.setText(this.fleetNameLabel, d.getName()));
 				return;
 			case PORT:
 				this.akashiTimer.reset();
@@ -184,7 +184,7 @@ public class FleetWindow implements EventListener {
 		//ship 状态
 		int[] ships = deck.getShips();
 		for (int i = 0; i < ships.length; i++) {
-			ShipDto ship = GlobalContext.getShipmap().get(ships[i]);
+			ShipDto ship = GlobalContext.getShipMap().get(ships[i]);
 			FleetWindow.updateShipInformation(this.shipComposites[i], ship);
 		}
 	}
@@ -194,7 +194,7 @@ public class FleetWindow implements EventListener {
 		SwtUtils.setText(shipComposite.namelabel, ship != null ? ShipDtoTranslator.getName(ship) : "");
 		SwtUtils.setToolTipText(shipComposite.namelabel, ship != null ? ShipDtoTranslator.getName(ship) : "");
 		SwtUtils.setText(shipComposite.hplabel, ship != null ? (ship.getNowHP() + "/" + ship.getMaxHp()) : "");
-		SwtUtils.setText(shipComposite.hpmsglabel, ship != null ? HPMessage.get(ship.getNowHP() * 1.0 / ship.getMaxHp()) : "");
+		SwtUtils.setText(shipComposite.hpmsglabel, ship != null ? HPMessage.getString(ship.getNowHP() * 1.0 / ship.getMaxHp()) : "");
 		SwtUtils.setText(shipComposite.lvlabel, ship != null ? ("Lv." + ship.getLv()) : "");
 		SwtUtils.setText(shipComposite.condlabel, ship != null ? String.valueOf(ship.getCond()) : "");
 
@@ -203,7 +203,7 @@ public class FleetWindow implements EventListener {
 		ArrayList<String> equipTooltipTexts = new ArrayList<>();
 		if (ship != null) {
 			int[] slots = ArrayUtils.addAll(Arrays.copyOfRange(ship.getSlots(), 0, 4), ship.getSlotex());
-			for (int index = 0; index < slots.length; index++) {
+			for (int index = 0; index < MAXEQUIP; index++) {
 				ItemDto item = GlobalContext.getItemMap().get(slots[index]);
 				if (item != null) {
 					int star = item.getLevel();
@@ -228,20 +228,8 @@ public class FleetWindow implements EventListener {
 		return GlobalContext.getDeckRoom()[this.id - 1].getDeck();
 	}
 
-	private boolean notifiyAkashitimer() {
-		return this.notifiyAkashitimer;
-	}
-
 	public FleetAkashiTimer getAkashiTimer() {
 		return this.akashiTimer;
-	}
-
-	public int getId() {
-		return this.id;
-	}
-
-	public Composite getComposite() {
-		return this.composite;
 	}
 
 	/*------------------------------------------------------------------------------------------------------------------------------------*/
@@ -255,11 +243,11 @@ public class FleetWindow implements EventListener {
 		public void update(TrayMessageBox box, long currentTime) {
 			long rest = (currentTime - this.time) / 1000;
 			FleetWindow.this.akashiLabel.setText(TimeString.toDateRestString(rest));
-			if (rest == RESET_LIMIT * ONE_MINUTE) {
-				if (FleetWindow.this.notifiyAkashitimer()) {
+			if (FleetWindow.this.notifiyAkashitimer) {
+				if (rest == RESET_LIMIT * ONE_MINUTE) {
 					DeckDto deck = FleetWindow.this.getDeck();
 					if (deck != null && deck.shouldNotifyAkashiTimer()) {
-						box.add("泊地修理", FleetWindow.this.defaultFleetName + "-泊地修理已20分钟");
+						box.add("泊地修理", FleetWindow.this.defaultFleetName + "∶泊地修理已20分钟");
 					}
 				}
 			}
@@ -299,14 +287,14 @@ public class FleetWindow implements EventListener {
 			{
 				this.namelabel = new Label(this.upsideBase, SWT.LEFT);
 				SwtUtils.initLabel(this.namelabel, "舰娘名", new GridData(GridData.FILL_HORIZONTAL));
-			}
-			SwtUtils.insertBlank(this.upsideBase, 5);
-			{
+
+				SwtUtils.insertBlank(this.upsideBase, 5);
+
 				this.hplabel = new Label(this.upsideBase, SWT.RIGHT);
 				SwtUtils.initLabel(this.hplabel, "000/000", new GridData(), 48);
-			}
-			SwtUtils.insertBlank(this.upsideBase, 5);
-			{
+
+				SwtUtils.insertBlank(this.upsideBase, 5);
+
 				this.hpmsglabel = new Label(this.upsideBase, SWT.RIGHT);
 				SwtUtils.initLabel(this.hpmsglabel, "健在", new GridData(), 24);
 			}
@@ -320,8 +308,7 @@ public class FleetWindow implements EventListener {
 			{
 				this.lvlabel = new Label(this.downsideBase, SWT.LEFT);
 				SwtUtils.initLabel(this.lvlabel, "Lv.100", new GridData(), 40);
-			}
-			{
+
 				int len = MAXEQUIP;
 				this.equipBase = new Composite(this.downsideBase, SWT.NONE);
 				this.equipBase.setLayout(SwtUtils.makeGridLayout(len, 0, 0, 0, 0));
@@ -332,9 +319,9 @@ public class FleetWindow implements EventListener {
 						SwtUtils.initLabel(this.equipslabel[j], "装", new GridData(), 12);
 					}
 				}
-			}
-			SwtUtils.insertBlank(this.downsideBase);
-			{
+
+				SwtUtils.insertBlank(this.downsideBase);
+
 				this.condlabel = new Label(this.downsideBase, SWT.RIGHT);
 				SwtUtils.initLabel(this.condlabel, "100", new GridData(), 24);
 			}

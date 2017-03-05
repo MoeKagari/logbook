@@ -2,6 +2,7 @@ package logbook.gui.window;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.function.BiConsumer;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -159,34 +160,28 @@ public class CalcuExpWindow extends WindowBase {
 
 	private void initControlEvent() {
 		this.shipcombo.addSelectionListener(new ControlSelectionListener(ev -> {
-			if (this.ships.size() > 0) {
-				this.selectLvAndExp();
-				this.calcu();
-			}
+			this.setLvAndExp();
+			this.calcu();
 		}));
 		this.seacombo.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
 		this.evalcombo.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
 		this.flagbtn.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
 		this.mvpbtn.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
 		this.secretary.addSelectionListener(new ControlSelectionListener(ev -> {
-			if (this.ships.size() > 0) {
-				this.selectSecretaryShip();
-				this.selectLvAndExp();
-				this.calcu();
-			}
-		}));
-
-		this.beforelv.addMouseWheelListener(new SpinnerMouseWheelListener(this.beforelv, ev -> {
-			this.beforexp.setText(Integer.toString(ShipExpMap.getExp(this.beforelv.getSelection())));
+			this.selectSecretaryShip();
+			this.setLvAndExp();
 			this.calcu();
 		}));
-		this.beforelv.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
 
-		this.afterlv.addMouseWheelListener(new SpinnerMouseWheelListener(this.afterlv, ev -> {
-			this.afterexp.setText(Integer.toString(ShipExpMap.getExp(this.afterlv.getSelection())));
+		BiConsumer<Label, Spinner> combiner = (label, spinner) -> {
+			label.setText(Integer.toString(ShipExpMap.getExp(spinner.getSelection())));
 			this.calcu();
-		}));
-		this.afterlv.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
+		};
+		this.beforelv.addMouseWheelListener(new SpinnerMouseWheelListener(this.beforelv, ev -> combiner.accept(this.beforexp, this.beforelv)));
+		this.beforelv.addSelectionListener(new ControlSelectionListener(ev -> combiner.accept(this.beforexp, this.beforelv)));
+
+		this.afterlv.addMouseWheelListener(new SpinnerMouseWheelListener(this.afterlv, ev -> combiner.accept(this.afterexp, this.afterlv)));
+		this.afterlv.addSelectionListener(new ControlSelectionListener(ev -> combiner.accept(this.afterexp, this.afterlv)));
 	}
 
 	/*-----------------------------------------------------------------------------------------------------------------*/
@@ -202,54 +197,48 @@ public class CalcuExpWindow extends WindowBase {
 	public void update(DataType type) {
 		switch (type) {
 			case PORT:
-				if (this.isVisible()) this.update();
+				if (this.isVisible()) this.updateDatas();
 				break;
 			default:
 				break;
 		}
 	}
 
-	private void update() {
+	private void updateDatas() {
 		this.shipcombo.removeAll();
 		this.ships.clear();
-		this.ships.addAll(GlobalContext.getShipmap().values());
+		this.ships.addAll(GlobalContext.getShipMap().values());
 		if (AppConfig.get().isNotCalcuExpForLevel99Ship()) this.ships.removeIf(ship -> ship.getLv() == 99);
 		Collections.sort(this.ships, (a, b) -> -Integer.compare(a.getLv(), b.getLv()));
 
 		int size = this.ships.size();
-		if (size <= 0) return;
 		for (int i = 0; i < size; i++) {
 			ShipDto ship = this.ships.get(i);
 			this.shipcombo.add(ShipDtoTranslator.getName(ship) + "(" + ship.getLv() + ")");
 		}
 
 		this.selectSecretaryShip();
-		this.selectLvAndExp();
+		this.setLvAndExp();
 		this.calcu();
 	}
 
 	private void selectSecretaryShip() {
-		int slectIndex = 0;
+		if (this.getItemCount() == 0) return;
 		int secretaryShipIndex = this.getSecretaryShipIndex();
-		if (secretaryShipIndex >= 0 && secretaryShipIndex < this.shipcombo.getItemCount()) slectIndex = secretaryShipIndex;
-		this.shipcombo.select(slectIndex);
+		if (secretaryShipIndex >= 0) this.shipcombo.select(secretaryShipIndex);
 	}
 
-	private void selectLvAndExp() {
+	private void setLvAndExp() {
+		if (this.getItemCount() == 0) return;
 		int slectIndex = this.shipcombo.getSelectionIndex();
-
 		ShipDto ship = this.ships.get(slectIndex);
-		if (this.ships == null) return;
 
 		int beforelv = ship.getLv();
 		int afterlv = beforelv == 155 ? 155 : (beforelv + 1);
 		this.beforelv.setSelection(beforelv);
 		this.afterlv.setSelection(afterlv);
-
-		int beforexp = ship.getCurrentExp();
-		int afterexp = ShipExpMap.getExp(afterlv);
-		this.beforexp.setText(Integer.toString(beforexp));
-		this.afterexp.setText(Integer.toString(afterexp));
+		this.beforexp.setText(Integer.toString(ship.getCurrentExp()));
+		this.afterexp.setText(Integer.toString(ShipExpMap.getExp(afterlv)));
 	}
 
 	private void calcu() {
@@ -265,14 +254,16 @@ public class CalcuExpWindow extends WindowBase {
 	private int getSecretaryShipIndex() {
 		DeckDto deck = GlobalContext.getDeckRoom()[0].getDeck();
 		int secretaryShip = deck != null ? deck.getShips()[0] : -1;
-		if (secretaryShip != -1) {
-			for (int i = 0; i < this.ships.size(); i++) {
-				if (this.ships.get(i).getId() == secretaryShip) {
-					return i;
-				}
+		for (int i = 0; i < this.ships.size(); i++) {
+			if (this.ships.get(i).getId() == secretaryShip) {
+				return i;
 			}
 		}
 		return -1;
+	}
+
+	private int getItemCount() {
+		return this.shipcombo.getItemCount();
 	}
 
 }

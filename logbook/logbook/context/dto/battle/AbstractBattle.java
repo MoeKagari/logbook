@@ -8,6 +8,9 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
+import logbook.context.dto.battle.info.InfoBattleStartAirBaseDto;
+import logbook.context.dto.translator.DeckDtoTranslator;
+import logbook.context.dto.translator.ShipDtoTranslator;
 import logbook.util.JsonUtils;
 import logbook.util.ToolUtils;
 
@@ -39,6 +42,26 @@ public abstract class AbstractBattle extends BattleDto {
 			}
 		}
 
+		//BattleDeck的舰娘名
+		if (this.fDeckCombine != null) {//我方为联合舰队
+			this.fDeck.setNames(DeckDtoTranslator.getShipNames(1));
+			this.fDeckCombine.setNames(DeckDtoTranslator.getShipNames(2));
+		} else {
+			if (json.containsKey("api_deck_id")) {
+				this.fDeck.setNames(DeckDtoTranslator.getShipNames(dissociateInt(json.get("api_deck_id"), 1)));
+			} else if (json.containsKey("api_dock_id")) {
+				this.fDeck.setNames(DeckDtoTranslator.getShipNames(dissociateInt(json.get("api_dock_id"), 1)));
+			}
+		}
+		{//敌方
+			int[] ids = dissociateIntarray(json, "api_ship_ke");
+			this.eDeck.setNames(ToolUtils.intToString(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
+		}
+		if (json.containsKey("api_ship_ke_combined")) {
+			int[] ids = dissociateIntarray(json, "api_ship_ke_combined");
+			this.eDeckCombine.setNames(ToolUtils.intToString(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
+		}
+
 		//索敌
 		this.search = dissociateIntarray(json, "api_search");
 		//阵型和航向,[自-阵型,敌-阵型,航向]
@@ -55,7 +78,7 @@ public abstract class AbstractBattle extends BattleDto {
 
 	@Override
 	public boolean hasDownArrow(BattleDto pre) {
-		return pre != null && (pre instanceof AbstractInfoBattle);
+		return pre != null && ((pre instanceof AbstractInfoBattle) || (pre instanceof InfoBattleStartAirBaseDto));
 	}
 
 	public boolean isMidnight() {
@@ -98,26 +121,27 @@ public abstract class AbstractBattle extends BattleDto {
 		return this.eDeckCombine;
 	}
 
-	public static int[] dissociateIntarray(JsonObject json, String key) {
+	protected static int[] dissociateIntarray(JsonObject json, String key) {
 		int[] intArray = null;
 		if (json.containsKey(key)) {
 			JsonArray array = json.getJsonArray(key);
 			intArray = new int[array.size()];
 			for (int i = 0; i < array.size(); i++) {
-				JsonValue value = array.get(i);
-				switch (value.getValueType()) {
-					case STRING:
-						intArray[i] = Integer.parseInt(((JsonString) value).getString());
-						break;
-					case NUMBER:
-						intArray[i] = ((JsonNumber) value).intValue();
-						break;
-					default:
-						break;
-				}
+				intArray[i] = dissociateInt(array.get(i), 0);
 			}
 		}
 		return intArray;
+	}
+
+	protected static int dissociateInt(JsonValue value, int defaultValue) {
+		switch (value.getValueType()) {
+			case STRING:
+				return Integer.parseInt(((JsonString) value).getString());
+			case NUMBER:
+				return ((JsonNumber) value).intValue();
+			default:
+				return defaultValue;
+		}
 	}
 
 }

@@ -10,9 +10,9 @@ public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
 	private final String questName;
 	private final String deckName;
 
-	private final boolean haveNewShip;
-	private final int newShipId;
-	private final String newShipTypeName;
+	private boolean haveNewShip = false;
+	private int newShipId = -1;
+	private String newShipTypeName = null;
 
 	public AbstractInfoBattleResult(Data data, JsonObject json) {
 		this.rank = json.getString("api_win_rank");
@@ -25,10 +25,6 @@ public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
 			this.haveNewShip = true;
 			this.newShipId = get_ship.getInt("api_ship_id");
 			this.newShipTypeName = get_ship.getString("api_ship_type") + "-" + get_ship.getString("api_ship_name");
-		} else {
-			this.haveNewShip = false;
-			this.newShipId = -1;
-			this.newShipTypeName = null;
 		}
 	}
 

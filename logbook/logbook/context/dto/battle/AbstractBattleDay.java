@@ -465,14 +465,14 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		 *  2,第二轮炮击战<br>
 		 *  3,第三轮炮击战
 		 */
-		private final int step;
+		private final int index;
 
 		public OpeningTaisen(JsonObject json) {//开幕反潜用
 			this(0, json);
 		}
 
 		public OpeningTaisen(int index, JsonObject json) {//炮击战用
-			this.step = index;
+			this.index = index;
 			/** 敌联合舰队时存在(因为有混战)  */
 			JsonArray at_eflag = json.containsKey("api_at_eflag") ? json.getJsonArray("api_at_eflag") : null;
 			JsonArray at_list = json.getJsonArray("api_at_list");
@@ -498,10 +498,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			if (enemyAttack == null) {//敌方非联合舰队
 				if (bt == BattleType.BATTLE_DAY || bt == BattleType.PRACTICE_DAY) {//6v6
 					return false;
-				} else if (this.getStep() == 0) {//12v6,开幕对潜
+				} else if (this.getindex() == 0) {//12v6,开幕对潜
 					return true;
 				} else if (bt == BattleType.COMBINEBATTLE_DAY_WATER) {
-					switch (this.getStep()) {
+					switch (this.getindex()) {
 						case 1:
 						case 2:
 							return false;
@@ -509,7 +509,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 							return true;
 					}
 				} else if (bt == BattleType.COMBINEBATTLE_DAY) {
-					switch (this.getStep()) {
+					switch (this.getindex()) {
 						case 1:
 							return true;
 						case 2:
@@ -518,14 +518,14 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					}
 				} else {
 					System.out.println(AbstractBattleDay.this.getBattleType());
-					System.out.println(this.getStep());
+					System.out.println(this.getindex());
 				}
 			}
 			return null;//敌联合舰队时,在BattleOneAttackSimulator内部判断
 		}
 
-		public int getStep() {
-			return this.step;
+		public int getindex() {
+			return this.index;
 		}
 
 		@Override

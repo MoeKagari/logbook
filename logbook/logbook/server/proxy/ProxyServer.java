@@ -18,10 +18,6 @@ import logbook.config.AppConfig;
 import logbook.gui.window.ApplicationMain;
 import logbook.internal.LoggerHolder;
 
-/**
- * プロキシサーバーです
- *
- */
 public final class ProxyServer {
 
 	private static final LoggerHolder LOG = new LoggerHolder(ProxyServer.class);
@@ -39,11 +35,9 @@ public final class ProxyServer {
 			updateSetting();
 			setConnector();
 
-			// httpsをプロキシできるようにConnectHandlerを設定
 			ConnectHandler proxy = new ConnectHandler();
 			server.setHandler(proxy);
 
-			// httpはこっちのハンドラでプロキシ
 			ServletContextHandler context = new ServletContextHandler(proxy, "/", ServletContextHandler.SESSIONS);
 			ServletHolder holder = new ServletHolder(new ReverseProxyServlet());
 			holder.setInitParameter("maxThreads", "256");
@@ -121,12 +115,10 @@ public final class ProxyServer {
 
 	private static void handleException(Exception e) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("代理服务器异常终了").append("\r\n");
-		sb.append("例外 : " + e.getClass().getName()).append("\r\n");
-		sb.append("原因 : " + e.getMessage()).append("\r\n");
-		if (e instanceof BindException) {
-			sb.append("可能是由于其它程序使用同一个端口").append("\r\n");
-		}
+		sb.append("代理服务器异常终了");
+		sb.append("\r\n").append("例外 : " + e.getClass().getName());
+		sb.append("\r\n").append("原因 : " + e.getMessage());
+		if (e instanceof BindException) sb.append("\r\n").append("可能是由于其它程序使用同一个端口");
 
 		Display.getDefault().asyncExec(() -> {
 			Shell shell = new Shell(Display.getDefault(), SWT.TOOL);

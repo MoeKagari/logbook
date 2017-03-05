@@ -4,9 +4,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
-import logbook.context.dto.data.ItemDto;
 import logbook.context.dto.data.KdockDto;
-import logbook.context.dto.data.ShipDto;
 import logbook.context.dto.data.record.CreateshipDto;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.Data;
@@ -91,17 +89,12 @@ public class CreateShipRoom extends Room {
 			JsonObject jo = (JsonObject) json;
 
 			//加入新船到shipmap
-			ShipDto ship = new ShipDto(jo.getJsonObject("api_ship"));
-			GlobalContext.getShipmap().put(ship.getId(), ship);
-
-			//加入新船的装备到itemmap
-			jo.getJsonArray("api_slotitem").forEach(value -> {
-				int id = ((JsonObject) value).getInt("api_id");
-				int slotitemId = ((JsonObject) value).getInt("api_slotitem_id");
-				ItemDto item = new ItemDto(id, slotitemId, false, 0);
-				GlobalContext.getItemMap().put(item.getId(), item);
-			});
-
+			GlobalContext.addNewShip(jo.getJsonObject("api_ship"));
+			//加入新船的装备到itemmap,有可能为JsonValue.NULL
+			JsonValue items_value = jo.get("api_slotitem");
+			if (items_value != null && items_value != JsonValue.NULL && (items_value instanceof JsonArray)) {
+				((JsonArray) items_value).forEach(value -> GlobalContext.addNewItem((JsonObject) value));
+			}
 			//刷新kdock状态
 			ToolUtils.forEach(GlobalContext.getCreateShipRoom(), csr -> csr.doKdock(data, jo.get("api_kdock")));
 		} catch (Exception e) {

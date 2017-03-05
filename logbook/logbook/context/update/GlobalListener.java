@@ -57,7 +57,7 @@ public class GlobalListener {
 
 			BasicDto basic = GlobalContext.getBasicInformation();
 			Button shipList = main.getShipList();
-			String setText = "舰娘(" + GlobalContext.getShipmap().size() + "/" + (basic == null ? 0 : basic.getMaxChara()) + ")";
+			String setText = "舰娘(" + GlobalContext.getShipMap().size() + "/" + (basic == null ? 0 : basic.getMaxChara()) + ")";
 			if (StringUtils.equals(shipList.getText(), setText) == false) shipList.setText(setText);
 		}
 	}

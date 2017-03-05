@@ -3,7 +3,6 @@ package logbook.context.update.room;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
-import logbook.context.dto.data.ItemDto;
 import logbook.context.dto.data.record.CreateItemDto;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.Data;
@@ -16,11 +15,9 @@ public class CreateItemRoom extends Room {
 			JsonObject jo = (JsonObject) json;
 
 			boolean success = jo.getInt("api_create_flag") == 1;
-			int id = -1, slotitemId = -1;
+			int slotitemId = -1;
 			if (success) {
-				id = jo.getJsonObject("api_slot_item").getInt("api_id");
-				slotitemId = jo.getJsonObject("api_slot_item").getInt("api_slotitem_id");
-				GlobalContext.getItemMap().put(id, new ItemDto(id, slotitemId, false, 0));
+				slotitemId = GlobalContext.addNewItem(jo.getJsonObject("api_slot_item")).getSlotitemId();
 			}
 
 			int[] mm = { //

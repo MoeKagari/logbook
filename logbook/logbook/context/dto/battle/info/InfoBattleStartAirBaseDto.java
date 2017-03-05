@@ -9,6 +9,7 @@ import logbook.context.update.data.Data;
 
 public class InfoBattleStartAirBaseDto extends AbstractInfoBattle {
 
+	/* 三支路基的打击点 */
 	private final int strikePoint[][] = new int[][] { null, null, null };
 
 	public InfoBattleStartAirBaseDto(Data data, JsonObject json) {

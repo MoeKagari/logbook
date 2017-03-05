@@ -8,7 +8,6 @@ import javax.json.JsonObject;
 /**
  * 地图详情
  * @author MoeKagari
- *
  */
 public class MapinfoDto {
 	private ArrayList<OneMap> maps = new ArrayList<>();

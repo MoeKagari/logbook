@@ -106,7 +106,7 @@ public enum DataType {
 	/** 更换家具 */
 	FURNITURE_CHANGE("/kcsapi/api_req_furniture/change"),
 	/** 选择活动难度 */
-	EVENTMAP_RANK_SELECT("api_req_map/select_eventmap_rank"),
+	EVENTMAP_RANK_SELECT("/kcsapi/api_req_map/select_eventmap_rank"),
 
 	/*-----------------------------*/
 

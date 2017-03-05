@@ -1,9 +1,22 @@
 package logbook.gui.logic;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.RGB;
+
+import logbook.gui.window.ApplicationMain;
+import logbook.util.ToolUtils;
+
 public class HPMessage {
 	public static final String ESCAPE_STRING = "退避";
 
-	public static String get(double percent) {
+	private static Color RED;//大破
+	private static Color GRAY;//中破
+	private static Color BROWN;//击沉
+	private static Color CYAN;//小破
+	private static Color ESCAPE_COLOR;//退避
+
+	public static String getString(double percent) {
 		if (percent == 1.00) {
 			return "完好";
 		}
@@ -25,6 +38,35 @@ public class HPMessage {
 		}
 
 		return "击沉";
+	}
+
+	public static Color getColor(String state) {
+		switch (state) {
+			case "击沉":
+				return BROWN;
+			case "大破":
+				return RED;
+			case "中破":
+				return GRAY;
+			case "小破":
+				return CYAN;
+			case HPMessage.ESCAPE_STRING:
+				return ESCAPE_COLOR;
+			default:
+				return null;
+		}
+	}
+
+	public static void initColor(ApplicationMain main) {
+		RED = new Color(null, new RGB(255, 85, 17));
+		GRAY = main.getDisplay().getSystemColor(SWT.COLOR_GRAY);
+		BROWN = new Color(null, new RGB(119, 102, 34));
+		CYAN = main.getDisplay().getSystemColor(SWT.COLOR_CYAN);
+		ESCAPE_COLOR = main.getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY);
+	}
+
+	public static void dispose() {
+		ToolUtils.forEach(new Color[] { RED, BROWN }, Color::dispose);
 	}
 
 }

@@ -40,12 +40,12 @@ public class NyukyoRoom extends Room {
 
 			int shipId = Integer.parseInt(data.getField("api_ship_id"));
 			boolean highspeed = Integer.parseInt(data.getField("api_highspeed")) == 1;
+			ShipDto ship = GlobalContext.getShipMap().get(shipId);
 
-			ShipDto ship = GlobalContext.getShipmap().get(shipId);
 			if (ship != null) GlobalContext.reduceMaterial(ship.getNyukyoCost());
 			if (highspeed) {//使用高速修复,后无ndock
+				GlobalContext.updateShip(shipId, ShipDto::nyukyoEnd);
 				GlobalContext.reduceMaterial(new int[] { 0, 0, 0, 0, 0, 1, 0, 0 });
-				if (ship != null) ship.nyukyoEnd();
 				this.ndock = null;
 			} else {
 				//不使用高速修复,后接ndock ,无需处理
@@ -62,11 +62,11 @@ public class NyukyoRoom extends Room {
 			if (Integer.parseInt(data.getField("api_ndock_id")) != this.id) return;
 
 			if (this.ndock != null) {
-				ShipDto ship = GlobalContext.getShipmap().get(this.ndock.getShipId());
-				if (ship != null) ship.nyukyoEnd();
+				GlobalContext.updateShip(this.ndock.getShipId(), ShipDto::nyukyoEnd);
 				GlobalContext.reduceMaterial(new int[] { 0, 0, 0, 0, 0, 1, 0, 0 });
-				this.ndock = null;
 			}
+
+			this.ndock = null;
 		} catch (Exception e) {
 			this.getLog().get().warn("doNyukyoSpeedchange" + this.id + "处理错误", e);
 			this.getLog().get().warn(data);

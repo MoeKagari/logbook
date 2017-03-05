@@ -9,6 +9,7 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 
 import logbook.context.update.GlobalContextUpdater;
+import logbook.context.update.data.DataType;
 import logbook.context.update.data.EventListener;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.NotCloseButHiddenShellListener;
@@ -19,12 +20,15 @@ import logbook.util.SwtUtils;
  * @author MoeKagari
  */
 public abstract class WindowBase implements EventListener {
+	private final ApplicationMain main;
 	private final Shell shell;
 	private final MenuItem menuItem;
 	private final Composite composite;
 	private final Menu menuBar;
 
 	public WindowBase(ApplicationMain main, MenuItem menuItem, String title) {
+		this.main = main;
+
 		this.shell = new Shell(main.getSubShell(), this.getShellStyle());
 		this.shell.setText(title);
 		this.shell.setImage(main.getLogo());
@@ -38,7 +42,9 @@ public abstract class WindowBase implements EventListener {
 		this.composite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		this.menuItem = menuItem;
-		this.menuItem.addSelectionListener(new ControlSelectionListener(ev -> this.setVisible(this.menuItem.getSelection())));
+		if (menuItem != null) {
+			this.menuItem.addSelectionListener(new ControlSelectionListener(ev -> this.setVisible(this.menuItem.getSelection())));
+		}
 
 		this.menuBar = new Menu(this.shell, SWT.BAR);
 		this.shell.setMenuBar(this.menuBar);
@@ -46,6 +52,10 @@ public abstract class WindowBase implements EventListener {
 	}
 
 	/*------------------------------------------------------------------------------------------------------------*/
+
+	public ApplicationMain getMain() {
+		return this.main;
+	}
 
 	public Menu getMenuBar() {
 		return this.menuBar;
@@ -60,21 +70,28 @@ public abstract class WindowBase implements EventListener {
 	}
 
 	public void setVisible(boolean visible) {
-		this.menuItem.setSelection(visible);
-		if (visible) {
-			this.shell.setMinimized(false);
-			this.shell.forceActive();
+		if (this.menuItem != null) {
+			this.menuItem.setSelection(visible);
 		}
 		this.shell.setVisible(visible);
+		if (visible) {
+			this.shell.setMinimized(false);
+			this.shell.setFocus();
+		}
 	}
 
 	public boolean isVisible() {
-		return this.shell.isVisible() || this.shell.getMinimized();
+		return this.shell.isVisible() && (this.shell.getMinimized() == false);
 	}
 
 	/*------------------------------------------------------------------------------------------------------------*/
 
-	public abstract Point getDefaultSize();
+	@Override
+	public void update(DataType type) {}
+
+	public Point getDefaultSize() {
+		return SwtUtils.DPIAwareSize(new Point(400, 200));
+	}
 
 	public int getShellStyle() {
 		return SWT.CLOSE | SWT.TITLE | SWT.RESIZE | SWT.MIN;

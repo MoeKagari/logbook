@@ -12,22 +12,14 @@ public class ItemDto {
 	private boolean isLocked;
 	private int level;
 	private int alv;
-	private int slotitemId;
+	private final int slotitemId;
 
 	public ItemDto(JsonObject json) {
 		this.id = json.getInt("api_id");
-		this.isLocked = json.getInt("api_locked") == 1;
-		this.level = json.getInt("api_level");
-		this.alv = json.getInt("api_alv", -1);
 		this.slotitemId = json.getInt("api_slotitem_id");
-	}
-
-	public ItemDto(int id, int slotitemId, boolean isLocked, int level) {
-		this.id = id;
-		this.isLocked = isLocked;
-		this.level = level;
-		this.alv = -1;
-		this.slotitemId = slotitemId;
+		this.isLocked = json.containsKey("api_locked") ? (json.getInt("api_locked") == 1) : false;
+		this.level = json.containsKey("api_level") ? json.getInt("api_level") : 0;
+		this.alv = json.containsKey("api_alv") ? json.getInt("api_alv") : -1;
 	}
 
 	public int getSlotitemId() {

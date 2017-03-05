@@ -8,7 +8,6 @@ import logbook.context.dto.data.MaterialDto;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.Data;
 import logbook.gui.logic.TimeString;
-import logbook.gui.window.ApplicationMain;
 import logbook.util.JsonUtils;
 import logbook.util.ToolUtils;
 
@@ -18,10 +17,8 @@ public class RemodelRoom extends Room {
 		try {
 			JsonObject jo = (JsonObject) json;
 
+			//boolean certain = Integer.parseInt(data.getField("api_certain_flag")) == 1;
 			boolean success = jo.getInt("api_remodel_flag") == 1;
-			boolean certain = Integer.parseInt(data.getField("api_certain_flag")) == 1;
-			ApplicationMain.main.logPrint("装备改修" + (success ? "成功" : "失败") + (certain ? "(确保)" : ""));
-
 			int slotId = Integer.parseInt(data.getField("api_slot_id"));
 			ItemDto item = GlobalContext.getItemMap().get(slotId);
 			if (success && item != null) {
@@ -31,8 +28,7 @@ public class RemodelRoom extends Room {
 			}
 			if (jo.containsKey("api_after_slot")) {
 				GlobalContext.getItemMap().remove(slotId);
-				ItemDto afterSlot = new ItemDto(jo.getJsonObject("api_after_slot"));
-				GlobalContext.getItemMap().put(afterSlot.getId(), afterSlot);
+				GlobalContext.addNewItem(jo.getJsonObject("api_after_slot"));
 			}
 			if (jo.containsKey("api_use_slot_id")) {
 				int[] useSlotIds = JsonUtils.getIntArray(jo, "api_use_slot_id");

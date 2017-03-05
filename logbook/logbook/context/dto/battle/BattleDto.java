@@ -213,6 +213,7 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 		private final boolean isEnemy;
 		private final int[] nowhps;
 		private final int[] maxhps;
+		private String[] names = null;
 
 		/**
 		 * 长度为6
@@ -262,10 +263,18 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 		public boolean isCombine() {
 			return this.isCombine;
 		}
+
+		public void setNames(String[] names) {
+			this.names = names;
+		}
+
+		public String[] getName() {
+			return this.names;
+		}
 	}
 
 	/**
-	 * 攻击方index,防御方indexs,伤害dmgs
+	 * 昼战开幕反潜,三次炮击战,夜战
 	 * @author MoeKagari
 	 */
 	public class BattleOneAttack {
@@ -274,8 +283,8 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 		private final int attackIndex;//攻击方位置(1-12),enemyAttack所代表的两只舰队,非联合舰队时,自方舰队在前,联合舰队时,第一舰队在前
 		private final int[] defenseIndexs;//attackIndex的对方
 		private final int[] dmgs;//此次造成的伤害,与defenseIndexs长度相同
-		private final int attackType;//攻击类型
-		private boolean isMidnight = false;
+		private final int attackType;//攻击类型,昼夜战不同
+		private boolean isMidnight;
 
 		/**
 		 * 夜战用
@@ -346,6 +355,8 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 			int[] defenseIndexs = boa.getDefenseIndexs();
 			int[] damages = boa.getDamages();
 			for (int i = 0; i < damages.length; i++) {
+				if (defenseIndexs[i] == -1) continue;//三炮CI -> [index,-1,-1]
+
 				int da = damages[i] < 0 ? 0 : damages[i];
 				Point p1 = new Point((attackIndex - 1) / 6, (attackIndex - 1) % 6);
 				Point p2 = new Point((defenseIndexs[i] - 1) / 6, (defenseIndexs[i] - 1) % 6);

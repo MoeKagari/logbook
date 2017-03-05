@@ -1,5 +1,6 @@
 package logbook.gui.window;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Point;
@@ -10,8 +11,9 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ProgressBar;
 
-import logbook.context.dto.data.MapinfoDto;
+import logbook.config.AppConfig;
 import logbook.context.dto.data.MapinfoDto.EventMap;
+import logbook.context.dto.data.MapinfoDto.OneMap;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.DataType;
 import logbook.util.SwtUtils;
@@ -49,31 +51,46 @@ public class MapinfoWindow extends WindowBase {
 	private void updateWindow() {
 		this.getShell().setRedraw(false);
 		ToolUtils.forEach(this.contentComposite.getChildren(), Control::dispose);
-
-		MapinfoDto mapinfo = GlobalContext.getMapinfo();
-		if (mapinfo != null) mapinfo.getMaps().forEach(map -> {
-			int now = 0, max = 0;
-
-			if (map.isExboss() && map.isClear() == false && map.getDefeatCount() != -1) {
-				max = map.getMaxCount();
-				now = max - map.getDefeatCount();
-			} else if (map.isEventMap()) {
-				EventMap eventMap = map.getEventMap();
-				max = eventMap.getMaxhp();
-				now = eventMap.getNowhp();
-			}
-
-			if (now != 0) {
-				StringBuilder text = new StringBuilder(map.getArea() + "-" + map.getNo());
-				text.append(",").append(map.isEventMap() ? map.getEventMap().getRank() : "");
-				text.append(",").append(map.isEventMap() ? map.getEventMap().getHptype() : "");
-				text.append(",").append(now + "/" + max);
-				this.newOneMapComposite(now, max, text.toString());
-			}
-		});
-
+		ToolUtils.notNullThenHandle(GlobalContext.getMapinfo(), mapinfo -> mapinfo.getMaps().forEach(map -> this.updateOneMap(map)));
 		this.contentComposite.layout();
 		this.getShell().setRedraw(true);
+	}
+
+	private void updateOneMap(OneMap map) {
+		int now = 0, max = 0;
+
+		if (map.isEventMap()) {
+			EventMap eventMap = map.getEventMap();
+			max = eventMap.getMaxhp();
+			now = eventMap.getNowhp();
+		} else if (map.getDefeatCount() != -1 && map.isExboss() && map.isClear() == false) {
+			max = map.getMaxCount();
+			now = max - map.getDefeatCount();
+		}
+
+		if (now == 0) {
+			return;
+		}
+
+		StringBuilder text = new StringBuilder(map.getArea() + "-" + map.getNo());
+		if (map.isEventMap()) {
+			String rank = map.getEventMap().getRank();
+			if (StringUtils.isNotBlank(rank)) {
+				text.append("-").append(rank);
+			}
+
+			String hptype = map.getEventMap().getHptype();
+			if (StringUtils.isNotBlank(hptype)) {
+				text.append(",").append(hptype);
+			}
+		}
+		text.append(":").append("[" + now + "," + max + "]");
+		this.newOneMapComposite(now, max, text.toString());
+
+		//print活动海域HP到console
+		if (map.isEventMap() && AppConfig.get().isShowEventMapHPInConsole()) {
+			this.getMain().logPrint(map.getArea() + "-" + map.getNo() + "-" + map.getEventMap().getRank() + ":" + "[" + now + "," + max + "]");
+		}
 	}
 
 	private void newOneMapComposite(int now, int max, String text) {

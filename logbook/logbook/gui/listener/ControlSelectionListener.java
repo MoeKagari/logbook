@@ -16,5 +16,4 @@ public class ControlSelectionListener extends SelectionAdapter {
 	public void widgetSelected(SelectionEvent ev) {
 		this.handler.accept(ev);
 	}
-
 }

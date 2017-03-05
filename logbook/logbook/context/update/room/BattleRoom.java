@@ -24,7 +24,6 @@ import logbook.context.dto.battle.info.InfoBattleResultDto;
 import logbook.context.dto.battle.info.InfoBattleStartAirBaseDto;
 import logbook.context.dto.battle.info.InfoBattleStartDto;
 import logbook.context.dto.battle.info.InfoCombinebattleResultDto;
-import logbook.context.dto.data.ShipDto;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.Data;
 import logbook.util.ToolUtils;
@@ -98,13 +97,8 @@ public class BattleRoom extends Room {
 		try {
 			JsonObject jo = (JsonObject) json;
 
-			jo.getJsonArray("api_ship_data").forEach(value -> {
-				ShipDto ship = new ShipDto((JsonObject) value);
-				GlobalContext.getShipmap().put(ship.getId(), ship);
-			});
-
-			JsonValue api_deck_data = jo.get("api_deck_data");
-			ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> dr.doDeck(data, api_deck_data));
+			jo.getJsonArray("api_ship_data").forEach(value -> GlobalContext.addNewShip((JsonObject) value));
+			ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> dr.doDeck(data, jo.get("api_deck_data")));
 		} catch (Exception e) {
 			this.getLog().get().warn("doBattleShipdeck" + "处理错误", e);
 			this.getLog().get().warn(data);

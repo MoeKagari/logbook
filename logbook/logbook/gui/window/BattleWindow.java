@@ -2,141 +2,91 @@ package logbook.gui.window;
 
 import java.util.ArrayList;
 import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ScrollBar;
 
+import logbook.context.dto.battle.AbstractBattle;
 import logbook.context.dto.battle.BattleDto;
 import logbook.context.dto.battle.BattleType;
 import logbook.context.dto.translator.BattleDtoTranslator;
 import logbook.context.dto.translator.BattleDtoTranslator.BTResult;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.DataType;
+import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.logic.HPMessage;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
 public class BattleWindow extends WindowBase {
-	private BattleDto battle = null;
+	private BattleDto battle = null;//最后一个battleDto(此面板中的)
 
-	private final Color red;
-	private final Color gray;
-	private final Color brown;
-	private final Color cyan;
-	private final Color escape_color;
-
-	private final ScrolledComposite sc;
-	private final Composite contentComposite;
+	private final ScrolledBattleComposite sbc;//战斗窗口
+	private final BattleFlowWindow bfw;
 
 	public BattleWindow(ApplicationMain main, MenuItem menuItem, String title) {
 		super(main, menuItem, title);
 
-		this.red = new Color(null, new RGB(255, 85, 17));
-		this.gray = main.getDisplay().getSystemColor(SWT.COLOR_GRAY);
-		this.brown = new Color(null, new RGB(119, 102, 34));
-		this.cyan = main.getDisplay().getSystemColor(SWT.COLOR_CYAN);
-		this.escape_color = main.getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY);
-
-		this.sc = new ScrolledComposite(this.getComposite(), SWT.V_SCROLL);
-		this.sc.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
-		this.sc.setLayoutData(new GridData(GridData.FILL_BOTH));
-		this.sc.setExpandHorizontal(true);
-		this.sc.setExpandVertical(true);
-		this.sc.setAlwaysShowScrollBars(true);
-
-		this.contentComposite = new Composite(this.sc, SWT.NONE);
-		this.contentComposite.setLayout(SwtUtils.makeGridLayout(1, 0, 8, 0, 0, 5, 5));
-		this.contentComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-		this.sc.setContent(this.contentComposite);
-		this.getShell().addDisposeListener(ev -> {
-			this.red.dispose();
-			this.brown.dispose();
-		});
-	}
-
-	private void layout() {
-		if (this.isVisible() == false) return;
-		this.sc.setMinSize(this.contentComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-		this.contentComposite.layout();
-		ScrollBar bar = this.sc.getVerticalBar();
-		bar.setSelection(bar.getMaximum());
-		this.sc.layout();
-	}
-
-	private void newBattleComposite(boolean hasDownArrow, BattleDto lastOne, BattleDto lastTwo) {
-		if (lastOne.getBattleType() == BattleType.PRACTICE_DAY) {
-			SwtUtils.initLabel(new Label(this.contentComposite, SWT.CENTER), "演习", new GridData(GridData.FILL_HORIZONTAL));
-			SwtUtils.initLabel(new Label(this.contentComposite, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
-		} else if (lastOne.isPracticeBattle() || (hasDownArrow && lastOne.hasDownArrow(lastTwo))) {
-			SwtUtils.initLabel(new Label(this.contentComposite, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
-		}
-
-		BTResult btr = BattleDtoTranslator.getBattle(lastOne);
-		if (btr != null) {
-			Composite base = new Composite(this.contentComposite, SWT.NONE);
-			base.setLayout(SwtUtils.makeGridLayout(3, 0, 0, 0, 0));
-			base.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-			SwtUtils.insertBlank(base);
-			Composite composite = new Composite(base, SWT.NONE);
-			composite.setLayout(SwtUtils.makeGridLayout(1, 0, 2, 0, 0));
-			composite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
-			SwtUtils.insertBlank(base);
-
-			this.newLabels(composite, btr.getDeckInformations());
-			if (btr.getBefore() != null && btr.getAfter() != null) {
-				Composite stateComposite = new Composite(composite, SWT.NONE);
-				stateComposite.setLayout(SwtUtils.makeGridLayout(3, 4, 0, 0, 0));
-				stateComposite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
-				{
-					this.newStateComposite(stateComposite, btr.getBefore());
-					SwtUtils.initLabel(new Label(stateComposite, SWT.CENTER), "→", new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 2));
-					this.newStateComposite(stateComposite, btr.getAfter());
-				}
-			}
-		}
+		this.sbc = new ScrolledBattleComposite(this.getComposite());
+		this.bfw = new BattleFlowWindow(main);
 	}
 
 	/*-------------------------------------------------------------------*/
 
-	private void newLabels(Composite composite, ArrayList<String> deckInformation) {
-		if (deckInformation == null) return;
-		for (String text : deckInformation)
-			SwtUtils.initLabel(new Label(composite, SWT.CENTER), text, new GridData(GridData.FILL_HORIZONTAL));
+	private static void newBattleComposite(Composite composite, Consumer<SelectionEvent> handler, boolean hasDownArrow, BattleDto lastOne, BattleDto lastTwo) {
+		if (lastOne.getBattleType() == BattleType.PRACTICE_DAY) {
+			SwtUtils.initLabel(new Label(composite, SWT.CENTER), "演习", new GridData(GridData.FILL_HORIZONTAL));
+			SwtUtils.initLabel(new Label(composite, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
+		} else if (hasDownArrow && lastOne.hasDownArrow(lastTwo)) {
+			SwtUtils.initLabel(new Label(composite, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
+		}
+
+		BTResult btr = BattleDtoTranslator.getBattle(lastOne);
+		if (btr != null) {
+			Composite base = new Composite(composite, SWT.CENTER);
+			base.setLayout(SwtUtils.makeGridLayout(1, 0, 2, 0, 0));
+			base.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+			ToolUtils.notNullThenHandle(btr.getDeckInformations(), di -> newLabels(base, di));
+			if (btr.getBefore() != null && btr.getAfter() != null) {
+				Composite stateComposite = new Composite(base, SWT.NONE);
+				stateComposite.setLayout(SwtUtils.makeGridLayout(3, 4, 0, 0, 0));
+				stateComposite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
+				{
+					newStateComposite(stateComposite, btr.getBefore());
+					SwtUtils.initLabel(new Label(stateComposite, SWT.CENTER), "→", new GridData(SWT.CENTER, SWT.CENTER, true, true, 1, 2));
+					newStateComposite(stateComposite, btr.getAfter());
+				}
+			}
+
+			if (lastOne instanceof AbstractBattle) {
+				MenuItem show = new MenuItem(new Menu(base), SWT.NONE);
+				show.setText("战斗流程");
+				show.addSelectionListener(new ControlSelectionListener(handler));
+				SwtUtils.setMenu(base, show.getParent());
+			}
+		}
 	}
 
-	private void newStateComposite(Composite composite, ArrayList<String[]> shipInformations) {
-		if (shipInformations == null || shipInformations.size() == 0) return;
+	private static void newLabels(Composite composite, ArrayList<String> deckInformation) {
+		deckInformation.forEach(text -> SwtUtils.initLabel(new Label(composite, SWT.CENTER), text, new GridData(GridData.FILL_HORIZONTAL)));
+	}
+
+	private static void newStateComposite(Composite composite, ArrayList<String[]> shipInformations) {
 		int count = shipInformations.stream().mapToInt(strs -> strs.length).max().orElse(0);
 		if (count == 0) return;
 
-		Function<String, Color> getBackground = text -> {
-			switch (text) {
-				case "击沉":
-					return this.brown;
-				case "大破":
-					return this.red;
-				case "中破":
-					return this.gray;
-				case "小破":
-					return this.cyan;
-				case HPMessage.ESCAPE_STRING:
-					return this.escape_color;
-				default:
-					return null;
-			}
-		};
 		BiFunction<Integer, Integer, String> getText = (i, j) -> {
 			if (j >= shipInformations.size() || j < 0) return "";
 			String[] strs = shipInformations.get(j);
@@ -146,15 +96,15 @@ public class BattleWindow extends WindowBase {
 
 		Composite oneSide = new Composite(composite, SWT.BORDER);
 		oneSide.setLayout(SwtUtils.makeGridLayout(count, 4, 0, 0, 0));
-		oneSide.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
+		oneSide.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
 		for (int i = 0; i < count; i++) {
 			Composite oneState = new Composite(oneSide, SWT.NONE);
 			oneState.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
-			oneState.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
+			oneState.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
 			for (int j = 0; j < shipInformations.size(); j++) {
 				String text = getText.apply(i, j);
-				Color background = getBackground.apply(text);
-				SwtUtils.initLabel(new Label(oneState, SWT.CENTER), text, new GridData(SWT.CENTER, SWT.CENTER, false, false), background);
+				Color background = HPMessage.getColor(text);
+				SwtUtils.initLabel(new Label(oneState, SWT.CENTER), text, new GridData(SWT.CENTER, SWT.CENTER, true, true), background);
 			}
 		}
 	}
@@ -163,17 +113,18 @@ public class BattleWindow extends WindowBase {
 
 	@Override
 	public void update(DataType type) {
-		Control[] childs = this.contentComposite.getChildren();
+		Control[] childs = this.sbc.contentComposite.getChildren();
 		BattleDto lastOne = GlobalContext.getBattlelist().getLastOne();
 		BattleDto lastTwo = GlobalContext.getBattlelist().getLastTwo();
 		if (type == DataType.PORT) {//返回母港,清空此窗口
 			GlobalContext.getBattlelist().clearLast();
-			ToolUtils.forEach(childs, child -> child.dispose());
+			ToolUtils.forEach(childs, Control::dispose);
+			this.bfw.clear();
 		} else if (lastOne != this.battle && lastOne != null) {
-			this.newBattleComposite(childs.length != 0, lastOne, lastTwo);
+			newBattleComposite(this.sbc.contentComposite, ev -> this.bfw.update(lastOne), childs.length != 0, lastOne, lastTwo);
 		}
 		this.battle = lastOne;
-		this.layout();
+		this.sbc.layout(true);
 	}
 
 	@Override
@@ -186,10 +137,60 @@ public class BattleWindow extends WindowBase {
 		return super.getShellStyle() | SWT.ON_TOP;
 	}
 
-	@Override
-	public void setVisible(boolean visible) {
-		super.setVisible(visible);
-		this.layout();
+	public class BattleFlowWindow extends WindowBase {
+		private final ScrolledBattleComposite sbc;//战斗窗口
+
+		public BattleFlowWindow(ApplicationMain main) {
+			super(main, null, "战斗流程");
+			this.sbc = new ScrolledBattleComposite(this.getComposite());
+		}
+
+		@Override
+		public int getShellStyle() {
+			return super.getShellStyle() | SWT.ON_TOP;
+		}
+
+		public void update(BattleDto battleDto) {
+			this.clear();
+			BattleDtoTranslator.createBattleFlow(this.sbc.contentComposite, battleDto);
+			this.setVisible(true);
+			this.sbc.layout(false);
+		}
+
+		public void clear() {
+			ToolUtils.forEach(this.sbc.contentComposite.getChildren(), Control::dispose);
+			this.sbc.layout(false);
+		}
+	}
+
+	public class ScrolledBattleComposite {
+		private final ScrolledComposite sc;
+		private final Composite contentComposite;
+
+		public ScrolledBattleComposite(Composite composite) {
+			this.sc = new ScrolledComposite(composite, SWT.V_SCROLL);
+			this.sc.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
+			this.sc.setLayoutData(new GridData(GridData.FILL_BOTH));
+			this.sc.setExpandHorizontal(true);
+			this.sc.setExpandVertical(true);
+			this.sc.setAlwaysShowScrollBars(true);
+
+			this.contentComposite = new Composite(this.sc, SWT.NONE);
+			this.contentComposite.setLayout(SwtUtils.makeGridLayout(1, 0, 5, 0, 0, 5, 5));
+			this.contentComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+			this.sc.setContent(this.contentComposite);
+		}
+
+		public void layout(boolean auto_scroll) {
+			this.sc.setMinSize(this.contentComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+			this.contentComposite.layout();
+			if (auto_scroll) {
+				ScrollBar bar = this.sc.getVerticalBar();
+				bar.setSelection(bar.getMaximum());
+			}
+			this.sc.layout();
+		}
 	}
 
 }

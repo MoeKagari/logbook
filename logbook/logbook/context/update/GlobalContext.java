@@ -2,12 +2,15 @@ package logbook.context.update;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import javax.json.Json;
+import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import org.apache.commons.io.FileUtils;
@@ -48,6 +51,7 @@ import logbook.context.update.room.PracticeRoom;
 import logbook.context.update.room.QuestRoom;
 import logbook.context.update.room.RemodelRoom;
 import logbook.gui.window.ApplicationMain;
+import logbook.internal.LoggerHolder;
 import logbook.util.ToolUtils;
 
 /**
@@ -55,6 +59,7 @@ import logbook.util.ToolUtils;
  * @author MoeKagari
  */
 public class GlobalContext {
+	private static final LoggerHolder LOG = new LoggerHolder(GlobalContext.class);
 
 	/** 服务器ip */
 	private static String serverName = null;
@@ -104,16 +109,17 @@ public class GlobalContext {
 			masterData = new MasterDataDto(Json.createReader(new FileInputStream(new File(AppConstants.MASTERDATAFILEPATH))).readObject());
 		} catch (Exception e) {
 			ApplicationMain.main.logPrint("MasterData读取失败");
+			LOG.get().warn("masterdata读取失败", e);
 		}
 	}
 
 	public static void store() {
 		try {
 			if (masterData != null) {
-				FileUtils.write(new File(AppConstants.MASTERDATAFILEPATH), masterData.getJson().toString());
+				FileUtils.write(new File(AppConstants.MASTERDATAFILEPATH), masterData.getJson().toString(), Charset.forName("utf-8"));
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOG.get().warn("masterdata保存失败", e);
 		}
 	}
 
@@ -435,8 +441,6 @@ public class GlobalContext {
 
 			destroyShipList.add(new DestroyShipDto(time, event, ship));
 			shipMap.remove(ship.getId());
-		} else {
-			//
 		}
 	}
 
@@ -446,6 +450,28 @@ public class GlobalContext {
 			destroyItemList.add(new DestroyItemDto(time, event, item, group));
 			itemMap.remove(item.getId());
 		}
+	}
+
+	public static ShipDto addNewShip(JsonObject json) {
+		ShipDto ship = new ShipDto(json);
+		shipMap.put(ship.getId(), ship);
+		return ship;
+	}
+
+	public static ItemDto addNewItem(JsonObject json) {
+		ItemDto item = new ItemDto(json);
+		itemMap.put(item.getId(), item);
+		return item;
+	}
+
+	public static UseItemDto addNewUseItem(JsonObject json) {
+		UseItemDto useItem = new UseItemDto(json);
+		useItemMap.put(useItem.getId(), useItem);
+		return useItem;
+	}
+
+	public static void updateShip(int id, Consumer<ShipDto> handler) {
+		ToolUtils.notNullThenHandle(shipMap.get(id), handler);
 	}
 
 	/*----------------------------------------------getter------------------------------------------------------------------*/
@@ -462,7 +488,7 @@ public class GlobalContext {
 		return itemMap;
 	}
 
-	public static Map<Integer, ShipDto> getShipmap() {
+	public static Map<Integer, ShipDto> getShipMap() {
 		return shipMap;
 	}
 

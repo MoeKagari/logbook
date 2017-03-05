@@ -32,6 +32,7 @@ import logbook.context.update.GlobalContext;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.TrayItemMenuListener;
 import logbook.gui.logic.DeckBuilder;
+import logbook.gui.logic.HPMessage;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.table.CreateItemTable;
 import logbook.gui.window.table.CreateShipTable;
@@ -82,14 +83,15 @@ public class ApplicationMain {
 			new SyncExecApplicationMain(main).start();
 			GlobalContext.load();
 			ProxyServer.start();
+			HPMessage.initColor(main);
 			main.display();//程序堵塞在这里
 		} catch (Exception | Error e) {
 			LOG.get().fatal("main thread 异常中止", e);
 		} finally {
 			main.dispose();
+			HPMessage.dispose();
 			applicationLock.release();
 			ProxyServer.end();
-			AppConfig.store();
 		}
 	}
 
@@ -145,7 +147,7 @@ public class ApplicationMain {
 	private final Shell shell;//主面板shell
 	private final Shell subShell;//辅助shell,不显示,用于其他呼出式窗口
 	private final Menu menubar;//菜单栏
-	private final TrayItem trayItem;
+	private TrayItem trayItem;
 
 	private Composite leftComposite;//左面板
 	private Button itemList;
@@ -181,25 +183,31 @@ public class ApplicationMain {
 		this.initMenuBar();
 		this.shell.setMenuBar(this.menubar);
 
-		this.trayItem = new TrayItem(this.display.getSystemTray(), SWT.NONE);
 		this.initTrayItem();
 	}
 
 	private void initShell() {
+		this.shell.setImage(this.logo);
 		this.shell.setText(AppConstants.MAINWINDOWNAME);
-		this.shell.setSize(SwtUtils.DPIAwareSize(new Point(411, 523)));
+		this.shell.setSize(SwtUtils.DPIAwareSize(new Point(411, 524)));
 		this.shell.setLocation(1100, 200);
 		this.shell.setLayout(SwtUtils.makeGridLayout(2, 0, 0, 0, 0));
 		this.shell.setLayoutData(new GridData(GridData.FILL_BOTH));
-		this.shell.setImage(this.logo);
 		this.shell.addShellListener(new ShellAdapter() {
 			@Override
 			public void shellClosed(ShellEvent e) {
 				if (AppConfig.get().isCheckDoit()) {
-					MessageBox box = new MessageBox(ApplicationMain.this.shell, SWT.YES | SWT.NO | SWT.ICON_QUESTION);
+					MessageBox box = new MessageBox(ApplicationMain.this.shell, SWT.YES | SWT.NO | SWT.ICON_QUESTION | SWT.ON_TOP);
 					box.setText("退出");
 					box.setMessage("要退出航海日志吗?");
 					e.doit = box.open() == SWT.YES;
+				}
+			}
+
+			@Override
+			public void shellIconified(ShellEvent e) {
+				if (AppConfig.get().isMinimizedToTray()) {
+					ApplicationMain.this.shell.setVisible(false);
 				}
 			}
 		});
@@ -212,7 +220,7 @@ public class ApplicationMain {
 		SwtUtils.initControl(this.leftComposite, new GridData(GridData.FILL_VERTICAL), 210);//左边面板的宽度在此控制
 		{
 			Composite buttonComposite = new Composite(this.leftComposite, SWT.NONE);
-			buttonComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
+			buttonComposite.setLayout(new FillLayout());
 			buttonComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			{
 				this.itemList = new Button(buttonComposite, SWT.PUSH);
@@ -231,7 +239,7 @@ public class ApplicationMain {
 			this.resourceGroup.setLayout(SwtUtils.makeGridLayout(4, 0, 0, 0, 0));
 			this.resourceGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-			int len = 8;
+			int len = this.resourceStrings.length;
 			this.resourceLabels = new Label[len];
 			for (int i = 0; i < len; i++) {
 				this.resourceLabels[i] = new Label(this.resourceGroup, SWT.RIGHT);
@@ -280,7 +288,7 @@ public class ApplicationMain {
 			this.decktimeLabels = new Label[len];
 			for (int i = 0; i < len; i++) {
 				this.decknameLabels[i] = new Label(this.deckGroup, SWT.NONE);
-				SwtUtils.initLabel(this.decknameLabels[i], AppConstants.DEFAULT_FLEET_NAME[i] + "的远征名", new GridData(GridData.FILL_HORIZONTAL));
+				SwtUtils.initLabel(this.decknameLabels[i], AppConstants.DEFAULT_FLEET_NAME[i] + "远征", new GridData(GridData.FILL_HORIZONTAL));
 
 				this.decktimeLabels[i] = new Label(this.deckGroup, SWT.RIGHT);
 				SwtUtils.initLabel(this.decktimeLabels[i], "00时00分00秒", new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1), 78);
@@ -297,7 +305,7 @@ public class ApplicationMain {
 			this.ndocktimeLabels = new Label[len];
 			for (int i = 0; i < len; i++) {
 				this.ndocknameLabels[i] = new Label(this.ndockGroup, SWT.NONE);
-				SwtUtils.initLabel(this.ndocknameLabels[i], "渠" + (i + 1) + "中的舰娘", new GridData(GridData.FILL_HORIZONTAL));
+				SwtUtils.initLabel(this.ndocknameLabels[i], "渠" + (i + 1), new GridData(GridData.FILL_HORIZONTAL));
 
 				this.ndocktimeLabels[i] = new Label(this.ndockGroup, SWT.RIGHT);
 				SwtUtils.initLabel(this.ndocktimeLabels[i], "00时00分00秒", new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1), 78);
@@ -311,7 +319,6 @@ public class ApplicationMain {
 				public void mouseDown(MouseEvent e) {
 					if (e.button == 3) {
 						ApplicationMain.this.console.deselectAll();
-						ApplicationMain.this.rightComposite.setFocus();
 					}
 				}
 			});
@@ -321,7 +328,7 @@ public class ApplicationMain {
 	//右面板
 	private void initRightComposite() {
 		this.rightComposite = new Composite(this.shell, SWT.NONE);
-		this.rightComposite.setLayout(SwtUtils.makeGridLayout(new int[] { 0, 1, 1, 2, 2 }[this.fleetLength], 2, 2, 0, 0));
+		this.rightComposite.setLayout(SwtUtils.makeGridLayout(new int[] { 0, 1, 1, 2, 2 }[this.fleetLength], 2, 2, 1, 1));
 		this.rightComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		this.fleetWindows = new FleetWindow[this.fleetLength];
@@ -332,6 +339,7 @@ public class ApplicationMain {
 
 	//托盘图标
 	private void initTrayItem() {
+		this.trayItem = new TrayItem(this.display.getSystemTray(), SWT.NONE);
 		this.trayItem.setImage(this.logo);
 		this.trayItem.addListener(SWT.Selection, ev -> this.setVisible(true));
 		this.trayItem.addMenuDetectListener(new TrayItemMenuListener(this));
@@ -503,12 +511,12 @@ public class ApplicationMain {
 
 	/*----------------------------------------------------------------------------------------------------------------*/
 
-	public FleetWindowOut[] getFleetWindowOuts() {
-		return this.fleetWindowOuts;
-	}
-
 	public FleetWindowAll getFleetWindowAll() {
 		return this.fleetWindowAll;
+	}
+
+	public FleetWindowOut[] getFleetWindowOuts() {
+		return this.fleetWindowOuts;
 	}
 
 	public CalcuExpWindow getCalcuExpWindow() {
@@ -548,8 +556,8 @@ public class ApplicationMain {
 		userLogger.get().info(mes);
 	}
 
-	public void printNewDay(long currentTime) {
-		this.printMessage(new SimpleDateFormat("yyyy-MM-dd").format(new Date(currentTime)));
+	public void printNewDay(long time) {
+		this.printMessage(new SimpleDateFormat("yyyy-MM-dd").format(new Date(time)));
 	}
 
 	private void printMessage(String message) {
@@ -564,7 +572,9 @@ public class ApplicationMain {
 	private void display() {
 		this.printNewDay(TimeString.getCurrentTime());
 		this.logPrint("航海日志启动");
-		this.setVisible(true);
+		this.shell.open();
+		this.shell.setFocus();
+		this.shell.forceFocus();
 		while (this.shell.isDisposed() == false) {
 			if (this.display.readAndDispatch() == false) {
 				this.display.sleep();
@@ -576,8 +586,8 @@ public class ApplicationMain {
 		this.shell.setVisible(visible);
 		if (visible) {
 			this.shell.setMinimized(false);
-			this.shell.setActive();
-			this.shell.forceActive();
+			this.shell.setFocus();
+			this.shell.forceFocus();
 		}
 	}
 

@@ -9,8 +9,20 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Menu;
 
 public final class SwtUtils {
+
+	public static void setMenu(Composite composite, Menu menu) {
+		composite.setMenu(menu);
+		ToolUtils.forEach(composite.getChildren(), child -> {
+			if (child instanceof Composite) {
+				setMenu((Composite) child, menu);
+			} else {
+				child.setMenu(menu);
+			}
+		});
+	}
 
 	private final static int DPI_BASE = 96;
 	private final static Point DPI = Display.getDefault().getDPI();

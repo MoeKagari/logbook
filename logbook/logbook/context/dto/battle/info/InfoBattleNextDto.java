@@ -21,6 +21,6 @@ public class InfoBattleNextDto extends AbstractInfoBattleStartNext {
 
 	@Override
 	public boolean hasDownArrow(BattleDto pre) {
-		return pre != null && ((pre instanceof InfoBattleStartDto) || (pre instanceof AbstractInfoBattleResult));
+		return pre != null && ((pre instanceof InfoBattleStartDto) || (pre instanceof AbstractInfoBattleResult) || (pre instanceof InfoBattleStartAirBaseDto));
 	}
 }

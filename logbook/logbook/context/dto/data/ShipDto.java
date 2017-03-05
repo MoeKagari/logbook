@@ -15,7 +15,7 @@ public class ShipDto {
 	private int id;
 	private int lv;
 	private int[] onSlot;
-	private int[] slots;
+	private int[] slots;//长度5,最后位不明作用
 	private int slotex;
 	private boolean locked;
 	private int cond;
@@ -141,8 +141,6 @@ public class ShipDto {
 			59],
 			"api_sakuteki": [38,
 			39],
-			"api_lucky": [12,
-			59],
 	 */
 
 	public int getNowLuck() {

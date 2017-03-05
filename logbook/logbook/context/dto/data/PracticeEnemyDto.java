@@ -11,7 +11,7 @@ import logbook.context.dto.translator.ShipDtoTranslator;
  */
 public class PracticeEnemyDto {
 
-	private PracticeEnemyShip[] ships;
+	private final PracticeEnemyShip[] ships;
 
 	public PracticeEnemyDto(JsonObject json) {
 		JsonArray array = json.getJsonObject("api_deck").getJsonArray("api_ships");
@@ -34,11 +34,7 @@ public class PracticeEnemyDto {
 		public PracticeEnemyShip(JsonObject json) {
 			this.id = json.getInt("api_id");
 			this.lv = json.getInt("api_level", 0);
-			if (this.exist()) {
-				this.name = ShipDtoTranslator.getName(json.getInt("api_ship_id"));
-			} else {
-				this.name = "";
-			}
+			this.name = this.exist() ? ShipDtoTranslator.getName(json.getInt("api_ship_id")) : "";
 		}
 
 		public boolean exist() {

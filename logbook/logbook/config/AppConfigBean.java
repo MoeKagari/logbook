@@ -15,8 +15,10 @@ public class AppConfigBean {
 	private boolean noticeCond = true;
 	private boolean noticeCondOnlyMainFleet = false;
 
+	private boolean showEventMapHPInConsole = true;
 	private boolean showNameOnTitle = true;
 	private boolean checkDoit = true;
+	private boolean minimizedToTray = false;
 
 	private boolean notCalcuExpForLevel99Ship = true;
 
@@ -140,6 +142,22 @@ public class AppConfigBean {
 
 	public void setNoticeDeckmissionAgain(boolean noticeDeckmissionAgain) {
 		this.noticeDeckmissionAgain = noticeDeckmissionAgain;
+	}
+
+	public boolean isShowEventMapHPInConsole() {
+		return this.showEventMapHPInConsole;
+	}
+
+	public void setShowEventMapHPInConsole(boolean showEventMapHPInConsole) {
+		this.showEventMapHPInConsole = showEventMapHPInConsole;
+	}
+
+	public boolean isMinimizedToTray() {
+		return this.minimizedToTray;
+	}
+
+	public void setMinimizedToTray(boolean minimizedToTray) {
+		this.minimizedToTray = minimizedToTray;
 	}
 
 }

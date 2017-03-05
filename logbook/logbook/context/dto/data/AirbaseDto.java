@@ -8,9 +8,5 @@ import javax.json.JsonArray;
  *
  */
 public class AirbaseDto {
-
-	public AirbaseDto(JsonArray array) {
-
-	}
-
+	public AirbaseDto(JsonArray array) {}
 }

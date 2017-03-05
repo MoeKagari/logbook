@@ -10,8 +10,8 @@ import logbook.context.dto.translator.ItemDtoTranslator;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.DataType;
 import logbook.gui.logic.TimeString;
-import logbook.gui.window.ApplicationMain;
 import logbook.gui.window.AbstractTable;
+import logbook.gui.window.ApplicationMain;
 
 /**
  * 开发记录
@@ -28,10 +28,10 @@ public class CreateItemTable extends AbstractTable<CreateItemDto> {
 		tcms.add(new TableColumnManager("日期", rd -> TimeString.timeToStringForTable(rd.getTime())));
 		tcms.add(new TableColumnManager("状态", rd -> rd.isSuccess() ? "成功" : "失败"));
 		tcms.add(new TableColumnManager("装备", rd -> rd.isSuccess() ? ItemDtoTranslator.getName(rd.getSlotitemId()) : ""));
-		tcms.add(new TableColumnManager("油", rd -> Integer.toString(-rd.getMaterial()[0])));
-		tcms.add(new TableColumnManager("弹", rd -> Integer.toString(-rd.getMaterial()[1])));
-		tcms.add(new TableColumnManager("钢", rd -> Integer.toString(-rd.getMaterial()[2])));
-		tcms.add(new TableColumnManager("铝", rd -> Integer.toString(-rd.getMaterial()[3])));
+		tcms.add(new TableColumnManager("油", rd -> Integer.toString(rd.getMaterial()[0])));
+		tcms.add(new TableColumnManager("弹", rd -> Integer.toString(rd.getMaterial()[1])));
+		tcms.add(new TableColumnManager("钢", rd -> Integer.toString(rd.getMaterial()[2])));
+		tcms.add(new TableColumnManager("铝", rd -> Integer.toString(rd.getMaterial()[3])));
 	}
 
 	@Override

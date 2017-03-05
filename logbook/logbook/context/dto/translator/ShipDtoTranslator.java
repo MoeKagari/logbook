@@ -4,10 +4,10 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import logbook.context.dto.data.MasterDataDto;
 import logbook.context.dto.data.MasterDataDto.MasterShipDataDto;
 import logbook.context.dto.data.ShipDto;
 import logbook.context.update.GlobalContext;
+import logbook.util.ToolUtils;
 
 public class ShipDtoTranslator {
 
@@ -55,9 +55,8 @@ public class ShipDtoTranslator {
 	}
 
 	public static String getName(int shipId) {
-		MasterDataDto mdd = GlobalContext.getMasterData();
-		MasterShipDataDto msdd = mdd != null ? mdd.getMasterShipDataMap().get(shipId) : null;
-		return msdd != null ? msdd.getName() : "";
+		MasterShipDataDto msdd = ToolUtils.notNullThenHandle(GlobalContext.getMasterData(), mdd -> mdd.getMasterShipDataMap().get(shipId), null);
+		return ToolUtils.notNullThenHandle(msdd, MasterShipDataDto::getName, "");
 	}
 
 }

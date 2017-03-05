@@ -15,6 +15,7 @@ import org.eclipse.swt.widgets.TableItem;
 
 import logbook.context.update.data.DataType;
 import logbook.gui.listener.ControlSelectionListener;
+import logbook.gui.listener.NotCloseButHiddenShellListener;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
@@ -28,6 +29,7 @@ public abstract class AbstractTable<T> extends WindowBase {
 		this.initTCMS(this.tcms);
 		this.initTable();
 		this.initMenuBar();
+		this.getShell().addShellListener(new NotCloseButHiddenShellListener(ev -> this.table.removeAll()));
 	}
 
 	private void initTable() {
@@ -99,6 +101,11 @@ public abstract class AbstractTable<T> extends WindowBase {
 	}
 
 	@Override
+	public int getShellStyle() {
+		return super.getShellStyle() | SWT.MAX;
+	}
+
+	@Override
 	public void setVisible(boolean visible) {
 		if (visible) this.updateTable();
 		super.setVisible(visible);
@@ -120,7 +127,6 @@ public abstract class AbstractTable<T> extends WindowBase {
 		public Object getValue(int count, T t) {
 			return this.value == null ? Integer.toString(count) : this.value.apply(t);
 		}
-
 	}
 
 }

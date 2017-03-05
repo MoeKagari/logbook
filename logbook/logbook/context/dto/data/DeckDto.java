@@ -7,9 +7,10 @@ import javax.json.JsonObject;
 
 import org.apache.commons.lang3.StringUtils;
 
-import logbook.context.dto.data.MasterDataDto.MasterMissionDataDto;
+import logbook.context.dto.translator.MasterDataDtoTranslator;
 import logbook.context.dto.translator.ShipDtoTranslator;
 import logbook.context.update.GlobalContext;
+import logbook.internal.TimerCounter;
 import logbook.util.JsonUtils;
 
 /**
@@ -22,9 +23,9 @@ public class DeckDto {
 	private DeckMissionDto deckMission;
 
 	public DeckDto(JsonObject jo) {
-		this.deckMission = new DeckMissionDto(jo.getJsonArray("api_mission"));
 		this.name = jo.getString("api_name");
 		this.ships = JsonUtils.getIntArray(jo, "api_ship");
+		this.deckMission = new DeckMissionDto(jo.getJsonArray("api_mission"));
 	}
 
 	/*-------------------------------------------------------------------------------------------*/
@@ -37,7 +38,7 @@ public class DeckDto {
 
 		int[] shipsTemp = Arrays.copyOf(this.ships, this.ships.length);
 
-		int shipIndex = shipId != -1 ? this.isShipInDeck(shipId) : -1;
+		int shipIndex = this.isShipInDeck(shipId);
 		if (shipIndex != -1) {//交换两艘船
 			int temp = shipsTemp[index];
 			shipsTemp[index] = shipsTemp[shipIndex];
@@ -46,12 +47,12 @@ public class DeckDto {
 			shipsTemp[index] = shipId;
 		}
 
-		//非 -1 提到前面
-		int notnull = 0;
+		int notnull = 0;//非 -1 提到前面
 		for (int i = 0; i < shipsTemp.length; i++) {
-			if (shipsTemp[i] == -1) continue;
-			shipsTemp[notnull] = shipsTemp[i];
-			notnull++;
+			if (shipsTemp[i] != -1) {
+				shipsTemp[notnull] = shipsTemp[i];
+				notnull++;
+			}
 		}
 		for (int i = notnull; i < shipsTemp.length; i++) {
 			shipsTemp[i] = -1;
@@ -61,11 +62,9 @@ public class DeckDto {
 	}
 
 	public int isShipInDeck(int shipId) {
-		if (shipId != -1) {
-			for (int i = 0; i < this.ships.length; i++) {
-				if (this.ships[i] == shipId) {
-					return i;
-				}
+		for (int index = 0; index < 6; index++) {
+			if (this.ships[index] != -1 && this.ships[index] == shipId) {
+				return index;
 			}
 		}
 		return -1;
@@ -76,7 +75,7 @@ public class DeckDto {
 	}
 
 	public boolean isAkashiFlagship() {
-		ShipDto flagship = GlobalContext.getShipmap().get(this.ships[0]);
+		ShipDto flagship = GlobalContext.getShipMap().get(this.ships[0]);
 		if (flagship != null) {
 			String flagshipname = ShipDtoTranslator.getName(flagship);
 			if (StringUtils.equals(flagshipname, "明石") || StringUtils.equals(flagshipname, "明石改")) {
@@ -114,13 +113,12 @@ public class DeckDto {
 	public static class DeckMissionDto {
 		private final JsonArray json;
 		private final String name;
+		private final TimerCounter timerCounter;
 
 		public DeckMissionDto(JsonArray json) {
 			this.json = json;
-
-			MasterDataDto mdd = GlobalContext.getMasterData();
-			MasterMissionDataDto mmdd = mdd != null ? mdd.getMasterMissionDataMap().get(this.getId()) : null;
-			this.name = mmdd != null ? mmdd.getName() : "";
+			this.name = MasterDataDtoTranslator.getMissionName(this.getId());
+			this.timerCounter = new TimerCounter(this.getTime(), 60, 2 * 60);
 		}
 
 		public String getName() {
@@ -140,6 +138,10 @@ public class DeckDto {
 		//归还时间
 		public long getTime() {
 			return this.json.getJsonNumber(2).longValue();
+		}
+
+		public TimerCounter getTimerCounter() {
+			return this.timerCounter;
 		}
 	}
 

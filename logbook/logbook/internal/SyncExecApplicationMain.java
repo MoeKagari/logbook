@@ -1,12 +1,9 @@
 package logbook.internal;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.swt.widgets.Label;
 
-import logbook.config.AppConfig;
 import logbook.config.AppConstants;
 import logbook.context.dto.data.DeckDto;
 import logbook.context.dto.data.DeckDto.DeckMissionDto;
@@ -58,49 +55,29 @@ public class SyncExecApplicationMain extends Thread {
 	}
 
 	public static class UpdateMaterialRecord {
-		private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("mm:ss");
-		private static boolean haveUpdated = false;
+		//2017-2-21 0:00:00
+		//1487606400000
+		private static final TimerCounter timerCounter = new TimerCounter(1487606400000L, 30 * 60);
 
 		public static void update(ApplicationMain main, long currentTime) {
-			switch (TIME_FORMAT.format(new Date(currentTime))) {
-				case "59:59":
-				case "00:00"://为了防止误差,应该±1秒
-				case "00:01":
-
-				case "29:59":
-				case "30:00"://为了防止误差,应该±1秒
-				case "30:01":
-					if (!haveUpdated) {
-						MaterialDto currentMaterial = GlobalContext.getCurrentMaterial();
-						if (currentMaterial == null) currentMaterial = new MaterialDto(new int[8]);
-						GlobalContext.getMaterialRecord().add(new MaterialRecordDto("定时记录", currentTime, currentMaterial));
-					}
-					haveUpdated = true;
-					break;
-				default:
-					haveUpdated = false;
-					break;
+			if (timerCounter.needNotify(currentTime)) {
+				MaterialDto currentMaterial = GlobalContext.getCurrentMaterial();
+				if (currentMaterial != null) {
+					GlobalContext.getMaterialRecord().add(new MaterialRecordDto("定时记录", currentTime, currentMaterial));
+				}
 			}
 		}
 	}
 
 	//new day时,在console输出
 	private static class UpdateNewDayConsole {
-		private static boolean haveUpdated = false;
+		//2017-2-21 0:00:00
+		//1487606400000
+		private static final TimerCounter timerCounter = new TimerCounter(1487606400000L, 24 * 60 * 60);
 
 		public static void update(ApplicationMain main, long currentTime) {
-			switch (AppConstants.CONSOLE_TIME_FORMAT.format(new Date(currentTime))) {
-				case "23:59:59":
-				case "00:00:00"://为了防止误差,应该±1秒
-				case "00:00:01":
-					if (!haveUpdated) {
-						main.printNewDay(currentTime + TimeUnit.HOURS.toMillis(1));
-					}
-					haveUpdated = true;
-					break;
-				default:
-					haveUpdated = false;
-					break;
+			if (timerCounter.needNotify(currentTime)) {
+				main.printNewDay(currentTime + TimeUnit.HOURS.toMillis(1));
 			}
 		}
 	}
@@ -125,10 +102,8 @@ public class SyncExecApplicationMain extends Thread {
 				String nameLabelText = "", timeLabelText = "", timeLabelTooltipText = "";
 				if (dmd.getState() != 0) {
 					long rest = (dmd.getTime() - currentTime) / 1000;
-					if (rest == 1 * 60) {
+					if (dmd.getTimerCounter().needNotify(currentTime)) {
 						box.add("远征", AppConstants.DEFAULT_FLEET_NAME[i] + "-远征已归还");
-					} else if (AppConfig.get().isNoticeDeckmissionAgain() && (rest < 0 && rest % 120 == 0)) {
-						box.add("远征", AppConstants.DEFAULT_FLEET_NAME[i] + "-远征已归还★");
 					}
 
 					nameLabelText = dmd.getName();
@@ -152,11 +127,11 @@ public class SyncExecApplicationMain extends Thread {
 
 				String nameLabelText = "", timeLabelText = "", timeLabelTooltipText = "";
 				if (ndock.getState() == 1) {
-					ShipDto ship = GlobalContext.getShipmap().get(ndock.getShipId());
+					ShipDto ship = GlobalContext.getShipMap().get(ndock.getShipId());
 					String name = ShipDtoTranslator.getName(ship);
 					if (ship != null) {
 						long rest = (ndock.getTime() - currentTime) / 1000;
-						if (rest == 1 * 60) {
+						if (ndock.getTimerCounter().needNotify(currentTime)) {
 							box.add("入渠", name + "(Lv." + ship.getLv() + ")" + "-入渠已完了");
 						}
 

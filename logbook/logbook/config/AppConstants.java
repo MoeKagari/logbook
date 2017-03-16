@@ -9,6 +9,7 @@ public class AppConstants {
 	public static final String[] DEFAULT_FLEET_NAME = { "第一舰队", "第二舰队", "第三舰队", "第四舰队" };
 
 	public static final SimpleDateFormat DECK_NDOCK_COMPLETE_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
+	public static final SimpleDateFormat DECK_NDOCK_COMPLETE_TIME_FORMAT_LONG = new SimpleDateFormat("MM-dd HH:mm:ss");
 	public static final SimpleDateFormat TABLE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	public static final SimpleDateFormat CONSOLE_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
 

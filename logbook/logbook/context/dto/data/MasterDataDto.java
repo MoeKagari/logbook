@@ -50,6 +50,10 @@ public class MasterDataDto {
 		return this.masterMissionDataMap;
 	}
 
+	public Map<Integer, MasterUserItemDto> getMasterUserItemDtoMap() {
+		return this.masterUserItemDtoMap;
+	}
+
 	public class MasterShipDataDto {
 		private final JsonObject json;
 
@@ -130,6 +134,20 @@ public class MasterDataDto {
 			return this.json.getString("api_name");
 		}
 
+		/** 对空 */
+		public int getTyku() {
+			return this.json.getInt("api_tyku");
+		}
+
+		/** 索敌 */
+		public int getSaku() {
+			return this.json.getInt("api_saku");
+		}
+
+		/** 五个值 */
+		public int[] getType() {
+			return JsonUtils.getIntArray(this.json, "api_type");
+		}
 	}
 
 	public class MasterMissionDataDto {

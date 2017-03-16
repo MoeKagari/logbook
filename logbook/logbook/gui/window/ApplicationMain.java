@@ -34,14 +34,16 @@ import logbook.gui.listener.TrayItemMenuListener;
 import logbook.gui.logic.DeckBuilder;
 import logbook.gui.logic.HPMessage;
 import logbook.gui.logic.TimeString;
+import logbook.gui.window.table.BattleListTable;
 import logbook.gui.window.table.CreateItemTable;
 import logbook.gui.window.table.CreateShipTable;
 import logbook.gui.window.table.DestroyItemTable;
 import logbook.gui.window.table.DestroyShipTable;
+import logbook.gui.window.table.DropListTable;
 import logbook.gui.window.table.ItemListTable;
 import logbook.gui.window.table.MaterialRecordTable;
 import logbook.gui.window.table.MissionResultTable;
-import logbook.gui.window.table.QuestTable;
+import logbook.gui.window.table.QuestListTable;
 import logbook.gui.window.table.ShipListTable;
 import logbook.internal.ApplicationLock;
 import logbook.internal.LoggerHolder;
@@ -129,9 +131,13 @@ public class ApplicationMain {
 	private DestroyShipTable destroyShipTable;
 	/** 废弃记录 */
 	private DestroyItemTable destroyItemTable;
+	/** 战斗记录 */
+	private BattleListTable battleTable;
+	/** 掉落记录 */
+	private DropListTable dropTable;
 
 	/** 所有任务 */
-	private QuestTable questTable;
+	private QuestListTable questListTable;
 	/** 所有舰娘 */
 	private ShipListTable shipListTable;
 	/** 所有装备 */
@@ -189,7 +195,7 @@ public class ApplicationMain {
 	private void initShell() {
 		this.shell.setImage(this.logo);
 		this.shell.setText(AppConstants.MAINWINDOWNAME);
-		this.shell.setSize(SwtUtils.DPIAwareSize(new Point(411, 524)));
+		this.shell.setSize(SwtUtils.DPIAwareSize(new Point(413, 524)));
 		this.shell.setLocation(1100, 200);
 		this.shell.setLayout(SwtUtils.makeGridLayout(2, 0, 0, 0, 0));
 		this.shell.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -362,12 +368,12 @@ public class ApplicationMain {
 
 			MenuItem quest = new MenuItem(cmdMenu, SWT.CHECK);
 			quest.setText("任务列表");
-			this.questTable = new QuestTable(this, quest, quest.getText());
+			this.questListTable = new QuestListTable(this, quest, quest.getText());
 
 			new MenuItem(cmdMenu, SWT.SEPARATOR);
 
 			MenuItem battle = new MenuItem(cmdMenu, SWT.CHECK);
-			battle.setText("战斗");
+			battle.setText("出击");
 			this.battleWindow = new BattleWindow(this, battle, battle.getText());
 
 			MenuItem mapinfo = new MenuItem(cmdMenu, SWT.CHECK);
@@ -411,6 +417,16 @@ public class ApplicationMain {
 			MenuItem destroyItem = new MenuItem(recordMenu, SWT.CHECK);
 			destroyItem.setText("废弃记录");
 			this.destroyItemTable = new DestroyItemTable(this, destroyItem, destroyItem.getText());
+
+			new MenuItem(recordMenu, SWT.SEPARATOR);
+
+			MenuItem battle = new MenuItem(recordMenu, SWT.CHECK);
+			battle.setText("战斗记录");
+			this.battleTable = new BattleListTable(this, battle, battle.getText());
+
+			MenuItem drop = new MenuItem(recordMenu, SWT.CHECK);
+			drop.setText("掉落记录");
+			this.dropTable = new DropListTable(this, drop, drop.getText());
 		}
 
 		MenuItem fleetMenuItem = new MenuItem(this.menubar, SWT.CASCADE);
@@ -539,8 +555,9 @@ public class ApplicationMain {
 		return new AbstractTable[] {//
 				this.createItemTable, this.createShipTable, //
 				this.missionResultTable, this.materialRecordTable, //
-				this.questTable, this.shipListTable, this.itemListTable,//
+				this.questListTable, this.shipListTable, this.itemListTable,//
 				this.destroyShipTable, this.destroyItemTable,//
+				this.battleTable, this.dropTable//
 		};
 	}
 

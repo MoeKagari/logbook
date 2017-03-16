@@ -68,7 +68,7 @@ public class TimeString {
 	}
 
 	public static String toDateRestString(long rest, String defaultString) {
-		if (rest < 0) return defaultString;
+		if (rest <= 0) return defaultString;
 		return toDateRestString(rest);
 	}
 

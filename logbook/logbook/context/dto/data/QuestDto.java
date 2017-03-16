@@ -124,8 +124,15 @@ public class QuestDto {
 			return JsonUtils.getIntArray(this.json, "api_get_material");
 		}
 
-		public int getProcess() {
-			return this.json.getInt("api_progress_flag");
+		public String getProcess() {
+			switch (this.json.getInt("api_progress_flag")) {
+				case 1:
+					return "50%";
+				case 2:
+					return "80%";
+				default:
+					return "";
+			}
 		}
 
 	}

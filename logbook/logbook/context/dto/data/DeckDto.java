@@ -5,11 +5,9 @@ import java.util.Arrays;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 
-import org.apache.commons.lang3.StringUtils;
-
+import logbook.context.dto.translator.DeckDtoTranslator;
 import logbook.context.dto.translator.MasterDataDtoTranslator;
-import logbook.context.dto.translator.ShipDtoTranslator;
-import logbook.context.update.GlobalContext;
+import logbook.gui.logic.TimeString;
 import logbook.internal.TimerCounter;
 import logbook.util.JsonUtils;
 
@@ -21,11 +19,12 @@ public class DeckDto {
 	private String name;
 	private int[] ships;
 	private DeckMissionDto deckMission;
+	private final long time = TimeString.getCurrentTime();//此deck的刷新时间
 
-	public DeckDto(JsonObject jo) {
-		this.name = jo.getString("api_name");
-		this.ships = JsonUtils.getIntArray(jo, "api_ship");
-		this.deckMission = new DeckMissionDto(jo.getJsonArray("api_mission"));
+	public DeckDto(JsonObject json) {
+		this.name = json.getString("api_name");
+		this.ships = JsonUtils.getIntArray(json, "api_ship");
+		this.deckMission = new DeckMissionDto(json.getJsonArray("api_mission"));
 	}
 
 	/*-------------------------------------------------------------------------------------------*/
@@ -37,8 +36,7 @@ public class DeckDto {
 		}
 
 		int[] shipsTemp = Arrays.copyOf(this.ships, this.ships.length);
-
-		int shipIndex = this.isShipInDeck(shipId);
+		int shipIndex = DeckDtoTranslator.isShipInDeck(this, shipId);
 		if (shipIndex != -1) {//交换两艘船
 			int temp = shipsTemp[index];
 			shipsTemp[index] = shipsTemp[shipIndex];
@@ -46,8 +44,23 @@ public class DeckDto {
 		} else {//替换某一艘船或者解除某一艘船(shipId=-1时)
 			shipsTemp[index] = shipId;
 		}
+		this.setShips(shipsTemp);
+	}
 
+	public void remove(int shipId) {
+		int shipIndex = DeckDtoTranslator.isShipInDeck(this, shipId);
+		if (shipIndex != -1) {
+			int[] shipsTemp = Arrays.copyOf(this.ships, this.ships.length);
+			shipsTemp[shipIndex] = -1;
+			this.setShips(shipsTemp);
+		}
+	}
+
+	/*-------------------------------------------------------------------------------------------*/
+
+	public void setShips(int[] shipsTemp) {
 		int notnull = 0;//非 -1 提到前面
+
 		for (int i = 0; i < shipsTemp.length; i++) {
 			if (shipsTemp[i] != -1) {
 				shipsTemp[notnull] = shipsTemp[i];
@@ -61,35 +74,13 @@ public class DeckDto {
 		this.ships = shipsTemp;
 	}
 
-	public int isShipInDeck(int shipId) {
-		for (int index = 0; index < 6; index++) {
-			if (this.ships[index] != -1 && this.ships[index] == shipId) {
-				return index;
-			}
-		}
-		return -1;
+	public int[] getShips() {
+		return this.ships;
 	}
 
-	public boolean shouldNotifyAkashiTimer() {
-		return (this.isInMission() == false) && this.isAkashiFlagship();
+	public long getTime() {
+		return this.time;
 	}
-
-	public boolean isAkashiFlagship() {
-		ShipDto flagship = GlobalContext.getShipMap().get(this.ships[0]);
-		if (flagship != null) {
-			String flagshipname = ShipDtoTranslator.getName(flagship);
-			if (StringUtils.equals(flagshipname, "明石") || StringUtils.equals(flagshipname, "明石改")) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public boolean isInMission() {
-		return this.deckMission.getState() != 0;
-	}
-
-	/*-------------------------------------------------------------------------------------------*/
 
 	public String getName() {
 		return this.name;
@@ -103,14 +94,10 @@ public class DeckDto {
 		return this.deckMission;
 	}
 
-	public int[] getShips() {
-		return this.ships;
-	}
-
 	/*-------------------------------------------------------------------------------------------*/
 
 	/** 舰队远征信息 */
-	public static class DeckMissionDto {
+	public class DeckMissionDto {
 		private final JsonArray json;
 		private final String name;
 		private final TimerCounter timerCounter;
@@ -118,7 +105,7 @@ public class DeckDto {
 		public DeckMissionDto(JsonArray json) {
 			this.json = json;
 			this.name = MasterDataDtoTranslator.getMissionName(this.getId());
-			this.timerCounter = new TimerCounter(this.getTime(), 60, 2 * 60);
+			this.timerCounter = new TimerCounter(this.getTime(), 60, true, 2 * 60);
 		}
 
 		public String getName() {

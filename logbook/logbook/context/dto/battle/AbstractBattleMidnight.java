@@ -29,6 +29,13 @@ public abstract class AbstractBattleMidnight extends AbstractBattle {
 		return true;
 	}
 
+	/**
+	 * 开幕夜战
+	 */
+	public boolean isMidnightOnly() {
+		return false;
+	}
+
 	public BattleMidnightStage getBattleMidnightStage() {
 		return this.battleMidnightStage;
 	}
@@ -42,11 +49,11 @@ public abstract class AbstractBattleMidnight extends AbstractBattle {
 	}
 
 	public boolean[] getTouchPlane() {
-		return new boolean[] { this.touchPlane[0] > 0, this.touchPlane[1] > 0 };
+		return this.touchPlane == null ? null : new boolean[] { this.touchPlane[0] > 0, this.touchPlane[1] > 0 };
 	}
 
 	public boolean[] getFlare() {
-		return new boolean[] { this.flare[0] > 0, this.flare[1] > 0 };
+		return this.flare == null ? null : new boolean[] { this.flare[0] > 0, this.flare[1] > 0 };
 	}
 
 	public class BattleMidnightStage {

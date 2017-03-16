@@ -13,6 +13,7 @@ public class AppConfigBean {
 	private boolean noticeNdock = true;
 	private boolean noticeAkashi = true;
 	private boolean noticeCond = true;
+	private int noticeCondWhen = 40;
 	private boolean noticeCondOnlyMainFleet = false;
 
 	private boolean showEventMapHPInConsole = true;
@@ -23,6 +24,8 @@ public class AppConfigBean {
 	private boolean notCalcuExpForLevel99Ship = true;
 
 	private boolean noticeDeckmissionAgain = true;
+
+	private boolean autoUpdateBattleFlow = true;
 
 	public boolean isNoticeDeckmission() {
 		return this.noticeDeckmission;
@@ -158,6 +161,22 @@ public class AppConfigBean {
 
 	public void setMinimizedToTray(boolean minimizedToTray) {
 		this.minimizedToTray = minimizedToTray;
+	}
+
+	public boolean isAutoUpdateBattleFlow() {
+		return this.autoUpdateBattleFlow;
+	}
+
+	public void setAutoUpdateBattleFlow(boolean autoUpdateBattleFlow) {
+		this.autoUpdateBattleFlow = autoUpdateBattleFlow;
+	}
+
+	public int getNoticeCondWhen() {
+		return this.noticeCondWhen;
+	}
+
+	public void setNoticeCondWhen(int noticeCondWhen) {
+		this.noticeCondWhen = noticeCondWhen;
 	}
 
 }

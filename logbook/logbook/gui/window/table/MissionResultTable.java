@@ -12,8 +12,8 @@ import logbook.context.dto.data.record.MissionResultDto.MissionResultItem;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.DataType;
 import logbook.gui.logic.TimeString;
-import logbook.gui.window.ApplicationMain;
 import logbook.gui.window.AbstractTable;
+import logbook.gui.window.ApplicationMain;
 
 /**
  * 远征记录
@@ -31,20 +31,20 @@ public class MissionResultTable extends AbstractTable<MissionResultDto> {
 		tcms.add(new TableColumnManager("远征", rd -> rd.getName()));
 		tcms.add(new TableColumnManager("状态", rd -> rd.getStateString()));
 		Function<Integer, String> materialString = material -> material == 0 ? "" : String.valueOf(material);
-		tcms.add(new TableColumnManager("油", rd -> materialString.apply(rd.getMaterial()[0])));
-		tcms.add(new TableColumnManager("弹", rd -> materialString.apply(rd.getMaterial()[1])));
-		tcms.add(new TableColumnManager("钢", rd -> materialString.apply(rd.getMaterial()[2])));
-		tcms.add(new TableColumnManager("铝", rd -> materialString.apply(rd.getMaterial()[3])));
+		tcms.add(new TableColumnManager("油", true, rd -> materialString.apply(rd.getMaterial()[0])));
+		tcms.add(new TableColumnManager("弹", true, rd -> materialString.apply(rd.getMaterial()[1])));
+		tcms.add(new TableColumnManager("钢", true, rd -> materialString.apply(rd.getMaterial()[2])));
+		tcms.add(new TableColumnManager("铝", true, rd -> materialString.apply(rd.getMaterial()[3])));
 		BiFunction<MissionResultItem, Function<MissionResultItem, String>, String> materialItemString = (item, fun) -> item == null ? "" : fun.apply(item);
 		tcms.add(new TableColumnManager("道具1", rd -> materialItemString.apply(rd.getItems()[0], item -> String.valueOf(item.getName()))));
-		tcms.add(new TableColumnManager("数量", rd -> materialItemString.apply(rd.getItems()[0], item -> String.valueOf(item.getCount()))));
+		tcms.add(new TableColumnManager("数量", true, rd -> materialItemString.apply(rd.getItems()[0], item -> String.valueOf(item.getCount()))));
 		tcms.add(new TableColumnManager("道具2", rd -> materialItemString.apply(rd.getItems()[1], item -> String.valueOf(item.getName()))));
-		tcms.add(new TableColumnManager("数量", rd -> materialItemString.apply(rd.getItems()[1], item -> String.valueOf(item.getCount()))));
+		tcms.add(new TableColumnManager("数量", true, rd -> materialItemString.apply(rd.getItems()[1], item -> String.valueOf(item.getCount()))));
 	}
 
 	@Override
-	protected List<MissionResultDto> getList() {
-		return GlobalContext.getMissionlist();
+	protected void updateData(List<MissionResultDto> datas) {
+		datas.addAll(GlobalContext.getMissionlist());
 	}
 
 	@Override

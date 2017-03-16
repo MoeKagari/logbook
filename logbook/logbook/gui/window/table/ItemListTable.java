@@ -1,12 +1,12 @@
 package logbook.gui.window.table;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.widgets.MenuItem;
 
@@ -15,15 +15,15 @@ import logbook.context.dto.data.ShipDto;
 import logbook.context.dto.translator.ItemDtoTranslator;
 import logbook.context.dto.translator.ShipDtoTranslator;
 import logbook.context.update.GlobalContext;
-import logbook.gui.window.ApplicationMain;
 import logbook.gui.window.AbstractTable;
-import logbook.gui.window.table.ItemListTable.ItemSort;
+import logbook.gui.window.ApplicationMain;
+import logbook.util.ToolUtils;
 
 /**
  * 所有装备
  * @author MoeKagari
  */
-public class ItemListTable extends AbstractTable<ItemSort> {
+public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 
 	public ItemListTable(ApplicationMain main, MenuItem menuItem, String title) {
 		super(main, menuItem, title);
@@ -31,77 +31,63 @@ public class ItemListTable extends AbstractTable<ItemSort> {
 
 	@Override
 	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
-		tcms.add(new TableColumnManager("装备", ItemSort::getName));
-		tcms.add(new TableColumnManager("改修等级", rd -> {
+		tcms.add(new TableColumnManager("装备", SortItem::getName));
+		tcms.add(new TableColumnManager("种类", SortItem::getType));
+		tcms.add(new TableColumnManager("改修等级", true, rd -> {
 			int level = rd.getLevel();
 			return level > 0 ? level : "";
 		}));
-		tcms.add(new TableColumnManager("熟练度", rd -> {
+		tcms.add(new TableColumnManager("熟练度", true, rd -> {
 			int alv = rd.getAlv();
 			return alv > 0 ? alv : "";
 		}));
-		tcms.add(new TableColumnManager("个数", ItemSort::getCount));
+		tcms.add(new TableColumnManager("个数", true, SortItem::getCount));
 		tcms.add(new TableColumnManager("装备着的舰娘", rd -> rd.getWhichShipWithItem()));
 	}
 
 	@Override
-	protected List<ItemSort> getList() {
+	protected void updateData(List<SortItem> datas) {
 		Function<ItemDto, ShipDto> whichShipWithItem = item -> {
-			int id = item.getId();
 			for (ShipDto ship : GlobalContext.getShipMap().values()) {
-				for (int slot : ship.getSlots()) {
-					if (slot == id) {
-						return ship;
-					}
-				}
-				if (ship.getSlotex() == id) {
+				if (Arrays.stream(ArrayUtils.addAll(ship.getSlots(), ship.getSlotex())).anyMatch(slot -> slot == item.getId())) {
 					return ship;
 				}
 			}
 			return null;
 		};
 
-		List<ItemSort> items = new ArrayList<>();
 		GlobalContext.getItemMap().values().stream().collect(Collectors.groupingBy(ItemDto::getSlotitemId)).forEach((slotitemId, nameResult) -> {
 			nameResult.stream().collect(Collectors.groupingBy(ItemDto::getLevel)).forEach((level, levelResult) -> {
 				levelResult.stream().collect(Collectors.groupingBy(ItemDto::getAlv)).forEach((alv, alvResult) -> {
-					Map<ShipDto, Integer> shipWithItemCount = new HashMap<>();
-					alvResult.forEach(item -> {
-						ShipDto ship = whichShipWithItem.apply(item);
-						Integer count = shipWithItemCount.get(ship);
-						if (count == null) {
-							shipWithItemCount.put(ship, 1);
-						} else {
-							shipWithItemCount.put(ship, count + 1);
-						}
-					});
-
 					ArrayList<String> sb = new ArrayList<>();
-					shipWithItemCount.forEach((ship, count) -> {
-						if (ship != null) {
-							sb.add(ShipDtoTranslator.getName(ship) + "(Lv." + ship.getLv() + ")" + "(" + count + ")");
-						}
+					alvResult.stream().map(whichShipWithItem).filter(ToolUtils::isNotNull).collect(Collectors.toMap(ship -> ship, ship -> 1, Integer::sum)).forEach((ship, count) -> {
+						sb.add(String.format("%s(Lv.%d)(%d)", ShipDtoTranslator.getName(ship), ship.getLv(), count.intValue()));
 					});
-					items.add(new ItemSort(alvResult.size(), level, alv, slotitemId, StringUtils.join(sb, ",")));
+					datas.add(new SortItem(alvResult.size(), level, alv, slotitemId, StringUtils.join(sb, ",")));
 				});
 			});
 		});
-		return items;
 	}
 
-	public class ItemSort {
+	public class SortItem {
 		private int count;
 		private int level;
 		private int alv;
+		private String type;
 		private String name;
 		private String whichShipWithItem;
 
-		public ItemSort(int count, int level, int alv, int slotitemId, String whichShipWithItem) {
+		public SortItem(int count, int level, int alv, int slotitemId, String whichShipWithItem) {
 			this.count = count;
 			this.level = level;
 			this.alv = alv;
+			this.type = ItemDtoTranslator.getTypeString(slotitemId);
 			this.name = ItemDtoTranslator.getName(slotitemId);
 			this.whichShipWithItem = whichShipWithItem;
+		}
+
+		public String getType() {
+			return this.type;
 		}
 
 		public String getWhichShipWithItem() {
@@ -125,5 +111,4 @@ public class ItemListTable extends AbstractTable<ItemSort> {
 		}
 
 	}
-
 }

@@ -26,10 +26,10 @@ public abstract class WindowBase implements EventListener {
 	private final Composite composite;
 	private final Menu menuBar;
 
-	public WindowBase(ApplicationMain main, MenuItem menuItem, String title) {
+	public WindowBase(ApplicationMain main, MenuItem menuItem, String title, boolean top) {
 		this.main = main;
 
-		this.shell = new Shell(main.getSubShell(), this.getShellStyle());
+		this.shell = new Shell(main.getSubShell(), this.getShellStyle() | (top ? SWT.ON_TOP : SWT.NONE));
 		this.shell.setText(title);
 		this.shell.setImage(main.getLogo());
 		this.shell.setSize(this.getDefaultSize());
@@ -49,6 +49,10 @@ public abstract class WindowBase implements EventListener {
 		this.menuBar = new Menu(this.shell, SWT.BAR);
 		this.shell.setMenuBar(this.menuBar);
 		GlobalContextUpdater.addEventListener(this);
+	}
+
+	public WindowBase(ApplicationMain main, MenuItem menuItem, String title) {
+		this(main, menuItem, title, false);
 	}
 
 	/*------------------------------------------------------------------------------------------------------------*/
@@ -76,7 +80,7 @@ public abstract class WindowBase implements EventListener {
 		this.shell.setVisible(visible);
 		if (visible) {
 			this.shell.setMinimized(false);
-			this.shell.setFocus();
+			this.shell.forceFocus();
 		}
 	}
 

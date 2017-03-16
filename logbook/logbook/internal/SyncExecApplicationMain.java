@@ -1,9 +1,11 @@
 package logbook.internal;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.swt.widgets.Label;
 
+import logbook.config.AppConfig;
 import logbook.config.AppConstants;
 import logbook.context.dto.data.DeckDto;
 import logbook.context.dto.data.DeckDto.DeckMissionDto;
@@ -13,6 +15,7 @@ import logbook.context.dto.data.ShipDto;
 import logbook.context.dto.data.record.MaterialRecordDto;
 import logbook.context.dto.translator.ShipDtoTranslator;
 import logbook.context.update.GlobalContext;
+import logbook.context.update.GlobalContext.PLTime;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.ApplicationMain;
 import logbook.util.SwtUtils;
@@ -57,7 +60,7 @@ public class SyncExecApplicationMain extends Thread {
 	public static class UpdateMaterialRecord {
 		//2017-2-21 0:00:00
 		//1487606400000
-		private static final TimerCounter timerCounter = new TimerCounter(1487606400000L, 30 * 60);
+		private static final TimerCounter timerCounter = new TimerCounter(1487606400000L, -1, true, 30 * 60);
 
 		public static void update(ApplicationMain main, long currentTime) {
 			if (timerCounter.needNotify(currentTime)) {
@@ -73,7 +76,7 @@ public class SyncExecApplicationMain extends Thread {
 	private static class UpdateNewDayConsole {
 		//2017-2-21 0:00:00
 		//1487606400000
-		private static final TimerCounter timerCounter = new TimerCounter(1487606400000L, 24 * 60 * 60);
+		private static final TimerCounter timerCounter = new TimerCounter(1487606400000L, -1, true, 24 * 60 * 60);
 
 		public static void update(ApplicationMain main, long currentTime) {
 			if (timerCounter.needNotify(currentTime)) {
@@ -82,7 +85,7 @@ public class SyncExecApplicationMain extends Thread {
 		}
 	}
 
-	//更新主面板的 远征和入渠
+	//更新主面板的 远征(或者疲劳)和入渠
 	private static class UpdateDeckNdockTask {
 		public static void update(ApplicationMain main, TrayMessageBox box, long currentTime) {
 			if (main.getShell().isDisposed()) return;
@@ -102,13 +105,40 @@ public class SyncExecApplicationMain extends Thread {
 				String nameLabelText = "", timeLabelText = "", timeLabelTooltipText = "";
 				if (dmd.getState() != 0) {
 					long rest = (dmd.getTime() - currentTime) / 1000;
-					if (dmd.getTimerCounter().needNotify(currentTime)) {
+					if (dmd.getTimerCounter().needNotify(currentTime) && (//
+					(AppConfig.get().isNoticeDeckmission() && rest >= 0) ||//
+							(AppConfig.get().isNoticeDeckmissionAgain() && rest < 0)//
+					)) {
 						box.add("远征", AppConstants.DEFAULT_FLEET_NAME[i] + "-远征已归还");
 					}
 
 					nameLabelText = dmd.getName();
 					timeLabelText = TimeString.toDateRestString(rest, "远征已归还");
-					timeLabelTooltipText = AppConstants.DECK_NDOCK_COMPLETE_TIME_FORMAT.format(dmd.getTime());
+					if (rest > 24 * 60 * 60) {//超过24小时,显示日期
+						timeLabelTooltipText = AppConstants.DECK_NDOCK_COMPLETE_TIME_FORMAT_LONG.format(dmd.getTime());
+					} else {
+						timeLabelTooltipText = AppConstants.DECK_NDOCK_COMPLETE_TIME_FORMAT.format(dmd.getTime());
+					}
+				} else {//疲劳回复时间
+					int pl = Arrays.stream(deck.getShips()).mapToObj(id -> GlobalContext.getShipMap().get(id)).filter(ToolUtils::isNotNull).mapToInt(ShipDto::getCond).min().orElse(100);
+					if (pl < AppConfig.get().getNoticeCondWhen()) {
+						PLTime PLTIME = GlobalContext.getPLTIME();
+						if (PLTIME != null) {
+							int count = (AppConfig.get().getNoticeCondWhen() - pl - 1) / 3 + 1;
+							long end = PLTIME.getTime() + 3 * 60 * 1000 * ((deck.getTime() - PLTIME.getTime() - 1) / (3 * 60 * 1000) + count);
+							long rest = (end - currentTime) / 1000;
+							if (rest == 0 && AppConfig.get().isNoticeCond()) {
+								if (AppConfig.get().isNoticeCondOnlyMainFleet() && i != 0) {
+									//只通知第一舰队,并且此deck非第一舰队
+								} else {
+									box.add("疲劳", AppConstants.DEFAULT_FLEET_NAME[i] + "-疲劳已恢复");
+								}
+							}
+							nameLabelText = "疲劳恢复中" + "(±" + (PLTIME.getRange() / 1000) + "秒)";
+							timeLabelText = TimeString.toDateRestString(rest, "疲劳已恢复");
+							timeLabelTooltipText = AppConstants.DECK_NDOCK_COMPLETE_TIME_FORMAT.format(end);
+						}
+					}
 				}
 
 				SwtUtils.setText(nameLabels[i], nameLabelText);

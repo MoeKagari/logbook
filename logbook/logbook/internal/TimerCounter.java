@@ -5,25 +5,15 @@ public class TimerCounter {
 	private final long endTime;
 	private final int advance;//提前
 	private final int interval;//再次提醒间隔
+	private final boolean notifyZero;//计时器到0是否通知
 	private boolean haveUpdatedAdvance = false;
 	private boolean haveUpdated = false;
 	private boolean haveUpdatedAgain = false;
 
-	public TimerCounter(long endTime) {
-		this.endTime = endTime;
-		this.advance = -1;
-		this.interval = -1;
-	}
-
-	public TimerCounter(long endTime, int interval) {
-		this.endTime = endTime;
-		this.advance = -1;
-		this.interval = interval;
-	}
-
-	public TimerCounter(long endTime, int advance, int interval) {
+	public TimerCounter(long endTime, int advance, boolean notifyZero, int interval) {
 		this.endTime = endTime;
 		this.advance = advance;
+		this.notifyZero = notifyZero;
 		this.interval = interval;
 	}
 
@@ -34,7 +24,7 @@ public class TimerCounter {
 				this.haveUpdatedAdvance = true;
 				return true;
 			}
-		} else if (space == -1 || space == 0 || space == 1) {
+		} else if (this.notifyZero && (space == -1 || space == 0 || space == 1)) {
 			if (this.haveUpdated == false) {
 				this.haveUpdated = true;
 				return true;

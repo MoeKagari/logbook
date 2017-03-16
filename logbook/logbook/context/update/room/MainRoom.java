@@ -1,28 +1,62 @@
 package logbook.context.update.room;
 
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
+
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import logbook.context.dto.data.AirbaseDto;
 import logbook.context.dto.data.BasicDto;
+import logbook.context.dto.data.DeckDto;
 import logbook.context.dto.data.MapinfoDto;
 import logbook.context.dto.data.MasterDataDto;
 import logbook.context.dto.data.MaterialDto;
+import logbook.context.dto.data.ShipDto;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.Data;
 import logbook.util.ToolUtils;
 
 public class MainRoom extends Room {
 
+	private Supplier<int[]> getConds = () -> {
+		DeckDto deck = GlobalContext.getDeckRoom()[0].getDeck();
+		if (deck != null) {
+			int[] conds = new int[6];
+			int[] ships = deck.getShips();
+			for (int i = 0; i < 6; i++) {
+				ShipDto ship = GlobalContext.getShipMap().get(ships[i]);
+				conds[i] = (ship != null && ship.isNeedForPLUpdate()) ? ship.getCond() : -1;
+			}
+			return conds;
+		}
+		return null;
+	};
+
+	private LongSupplier getTime = () -> {
+		DeckDto deck = GlobalContext.getDeckRoom()[0].getDeck();
+		return deck != null ? deck.getTime() : -1;
+	};
+
 	public void doPort(Data data, JsonValue json) {
 		try {
 			JsonObject apidata = (JsonObject) json;
 			this.doBasic(data, apidata.get("api_basic"));
-			this.doPort_Ship(apidata.getJsonArray("api_ship"));
 			this.doMaterial(data, apidata.get("api_material"));
-			ToolUtils.forEach(GlobalContext.getNyukyoRoom(), nr -> nr.doNdock(data, apidata.get("api_ndock")));
-			ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> dr.doDeck(data, apidata.get("api_deck_port")));
+			if (apidata.containsKey("api_combined_flag")) GlobalContext.setCombined(apidata.getInt("api_combined_flag") > 0);
+
+			int[] oldconds = this.getConds.get();//第一舰队的疲劳(旧)
+			long oldtime = this.getTime.getAsLong();
+			{
+				GlobalContext.getShipMap().clear();
+				apidata.getJsonArray("api_ship").forEach(value -> GlobalContext.addNewShip((JsonObject) value));
+				ToolUtils.forEach(GlobalContext.getNyukyoRoom(), nr -> nr.doNdock(data, apidata.get("api_ndock")));
+				ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> dr.doDeck(data, apidata.get("api_deck_port")));
+			}
+			int[] newconds = this.getConds.get();//第一舰队的疲劳(新)
+			long newtime = this.getTime.getAsLong();
+			GlobalContext.updatePLTIME(oldtime, oldconds, newtime, newconds);
 		} catch (Exception e) {
 			this.getLog().get().warn("doPort" + "处理错误", e);
 			this.getLog().get().warn(data);
@@ -121,13 +155,6 @@ public class MainRoom extends Room {
 			this.getLog().get().warn("doShip2" + "处理错误", e);
 			this.getLog().get().warn(data);
 		}
-	}
-
-	/*---------------------------------------------------------------------------------------------------------*/
-
-	private void doPort_Ship(JsonArray array) {
-		GlobalContext.getShipMap().clear();
-		array.forEach(value -> GlobalContext.addNewShip((JsonObject) value));
 	}
 
 }

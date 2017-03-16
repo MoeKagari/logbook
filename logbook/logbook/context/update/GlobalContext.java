@@ -1,13 +1,18 @@
 package logbook.context.update;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -24,6 +29,7 @@ import logbook.context.dto.data.MapinfoDto;
 import logbook.context.dto.data.MasterDataDto;
 import logbook.context.dto.data.MaterialDto;
 import logbook.context.dto.data.PracticeEnemyDto;
+import logbook.context.dto.data.PresetDeckDto;
 import logbook.context.dto.data.QuestDto;
 import logbook.context.dto.data.ShipDto;
 import logbook.context.dto.data.UseItemDto;
@@ -66,6 +72,14 @@ public class GlobalContext {
 	/** 司令部等级 玩家名字 最大保有舰娘数 最大保有装备数 */
 	private static BasicDto basicInformation = null;
 
+	/** 是否结成联合舰队 */
+	private static boolean combined = false;
+	/**
+	 * 通过返回母港时第一舰队无疲劳变化来更新此值
+	 * 包括下限,不包括上限
+	 */
+	private static PLTime PLTIME = null;
+
 	/** 路基详情 */
 	private static AirbaseDto airbase = null;
 	/** 地图详情 */
@@ -101,12 +115,15 @@ public class GlobalContext {
 	/** 废弃记录 */
 	private final static List<DestroyItemDto> destroyItemList = new ArrayList<>();
 
+	/** 编成记录 */
+	private final static List<PresetDeckDto> presetDeckList = new ArrayList<>();
+
 	/** master data */
 	private static MasterDataDto masterData = null;
 
 	public static void load() {
 		try {
-			masterData = new MasterDataDto(Json.createReader(new FileInputStream(new File(AppConstants.MASTERDATAFILEPATH))).readObject());
+			masterData = new MasterDataDto(Json.createReader(new BufferedReader(new InputStreamReader(new FileInputStream(AppConstants.MASTERDATAFILEPATH), Charset.forName("utf-8")))).readObject());
 		} catch (Exception e) {
 			ApplicationMain.main.logPrint("MasterData读取失败");
 			LOG.get().warn("masterdata读取失败", e);
@@ -403,6 +420,20 @@ public class GlobalContext {
 
 	/*----------------------------------------------静态方法------------------------------------------------------------------*/
 
+	public static void updatePLTIME(long oldtime, int[] oldconds, long newtime, int[] newconds) {
+		if (oldtime <= 0 || newtime <= 0) {
+			return;
+		}
+
+		if (PLTime.need(oldtime, oldconds, newtime, newconds)) {
+			if (PLTIME == null) {
+				PLTIME = new PLTime(newtime - 3 * 60 * 1000, oldtime);
+			} else {
+				PLTIME.update(oldtime, oldconds, newtime, newconds);
+			}
+		}
+	}
+
 	public static void setMaterial(int[] mm) {
 		if (currentMaterial != null) {
 			int[] material = ToolUtils.arrayCopy(currentMaterial.getMaterial());
@@ -442,6 +473,7 @@ public class GlobalContext {
 			destroyShipList.add(new DestroyShipDto(time, event, ship));
 			shipMap.remove(ship.getId());
 		}
+		ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> ToolUtils.notNullThenHandle(dr.getDeck(), deck -> deck.remove(id)));
 	}
 
 	public static void destroyItem(long time, String event, int id, int group) {
@@ -475,6 +507,18 @@ public class GlobalContext {
 	}
 
 	/*----------------------------------------------getter------------------------------------------------------------------*/
+
+	public static PLTime getPLTIME() {
+		return PLTIME;
+	}
+
+	public static boolean isCombined() {
+		return combined;
+	}
+
+	public static void setCombined(boolean combined) {
+		GlobalContext.combined = combined;
+	}
 
 	public static String getServerName() {
 		return serverName;
@@ -526,6 +570,10 @@ public class GlobalContext {
 
 	public static BasicDto getBasicInformation() {
 		return basicInformation;
+	}
+
+	public static List<PresetDeckDto> getPresetdecklist() {
+		return presetDeckList;
 	}
 
 	public static void setBasicInformation(BasicDto basicInformation) {
@@ -652,6 +700,10 @@ public class GlobalContext {
 			this.battles.add(battleDto);
 		}
 
+		public ArrayList<BattleDto> getBattleList() {
+			return this.battles;
+		}
+
 		public BattleDto getLastTwo() {
 			return this.lastTwo;
 		}
@@ -664,6 +716,121 @@ public class GlobalContext {
 			this.lastOne = null;
 			this.lastTwo = null;
 		}
+	}
+
+	public static class PLTime {
+		private long floor, ceil;
+		private TreeSet<long[]> notuse = new TreeSet<>((a, b) -> Long.compare(a[0], b[0]));
+
+		public PLTime(long floor, long ceil) {
+			this.floor = floor;
+			this.ceil = ceil;
+		}
+
+		public long getTime() {
+			return (this.floor + this.ceil) / 2;
+		}
+
+		public long getRange() {
+			return (this.ceil - this.floor) / 2;
+		}
+
+		public void update(long oldtime, int[] oldconds, long newtime, int[] newconds) {
+			long time1 = oldtime;
+			long time2 = newtime;
+			System.out.println("刷新:" + "time1=" + time1 + ",time2=" + time2);
+
+			while (time1 >= this.ceil && time2 >= this.ceil) {
+				time1 -= 3 * 60 * 1000;
+				time2 -= 3 * 60 * 1000;
+			}
+
+			if (time2 <= this.floor) {
+				System.out.println("不需要:" + "time1=" + time1 + ",time2=" + time2);
+				//如果不在预测时间段内,不需要
+			} else {//有交集
+				this.notuse.add(new long[] { time1, time2 });
+				this.update();
+			}
+
+		}
+
+		private void update() {
+			TreeSet<long[]> temps = new TreeSet<>((a, b) -> Long.compare(a[0], b[0]));
+			temps.addAll(this.notuse);
+			System.out.println("notuse:");
+			this.notuse.forEach(one -> System.out.println(Arrays.toString(one)));
+			this.notuse.clear();
+
+			//整合
+			long time1 = -1, time2 = -1;
+			for (long[] temp : temps) {
+				if (time1 == -1) time1 = temp[0];
+				if (time2 == -1) time2 = temp[1];
+				if (time1 == temp[0] && time2 == temp[1]) continue;
+
+				if (time2 >= temp[0]) {
+					time2 = temp[1];
+				} else {
+					this.update(time1, time2);
+					time1 = -1;
+					time2 = -1;
+				}
+			}
+
+			if (time1 != -1 && time2 != -1) {
+				this.update(time1, time2);
+			}
+
+			System.out.println("notuse:");
+			this.notuse.forEach(one -> System.out.println(Arrays.toString(one)));
+		}
+
+		private void update(long time1, long time2) {
+			System.out.println("start:\n" + "time1=" + time1 + ",time2=" + time2);
+			System.out.println("" + "floor=" + this.floor + ",ceil=" + this.ceil);
+
+			if (time1 >= this.floor && time2 <= this.ceil) {
+				if (time1 == this.floor && time2 < this.ceil) {
+					this.floor = time2;
+				} else if (time1 > this.floor && time2 == this.ceil) {
+					this.ceil = time1;
+				} else {
+					//时间段是预测时间段的子集,需收集之后整合
+					this.notuse.add(new long[] { time1, time2 });
+					System.out.println("add");
+				}
+			} else {
+				//只有交集
+				if (time1 >= this.floor) {
+					this.ceil = time1;
+				} else if (time2 <= this.ceil) {
+					this.floor = time2;
+				}
+			}
+
+			System.out.println("" + "floor=" + this.floor + ",ceil=" + this.ceil);
+			System.out.println("end");
+		}
+
+		public static boolean need(long oldtime, int[] oldconds, long newtime, int[] newconds) {
+			if (newtime - oldtime > 60 * 1000) {
+				//两次刷新时间大于一分钟,则忽略此次刷新母港
+				//尽管理论上可以最大三分钟,但是根据游戏情况,缩小范围显得更优
+				return false;
+			}
+
+			if (oldconds != null && newconds != null) {
+				Predicate<int[]> need = conds -> Arrays.stream(oldconds).anyMatch(i -> (i >= 0) && (i < 49));
+				if (need.test(oldconds) && need.test(newconds) && Arrays.equals(oldconds, newconds)) {
+					//有舰娘的疲劳处于[0,49),并且两个time没有发生疲劳变化
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 	}
 
 }

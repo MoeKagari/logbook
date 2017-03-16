@@ -9,10 +9,10 @@ import javax.json.JsonObject;
 public class ItemDto {
 
 	private final int id;
+	private final int slotitemId;
 	private boolean isLocked;
 	private int level;
 	private int alv;
-	private final int slotitemId;
 
 	public ItemDto(JsonObject json) {
 		this.id = json.getInt("api_id");
@@ -48,5 +48,4 @@ public class ItemDto {
 	public void slotItemLock(boolean b) {
 		this.isLocked = b;
 	}
-
 }

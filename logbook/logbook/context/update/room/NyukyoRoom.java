@@ -24,7 +24,12 @@ public class NyukyoRoom extends Room {
 			for (JsonValue value : (JsonArray) json) {
 				JsonObject jo = (JsonObject) value;
 				if (jo.getInt("api_id") == this.id) {
+					NdockDto old = this.ndock;
 					this.ndock = new NdockDto(jo);
+					if (old != null && old.getShipId() > 0 && old.getShipId() != this.ndock.getShipId()) {
+						ShipDto ship = GlobalContext.getShipMap().get(old.getShipId());
+						if (ship != null) ship.nyukyoEnd();
+					}
 					break;
 				}
 			}

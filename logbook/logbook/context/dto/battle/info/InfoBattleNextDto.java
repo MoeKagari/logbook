@@ -2,7 +2,6 @@ package logbook.context.dto.battle.info;
 
 import javax.json.JsonObject;
 
-import logbook.context.dto.battle.AbstractInfoBattleResult;
 import logbook.context.dto.battle.AbstractInfoBattleStartNext;
 import logbook.context.dto.battle.BattleDto;
 import logbook.context.dto.battle.BattleType;
@@ -21,6 +20,6 @@ public class InfoBattleNextDto extends AbstractInfoBattleStartNext {
 
 	@Override
 	public boolean hasDownArrow(BattleDto pre) {
-		return pre != null && ((pre instanceof InfoBattleStartDto) || (pre instanceof AbstractInfoBattleResult) || (pre instanceof InfoBattleStartAirBaseDto));
+		return pre != null && ((pre instanceof InfoBattleStartDto) || (pre instanceof InfoBattleStartAirBaseDto) || (pre instanceof InfoBattleShipdeckDto));
 	}
 }

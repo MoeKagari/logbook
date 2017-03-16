@@ -23,22 +23,21 @@ public class ShipListTable extends AbstractTable<ShipDto> {
 
 	@Override
 	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
-		tcms.add(new TableColumnManager("ID", ShipDto::getId));
+		tcms.add(new TableColumnManager("ID", true, ShipDto::getId));
 		tcms.add(new TableColumnManager("舰娘", rd -> ShipDtoTranslator.getName(rd)));
-		tcms.add(new TableColumnManager("等级", ShipDto::getLv));
-		tcms.add(new TableColumnManager("现有经验", ShipDto::getCurrentExp));
-		tcms.add(new TableColumnManager("升级所需", ShipDto::getNextExp));
-		tcms.add(new TableColumnManager("现在耐久", ShipDto::getNowHP));
-		tcms.add(new TableColumnManager("最大耐久", ShipDto::getMaxHp));
-		tcms.add(new TableColumnManager("Cond", ShipDto::getCond));
+		tcms.add(new TableColumnManager("等级", true, ShipDto::getLv));
+		tcms.add(new TableColumnManager("现有经验", true, ShipDto::getCurrentExp));
+		tcms.add(new TableColumnManager("升级所需", true, ShipDto::getNextExp));
+		tcms.add(new TableColumnManager("现在耐久", true, ShipDto::getNowHp));
+		tcms.add(new TableColumnManager("最大耐久", true, ShipDto::getMaxHp));
+		tcms.add(new TableColumnManager("Cond", true, ShipDto::getCond));
 		tcms.add(new TableColumnManager("速力", rd -> ShipDtoTranslator.getSokuString(rd)));
 		tcms.add(new TableColumnManager("增设", rd -> rd.getSlotex() != 0 ? "有" : ""));
 		tcms.add(new TableColumnManager("Lock", rd -> rd.isLocked() ? "有" : ""));
 	}
 
 	@Override
-	protected List<ShipDto> getList() {
-		return new ArrayList<>(GlobalContext.getShipMap().values());
+	protected void updateData(List<ShipDto> datas) {
+		datas.addAll(GlobalContext.getShipMap().values());
 	}
-
 }

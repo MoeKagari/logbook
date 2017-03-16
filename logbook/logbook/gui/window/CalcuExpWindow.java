@@ -168,9 +168,13 @@ public class CalcuExpWindow extends WindowBase {
 		this.flagbtn.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
 		this.mvpbtn.addSelectionListener(new ControlSelectionListener(ev -> this.calcu()));
 		this.secretary.addSelectionListener(new ControlSelectionListener(ev -> {
-			this.selectSecretaryShip();
-			this.setLvAndExp();
-			this.calcu();
+			if (this.ships.size() == 0) {
+				this.updateDatas();
+			} else {
+				this.selectSecretaryShip();
+				this.setLvAndExp();
+				this.calcu();
+			}
 		}));
 
 		BiConsumer<Label, Spinner> combiner = (label, spinner) -> {
@@ -211,26 +215,29 @@ public class CalcuExpWindow extends WindowBase {
 		if (AppConfig.get().isNotCalcuExpForLevel99Ship()) this.ships.removeIf(ship -> ship.getLv() == 99);
 		Collections.sort(this.ships, (a, b) -> -Integer.compare(a.getLv(), b.getLv()));
 
-		int size = this.ships.size();
-		for (int i = 0; i < size; i++) {
+		for (int i = 0; i < this.ships.size(); i++) {
 			ShipDto ship = this.ships.get(i);
 			this.shipcombo.add(ShipDtoTranslator.getName(ship) + "(" + ship.getLv() + ")");
 		}
 
-		this.selectSecretaryShip();
-		this.setLvAndExp();
-		this.calcu();
+		if (this.ships.size() != 0) {
+			this.selectSecretaryShip();
+			this.setLvAndExp();
+			this.calcu();
+		}
 	}
 
 	private void selectSecretaryShip() {
 		if (this.getItemCount() == 0) return;
-		int secretaryShipIndex = this.getSecretaryShipIndex();
+		int secretaryShipIndex = this.getSecretaryShipIndex();//旗舰99级,并且启用过滤99级,返回-1
 		if (secretaryShipIndex >= 0) this.shipcombo.select(secretaryShipIndex);
 	}
 
 	private void setLvAndExp() {
 		if (this.getItemCount() == 0) return;
 		int slectIndex = this.shipcombo.getSelectionIndex();
+		slectIndex = slectIndex < 0 ? 0 : slectIndex;
+		this.shipcombo.select(slectIndex);
 		ShipDto ship = this.ships.get(slectIndex);
 
 		int beforelv = ship.getLv();

@@ -84,6 +84,13 @@ public final class SwtUtils {
 		initLabel(label, text, gd);
 	}
 
+	public static void initLabel(Label label, String text, GridData gd, int width, Color background) {
+		gd.widthHint = SwtUtils.DPIAwareWidth(width);
+		label.setText(text);
+		label.setLayoutData(gd);
+		if (background != null) label.setBackground(background);
+	}
+
 	public static void insertBlank(Composite composite, int width) {
 		initLabel(new Label(composite, SWT.NONE), "", new GridData(), width);
 	}

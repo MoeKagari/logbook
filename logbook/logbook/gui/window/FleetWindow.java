@@ -159,8 +159,10 @@ public class FleetWindow implements EventListener {
 				this.akashiTimer.reset();
 				break;
 			case CHANGE:
-				if (deck != null && deck.isAkashiFlagship()) {
-					this.akashiTimer.resetAkashiFlagship();
+				if (deck != null && DeckDtoTranslator.isAkashiFlagship(deck)) {
+					if (DeckDtoTranslator.isOnlyAkashi(deck) == false) {
+						this.akashiTimer.resetAkashiFlagship();
+					}
 				}
 				break;
 			default:
@@ -193,8 +195,8 @@ public class FleetWindow implements EventListener {
 		SwtUtils.setText(shipComposite.iconlabel, "");
 		SwtUtils.setText(shipComposite.namelabel, ship != null ? ShipDtoTranslator.getName(ship) : "");
 		SwtUtils.setToolTipText(shipComposite.namelabel, ship != null ? ShipDtoTranslator.getName(ship) : "");
-		SwtUtils.setText(shipComposite.hplabel, ship != null ? (ship.getNowHP() + "/" + ship.getMaxHp()) : "");
-		SwtUtils.setText(shipComposite.hpmsglabel, ship != null ? HPMessage.getString(ship.getNowHP() * 1.0 / ship.getMaxHp()) : "");
+		SwtUtils.setText(shipComposite.hplabel, ship != null ? (ship.getNowHp() + "/" + ship.getMaxHp()) : "");
+		SwtUtils.setText(shipComposite.hpmsglabel, ship != null ? HPMessage.getString(ship.getNowHp() * 1.0 / ship.getMaxHp()) : "");
 		SwtUtils.setText(shipComposite.lvlabel, ship != null ? ("Lv." + ship.getLv()) : "");
 		SwtUtils.setText(shipComposite.condlabel, ship != null ? String.valueOf(ship.getCond()) : "");
 
@@ -246,7 +248,7 @@ public class FleetWindow implements EventListener {
 			if (FleetWindow.this.notifiyAkashitimer) {
 				if (rest == RESET_LIMIT * ONE_MINUTE) {
 					DeckDto deck = FleetWindow.this.getDeck();
-					if (deck != null && deck.shouldNotifyAkashiTimer()) {
+					if (deck != null && DeckDtoTranslator.shouldNotifyAkashiTimer(deck) && DeckDtoTranslator.canAkashiRepair(deck)) {
 						box.add("泊地修理", FleetWindow.this.defaultFleetName + "∶泊地修理已20分钟");
 					}
 				}

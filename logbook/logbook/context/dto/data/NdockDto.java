@@ -22,7 +22,7 @@ public class NdockDto {
 		this.state = this.json.getInt("api_state");
 		this.shipId = this.json.getInt("api_ship_id");
 		this.time = this.json.getJsonNumber("api_complete_time").longValue();
-		this.timerCounter = new TimerCounter(this.time, 60, -1);
+		this.timerCounter = new TimerCounter(this.time, 60, false, -1);
 	}
 
 	public int getState() {

@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,17 +32,17 @@ import logbook.internal.LoggerHolder;
  */
 public class GlobalContextUpdater {
 	/** 游戏现有的服务器 */
-	public final static List<String> SERVER_LIST = Arrays.asList(new String[] { //
+	public final static List<String> SERVER_LIST = Arrays.asList(//
 			"125.6.184.16", "125.6.187.205", "125.6.187.229", "125.6.187.253", //
 			"125.6.188.25", "125.6.189.7", "125.6.189.39", "125.6.189.71", //
 			"125.6.189.103", "125.6.189.135", "125.6.189.167", "125.6.189.215", //
 			"125.6.189.247", "203.104.209.71", "203.104.209.87", "203.104.248.135", //
 			"203.104.209.23", "203.104.209.39", "203.104.209.55", "203.104.209.102" //
-	});
+	);
 
 	private final static SimpleDateFormat format = new SimpleDateFormat("dd_HHmmss.SSS");
 	private final static LoggerHolder LOG = new LoggerHolder(GlobalContextUpdater.class);
-	private static List<EventListener> eventListeners = new ArrayList<>();
+	private static List<EventListener> eventListeners = new LinkedList<>();
 
 	public static void update(UndefinedData undefinedData, String serverName, String contentType) {
 		String url = undefinedData.getUrl();

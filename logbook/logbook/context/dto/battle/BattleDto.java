@@ -203,6 +203,10 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 		return false;
 	}
 
+	public boolean isStart() {
+		return false;
+	}
+
 	/**
 	 * 战斗时的舰队的信息
 	 * @author MoeKagari
@@ -213,7 +217,7 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 		private final boolean isEnemy;
 		private final int[] nowhps;
 		private final int[] maxhps;
-		private String[] names = null;
+		private String[] names = new String[6];
 
 		/**
 		 * 长度为6
@@ -345,8 +349,6 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 		private final int[] eattco = new int[6];
 
 		/**
-		 * 
-		 * @param boa
 		 * @param fcombine 自方参战deck是否是联合舰队
 		 */
 		public void accept(BattleOneAttack boa, Boolean fcombine) {
@@ -357,16 +359,18 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 			for (int i = 0; i < damages.length; i++) {
 				if (defenseIndexs[i] == -1) continue;//三炮CI -> [index,-1,-1]
 
-				int da = damages[i] < 0 ? 0 : damages[i];
+				int da = damages[i];
+				if (da < 0) continue;
+
 				Point p1 = new Point((attackIndex - 1) / 6, (attackIndex - 1) % 6);
 				Point p2 = new Point((defenseIndexs[i] - 1) / 6, (defenseIndexs[i] - 1) % 6);
 				if (enemyAttack == null && fcombine != null) {//敌方非联合舰队
-					new int[][] { fcombine ? this.fattco : this.fatt, this.eatt }[p1.x][p1.y] += da;
-					new int[][] { fcombine ? this.fdmgco : this.fdmg, this.edmg }[p2.x][p2.y] += da;
-				} else if (enemyAttack == false) {//敌联合舰队,我方攻击
+					new int[][] { fcombine == Boolean.TRUE ? this.fattco : this.fatt, this.eatt }[p1.x][p1.y] += da;
+					new int[][] { fcombine == Boolean.TRUE ? this.fdmgco : this.fdmg, this.edmg }[p2.x][p2.y] += da;
+				} else if (enemyAttack == Boolean.FALSE) {//敌联合舰队,我方攻击
 					new int[][] { this.fatt, this.fattco }[p1.x][p1.y] += da;
 					new int[][] { this.edmg, this.edmgco }[p2.x][p2.y] += da;
-				} else if (enemyAttack == true) {//敌联合舰队,敌方攻击
+				} else if (enemyAttack == Boolean.TRUE) {//敌联合舰队,敌方攻击
 					new int[][] { this.eatt, this.eattco }[p1.x][p1.y] += da;
 					new int[][] { this.fdmg, this.fdmgco }[p2.x][p2.y] += da;
 				} else {
@@ -413,7 +417,7 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 	 * 供每个 BattleStage 用
 	 * @author MoeKagari
 	 */
-	public class BattleDeckAttackDamage {
+	public static class BattleDeckAttackDamage {
 		private final int[] dmg = new int[6];
 		private final int[] attack = new int[6];
 

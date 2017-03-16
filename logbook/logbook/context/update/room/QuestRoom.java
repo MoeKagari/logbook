@@ -37,6 +37,10 @@ public class QuestRoom extends Room {
 						//移除quest_no相同或者(page和no)相同的任务
 						GlobalContext.getQuestlist().removeIf(ele -> (ele.getInformation().getNo() == quest.getInformation().getNo() || (ele.getPage() == quest.getPage() && ele.getNo() == quest.getNo())));
 						GlobalContext.getQuestlist().add(quest);
+					} else if (questValue instanceof JsonNumber) {
+						//类别最后一页空位为-1
+						//清除之后的任务
+						//TODO
 					}
 				}
 			} else if (value instanceof JsonNumber) {

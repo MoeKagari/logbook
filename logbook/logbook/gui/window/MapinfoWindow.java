@@ -43,7 +43,7 @@ public class MapinfoWindow extends WindowBase {
 
 	@Override
 	public void update(DataType type) {
-		if (type == DataType.MAPINFO && this.isVisible()) {
+		if (type == DataType.MAPINFO && this.getShell().isVisible()) {
 			this.updateWindow();
 		}
 	}

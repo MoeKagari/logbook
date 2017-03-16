@@ -9,13 +9,25 @@ import logbook.context.update.data.Data;
 
 public class InfoBattleStartDto extends AbstractInfoBattleStartNext {
 
+	private final boolean combined;
 	private final int deckId;
 	private final int start;
 
-	public InfoBattleStartDto(Data data, JsonObject json) {
+	public InfoBattleStartDto(boolean combined, Data data, JsonObject json) {
 		super(data, json);
+
+		this.combined = combined;
 		this.deckId = Integer.parseInt(data.getField("api_deck_id"));
 		this.start = json.getInt("api_from_no");
+	}
+
+	@Override
+	public boolean isStart() {
+		return true;
+	}
+
+	public boolean isCombined() {
+		return this.combined;
 	}
 
 	public int getStart() {

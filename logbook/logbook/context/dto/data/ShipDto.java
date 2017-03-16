@@ -2,6 +2,7 @@ package logbook.context.dto.data;
 
 import javax.json.JsonObject;
 
+import logbook.gui.logic.TimeString;
 import logbook.util.JsonUtils;
 
 /**
@@ -11,6 +12,11 @@ import logbook.util.JsonUtils;
 public class ShipDto {
 
 	private final JsonObject json;
+	/**
+	 * 更新(PLTIME)是是否需要此ShipDto
+	 */
+	private boolean needForPLUpdate = true;
+	private final long time = TimeString.getCurrentTime();
 
 	private int id;
 	private int lv;
@@ -77,7 +83,7 @@ public class ShipDto {
 		return this.exp[2];
 	}
 
-	public int getNowHP() {
+	public int getNowHp() {
 		return this.nowHp;
 	}
 
@@ -157,10 +163,19 @@ public class ShipDto {
 
 	/*----------------------------------------------------------------------------------------------------------------------*/
 
+	public long getTime() {
+		return this.time;
+	}
+
+	public boolean isNeedForPLUpdate() {
+		return this.needForPLUpdate;
+	}
+
 	public void nyukyoEnd() {
 		this.nowHp = this.maxHp;
 		this.cond = this.cond < 40 ? 40 : this.cond;
 		this.ndockCost = new int[2];
+		this.needForPLUpdate = false;//入渠完毕,非自然恢复,更新(PLTIME)是,不需要此ship
 	}
 
 	public void updateWhenCharge(JsonObject jo) {

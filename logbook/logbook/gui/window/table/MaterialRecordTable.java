@@ -9,8 +9,8 @@ import logbook.context.dto.data.MaterialDto;
 import logbook.context.dto.data.record.MaterialRecordDto;
 import logbook.context.update.GlobalContext;
 import logbook.gui.logic.TimeString;
-import logbook.gui.window.ApplicationMain;
 import logbook.gui.window.AbstractTable;
+import logbook.gui.window.ApplicationMain;
 
 /**
  * 资源记录
@@ -29,13 +29,13 @@ public class MaterialRecordTable extends AbstractTable<MaterialRecordDto> {
 		String[] materialStrings = MaterialDto.getMaterialStrings();
 		for (int i = 0; i < materialStrings.length; i++) {
 			final int index = i;
-			tcms.add(new TableColumnManager(materialStrings[i], rd -> rd.getMaterial().getMaterial()[index]));
+			tcms.add(new TableColumnManager(materialStrings[i], true, rd -> rd.getMaterial().getMaterial()[index]));
 		}
 	}
 
 	@Override
-	protected List<MaterialRecordDto> getList() {
-		return GlobalContext.getMaterialRecord();
+	protected void updateData(List<MaterialRecordDto> datas) {
+		datas.addAll(GlobalContext.getMaterialRecord());
 	}
 
 }

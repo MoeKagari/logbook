@@ -9,28 +9,31 @@ public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
 
 	private final String questName;
 	private final String deckName;
+	private final BattleResult_GetShip getShip;
 
-	private boolean haveNewShip = false;
-	private int newShipId = -1;
-	private String newShipTypeName = null;
+	private final int mvp;
+	private final int mvpCombined;
 
 	public AbstractInfoBattleResult(Data data, JsonObject json) {
 		this.rank = json.getString("api_win_rank");
-
 		this.questName = json.getString("api_quest_name", null);
 		this.deckName = json.getJsonObject("api_enemy_info").getString("api_deck_name");
-
-		if (json.containsKey("api_get_ship")) {
-			JsonObject get_ship = json.getJsonObject("api_get_ship");
-			this.haveNewShip = true;
-			this.newShipId = get_ship.getInt("api_ship_id");
-			this.newShipTypeName = get_ship.getString("api_ship_type") + "-" + get_ship.getString("api_ship_name");
-		}
+		this.getShip = json.containsKey("api_get_ship") ? (new BattleResult_GetShip(json.getJsonObject("api_get_ship"))) : null;
+		this.mvp = json.getInt("api_mvp");
+		this.mvpCombined = json.containsKey("api_mvp_combined") ? json.getInt("api_mvp_combined") : -1;
 	}
 
 	@Override
 	public boolean hasDownArrow(BattleDto pre) {
 		return false;
+	}
+
+	public int getMvp() {
+		return this.mvp;
+	}
+
+	public int getMvpCombined() {
+		return this.mvpCombined;
 	}
 
 	public String getRank() {
@@ -46,15 +49,35 @@ public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
 	}
 
 	public boolean haveNewShip() {
-		return this.haveNewShip;
+		return this.getShip != null;
 	}
 
-	public int getNewShipId() {
-		return this.newShipId;
+	public BattleResult_GetShip getNewShip() {
+		return this.getShip;
 	}
 
-	public String getNewShipTypeName() {
-		return this.newShipTypeName;
+	public class BattleResult_GetShip {
+		private final int id;
+		private final String type;
+		private final String name;
+
+		public BattleResult_GetShip(JsonObject json) {
+			this.id = json.getInt("api_ship_id");
+			this.type = json.getString("api_ship_type");
+			this.name = json.getString("api_ship_name");
+		}
+
+		public int getId() {
+			return this.id;
+		}
+
+		public String getName() {
+			return this.name;
+		}
+
+		public String getType() {
+			return this.type;
+		}
 	}
 
 }

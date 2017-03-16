@@ -21,6 +21,7 @@ import logbook.context.dto.battle.daymidnight.CombinebattleMidnightSPDto;
 import logbook.context.dto.battle.info.InfoBattleGobackPortDto;
 import logbook.context.dto.battle.info.InfoBattleNextDto;
 import logbook.context.dto.battle.info.InfoBattleResultDto;
+import logbook.context.dto.battle.info.InfoBattleShipdeckDto;
 import logbook.context.dto.battle.info.InfoBattleStartAirBaseDto;
 import logbook.context.dto.battle.info.InfoBattleStartDto;
 import logbook.context.dto.battle.info.InfoCombinebattleResultDto;
@@ -32,7 +33,7 @@ public class BattleRoom extends Room {
 
 	public void doBattleStart(Data data, JsonValue json) {
 		try {
-			GlobalContext.getBattlelist().add(new InfoBattleStartDto(data, (JsonObject) json));
+			GlobalContext.getBattlelist().add(new InfoBattleStartDto(GlobalContext.isCombined(), data, (JsonObject) json));
 		} catch (Exception e) {
 			this.getLog().get().warn("doBattleStart" + "处理错误", e);
 			this.getLog().get().warn(data);
@@ -99,6 +100,7 @@ public class BattleRoom extends Room {
 
 			jo.getJsonArray("api_ship_data").forEach(value -> GlobalContext.addNewShip((JsonObject) value));
 			ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> dr.doDeck(data, jo.get("api_deck_data")));
+			GlobalContext.getBattlelist().add(new InfoBattleShipdeckDto(data, (JsonObject) json));
 		} catch (Exception e) {
 			this.getLog().get().warn("doBattleShipdeck" + "处理错误", e);
 			this.getLog().get().warn(data);

@@ -13,6 +13,11 @@ public class BattleMidnightSPDto extends AbstractBattleMidnight {
 	}
 
 	@Override
+	public boolean isMidnightOnly() {
+		return true;
+	}
+
+	@Override
 	public BattleType getBattleType() {
 		return BattleType.BATTLE_MIDNIGHT_SP;
 	}

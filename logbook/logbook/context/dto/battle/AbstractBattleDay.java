@@ -89,7 +89,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 	}
 
 	private BattleDeckAttackDamage getBattleDeckAttackDamage(Function<BattleDayStage, BattleDeckAttackDamage> mapper) {
-		return this.battleDayStage.stream().map(mapper).reduce(new BattleDeckAttackDamage(), (orin, next) -> orin.add(next));
+		return this.battleDayStage.stream().map(mapper).reduce(new BattleDeckAttackDamage(), BattleDeckAttackDamage::add);
 	}
 
 	/*---------------------------------添加------------------------------------------*/
@@ -150,20 +150,20 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		public abstract BattleDayStageType getType();
 	}
 
-	private enum BattleDayStageType {
+	public enum BattleDayStageType {
 		AIRBASEINJECTION("基地航空队-喷气机"),
 		INJECTIONKOUKO("喷气机航空战"),
 		AIRBASEATTACK("基地航空队"),
 		KOUKO("航空战"),
 		SUPPORTATTACK("支援舰队"),
-		OPENINGTAISEN("开幕对潜"),
+		OPENINGTAISEN("先制反潜"),
 		OPENINGATTACK("开幕雷击"),
 		HOUGEKI("炮击战"),
 		RAIGEKI("雷击战");
 
 		private final String name;
 
-		BattleDayStageType(String name) {
+		private BattleDayStageType(String name) {
 			this.name = name;
 		}
 
@@ -187,16 +187,13 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		private final int[][] planeLostStage2 = new int[][] { null, null };
 
 		public InjectionKouko(JsonObject json) {
-			{
-				JsonObject stage1 = json.getJsonObject("api_stage1");
-				this.planeLostStage1[0] = new int[] { stage1.getInt("api_f_count"), stage1.getInt("api_f_lostcount") };
-				this.planeLostStage1[1] = new int[] { stage1.getInt("api_e_count"), stage1.getInt("api_e_lostcount") };
-			}
-			{
-				JsonObject stage2 = json.getJsonObject("api_stage2");
-				this.planeLostStage2[0] = new int[] { stage2.getInt("api_f_count"), stage2.getInt("api_f_lostcount") };
-				this.planeLostStage2[1] = new int[] { stage2.getInt("api_e_count"), stage2.getInt("api_e_lostcount") };
-			}
+			JsonObject stage1 = json.getJsonObject("api_stage1");
+			this.planeLostStage1[0] = new int[] { stage1.getInt("api_f_count"), stage1.getInt("api_f_lostcount") };
+			this.planeLostStage1[1] = new int[] { stage1.getInt("api_e_count"), stage1.getInt("api_e_lostcount") };
+
+			JsonObject stage2 = json.getJsonObject("api_stage2");
+			this.planeLostStage2[0] = new int[] { stage2.getInt("api_f_count"), stage2.getInt("api_f_lostcount") };
+			this.planeLostStage2[1] = new int[] { stage2.getInt("api_e_count"), stage2.getInt("api_e_lostcount") };
 
 			int[] fdmg = new int[6];
 			int[] edmg = new int[6];
@@ -204,25 +201,25 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			int[] edmgco = new int[6];
 			{
 				JsonObject stage3 = json.getJsonObject("api_stage3");
-				double[] fdam = JsonUtils.getDoubleArray(stage3, "api_fdam");
-				double[] edam = JsonUtils.getDoubleArray(stage3, "api_edam");
+				int[] fdam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_fdam"));
+				int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_edam"));
 				for (int i = 1; i <= 6; i++) {
-					fdmg[i - 1] += Math.floor(fdam[i]);
-					edmg[i - 1] += Math.floor(edam[i]);
+					fdmg[i - 1] += fdam[i];
+					edmg[i - 1] += edam[i];
 				}
 			}
 			if (json.containsKey("api_stage3_combined")) {
 				JsonObject stage3_combined = json.getJsonObject("api_stage3_combined");
 				if (stage3_combined.containsKey("api_fdam")) {
-					double[] fdam = JsonUtils.getDoubleArray(stage3_combined, "api_fdam");
+					int[] fdam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3_combined, "api_fdam"));
 					for (int i = 1; i <= 6; i++) {
-						fdmgco[i - 1] += Math.floor(fdam[i]);
+						fdmgco[i - 1] += fdam[i];
 					}
 				}
 				if (stage3_combined.containsKey("api_edam")) {
-					double[] edam = JsonUtils.getDoubleArray(stage3_combined, "api_edam");
+					int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3_combined, "api_edam"));
 					for (int i = 1; i <= 6; i++) {
-						edmgco[i - 1] += Math.floor(edam[i]);
+						edmgco[i - 1] += edam[i];
 					}
 				}
 			}
@@ -335,25 +332,25 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			int[] edmgco = new int[6];
 			if (this.stages[2]) {
 				JsonObject stage3 = json.getJsonObject("api_stage3");
-				double[] fdam = JsonUtils.getDoubleArray(stage3, "api_fdam");
-				double[] edam = JsonUtils.getDoubleArray(stage3, "api_edam");
+				int[] fdam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_fdam"));
+				int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_edam"));
 				for (int i = 1; i <= 6; i++) {
-					fdmg[i - 1] += Math.floor(fdam[i]);
-					edmg[i - 1] += Math.floor(edam[i]);
+					fdmg[i - 1] += fdam[i];
+					edmg[i - 1] += edam[i];
 				}
 			}
 			if (this.stages[2] && json.containsKey("api_stage3_combined")) {
 				JsonObject stage3_combined = json.getJsonObject("api_stage3_combined");
 				if (stage3_combined.containsKey("api_fdam")) {
-					double[] fdam = JsonUtils.getDoubleArray(stage3_combined, "api_fdam");
+					int[] fdam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3_combined, "api_fdam"));
 					for (int i = 1; i <= 6; i++) {
-						fdmgco[i - 1] += Math.floor(fdam[i]);
+						fdmgco[i - 1] += fdam[i];
 					}
 				}
 				if (stage3_combined.containsKey("api_edam")) {
-					double[] edam = JsonUtils.getDoubleArray(stage3_combined, "api_edam");
+					int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3_combined, "api_edam"));
 					for (int i = 1; i <= 6; i++) {
-						edmgco[i - 1] += Math.floor(edam[i]);
+						edmgco[i - 1] += edam[i];
 					}
 				}
 			}
@@ -361,10 +358,6 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			this.geteAttackDamage().getDamage(edmg);
 			this.getfAttackDamagecombine().getDamage(fdmgco);
 			this.geteAttackDamagecombine().getDamage(edmgco);
-		}
-
-		public int getIndex() {
-			return this.index;
 		}
 
 		public boolean[] getStages() {
@@ -386,6 +379,11 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 
 		public int[][] getPlaneLostStage2() {
 			return this.planeLostStage2;
+		}
+
+		@Override
+		public String getStageName() {
+			return (this.index != 1 ? ("第" + new String[] { "零", "一", "二", "三", "四" }[this.index] + "轮") : "") + super.getStageName();
 		}
 
 		@Override
@@ -420,11 +418,11 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 				}
 				if (this.stages[2]) {
 					JsonObject stage3 = airattack.getJsonObject("api_stage3");
-					damage = ToolUtils.doubleToInteger(JsonUtils.getDoubleArray(stage3, "api_edam"), d -> (int) Math.floor(d));
+					damage = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_edam"));
 				}
 			} else if (type == 2 || type == 3) {//炮击支援或雷击支援
 				JsonObject hourai = json.getJsonObject("api_support_hourai");
-				damage = ToolUtils.doubleToInteger(JsonUtils.getDoubleArray(hourai, "api_damage"), d -> (int) Math.floor(d));
+				damage = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(hourai, "api_damage"));
 			}
 			if (damage != null) {
 				switch (damage.length) {
@@ -483,7 +481,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 				Boolean enemyAttack = at_eflag == null ? null : (at_eflag.getInt(x) == 1);
 				int attackIndex = at_list.getInt(x);
 				int[] defenseIndexs = JsonUtils.getIntArray(df_list.getJsonArray(x));
-				int[] damages = ToolUtils.doubleToInteger(JsonUtils.getDoubleArray(damage.getJsonArray(x)), d -> (int) Math.floor(d));
+				int[] damages = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(damage.getJsonArray(x)));
 				int type = at_type.getInt(x);
 				this.getBattleAttacks().add(new BattleOneAttack(enemyAttack, false, attackIndex, defenseIndexs, damages, type));
 			}
@@ -493,7 +491,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			this.accept(boas);
 		}
 
-		private Boolean getSimulatorObject(Boolean enemyAttack) {
+		public Boolean getSimulatorObject(Boolean enemyAttack) {
 			BattleType bt = AbstractBattleDay.this.getBattleType();
 			if (enemyAttack == null) {//敌方非联合舰队
 				if (bt == BattleType.BATTLE_DAY || bt == BattleType.PRACTICE_DAY) {//6v6
@@ -639,6 +637,11 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 
 		public Hougeki(int index, JsonObject json) {
 			super(index, json);
+		}
+
+		@Override
+		public String getStageName() {
+			return "第" + new String[] { "零", "一", "二", "三", "四" }[this.getindex()] + "轮" + super.getStageName();
 		}
 
 		@Override

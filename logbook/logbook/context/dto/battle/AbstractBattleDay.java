@@ -73,26 +73,24 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 	}
 
 	public BattleDeckAttackDamage getfDeckAttackDamage() {
-		return this.getBattleDeckAttackDamage(bds -> bds.getfAttackDamage());
+		return this.getBattleDeckAttackDamage(bds -> bds.fAttackDamage);
 	}
 
 	public BattleDeckAttackDamage getfDeckCombineAttackDamage() {
-		return this.getBattleDeckAttackDamage(bds -> bds.getfAttackDamagecombine());
+		return this.getBattleDeckAttackDamage(bds -> bds.fAttackDamageco);
 	}
 
 	public BattleDeckAttackDamage geteDeckAttackDamage() {
-		return this.getBattleDeckAttackDamage(bds -> bds.geteAttackDamage());
+		return this.getBattleDeckAttackDamage(bds -> bds.eAttackDamage);
 	}
 
 	public BattleDeckAttackDamage geteDeckCombineAttackDamage() {
-		return this.getBattleDeckAttackDamage(bds -> bds.geteAttackDamagecombine());
+		return this.getBattleDeckAttackDamage(bds -> bds.eAttackDamageco);
 	}
 
 	private BattleDeckAttackDamage getBattleDeckAttackDamage(Function<BattleDayStage, BattleDeckAttackDamage> mapper) {
 		return this.battleDayStage.stream().map(mapper).reduce(new BattleDeckAttackDamage(), BattleDeckAttackDamage::add);
 	}
-
-	/*---------------------------------添加------------------------------------------*/
 
 	/**
 	 * 雷击战的index,1,2,3,4<br>
@@ -106,45 +104,25 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 	/*---------------------------------昼战的各个战斗阶段--------------------------------------------*/
 
 	public abstract class BattleDayStage {
-		private final BattleDeckAttackDamage fAttackDamage = new BattleDeckAttackDamage();
-		private final BattleDeckAttackDamage eAttackDamage = new BattleDeckAttackDamage();
-		private final BattleDeckAttackDamage fAttackDamageco = new BattleDeckAttackDamage();
-		private final BattleDeckAttackDamage eAttackDamageco = new BattleDeckAttackDamage();
-		private ArrayList<BattleOneAttack> battleAttacks = new ArrayList<>();
-
-		public ArrayList<BattleOneAttack> getBattleAttacks() {
-			return this.battleAttacks;
-		}
-
-		public BattleDeckAttackDamage getfAttackDamage() {
-			return this.fAttackDamage;
-		}
-
-		public BattleDeckAttackDamage geteAttackDamage() {
-			return this.eAttackDamage;
-		}
-
-		public BattleDeckAttackDamage getfAttackDamagecombine() {
-			return this.fAttackDamageco;
-		}
-
-		public BattleDeckAttackDamage geteAttackDamagecombine() {
-			return this.eAttackDamageco;
-		}
+		public final BattleDeckAttackDamage fAttackDamage = new BattleDeckAttackDamage();
+		public final BattleDeckAttackDamage eAttackDamage = new BattleDeckAttackDamage();
+		public final BattleDeckAttackDamage fAttackDamageco = new BattleDeckAttackDamage();
+		public final BattleDeckAttackDamage eAttackDamageco = new BattleDeckAttackDamage();
+		public final ArrayList<BattleOneAttack> battleAttacks = new ArrayList<>();
 
 		public String getStageName() {
 			return this.getType().getName();
 		}
 
 		public void accept(BattleOneAttackSimulator boas) {
-			this.fAttackDamage.getDamage(boas.getFdmg());
-			this.fAttackDamage.setAttack(boas.getFatt());
-			this.eAttackDamage.getDamage(boas.getEdmg());
-			this.eAttackDamage.setAttack(boas.getEatt());
-			this.fAttackDamageco.getDamage(boas.getFdmgco());
-			this.fAttackDamageco.setAttack(boas.getFattco());
-			this.eAttackDamageco.getDamage(boas.getEdmgco());
-			this.eAttackDamageco.setAttack(boas.getEattco());
+			this.fAttackDamage.getDamage(boas.fdmg);
+			this.fAttackDamage.setAttack(boas.fatt);
+			this.eAttackDamage.getDamage(boas.edmg);
+			this.eAttackDamage.setAttack(boas.eatt);
+			this.fAttackDamageco.getDamage(boas.fdmgco);
+			this.fAttackDamageco.setAttack(boas.fattco);
+			this.eAttackDamageco.getDamage(boas.edmgco);
+			this.eAttackDamageco.setAttack(boas.eattco);
 		}
 
 		public abstract BattleDayStageType getType();
@@ -223,10 +201,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					}
 				}
 			}
-			this.getfAttackDamage().getDamage(fdmg);
-			this.geteAttackDamage().getDamage(edmg);
-			this.getfAttackDamagecombine().getDamage(fdmgco);
-			this.geteAttackDamagecombine().getDamage(edmgco);
+			this.fAttackDamage.getDamage(fdmg);
+			this.eAttackDamage.getDamage(edmg);
+			this.fAttackDamageco.getDamage(fdmgco);
+			this.eAttackDamageco.getDamage(edmgco);
 		}
 
 		public int[][] getPlaneLostStage1() {
@@ -279,8 +257,8 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					edmgco[i - 1] += Math.floor(edam[i]);
 				}
 			}
-			this.geteAttackDamage().getDamage(edmg);
-			this.geteAttackDamagecombine().getDamage(edmgco);
+			this.eAttackDamage.getDamage(edmg);
+			this.eAttackDamageco.getDamage(edmgco);
 		}
 
 		public int getIndex() {
@@ -354,10 +332,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					}
 				}
 			}
-			this.getfAttackDamage().getDamage(fdmg);
-			this.geteAttackDamage().getDamage(edmg);
-			this.getfAttackDamagecombine().getDamage(fdmgco);
-			this.geteAttackDamagecombine().getDamage(edmgco);
+			this.fAttackDamage.getDamage(fdmg);
+			this.eAttackDamage.getDamage(edmg);
+			this.fAttackDamageco.getDamage(fdmgco);
+			this.eAttackDamageco.getDamage(edmgco);
 		}
 
 		public boolean[] getStages() {
@@ -427,9 +405,9 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			if (damage != null) {
 				switch (damage.length) {
 					case 1 + 12:
-						this.geteAttackDamagecombine().getDamage(Arrays.copyOfRange(damage, 7, 13));
+						this.eAttackDamageco.getDamage(Arrays.copyOfRange(damage, 7, 13));
 					case 1 + 6:
-						this.geteAttackDamage().getDamage(Arrays.copyOfRange(damage, 1, 7));
+						this.eAttackDamage.getDamage(Arrays.copyOfRange(damage, 1, 7));
 				}
 			}
 		}
@@ -478,16 +456,16 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			JsonArray df_list = json.getJsonArray("api_df_list");
 			JsonArray damage = json.getJsonArray("api_damage");
 			for (int x = 1; x < at_list.size(); x++) {
-				Boolean enemyAttack = at_eflag == null ? null : (at_eflag.getInt(x) == 1);
+				Boolean enemyAttack = at_eflag == null ? null : (at_eflag.getInt(x) == 1 ? Boolean.TRUE : Boolean.FALSE);
 				int attackIndex = at_list.getInt(x);
 				int[] defenseIndexs = JsonUtils.getIntArray(df_list.getJsonArray(x));
 				int[] damages = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(damage.getJsonArray(x)));
 				int type = at_type.getInt(x);
-				this.getBattleAttacks().add(new BattleOneAttack(enemyAttack, false, attackIndex, defenseIndexs, damages, type));
+				this.battleAttacks.add(new BattleOneAttack(enemyAttack, false, attackIndex, defenseIndexs, damages, type));
 			}
 
 			BattleOneAttackSimulator boas = new BattleOneAttackSimulator();
-			this.getBattleAttacks().forEach(boa -> boas.accept(boa, this.getSimulatorObject(boa.isEnemyAttack())));
+			this.battleAttacks.forEach(boa -> boas.accept(boa, this.getSimulatorObject(boa.enemyAttack)));
 			this.accept(boas);
 		}
 
@@ -495,34 +473,31 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			BattleType bt = AbstractBattleDay.this.getBattleType();
 			if (enemyAttack == null) {//敌方非联合舰队
 				if (bt == BattleType.BATTLE_DAY || bt == BattleType.PRACTICE_DAY) {//6v6
-					return false;
-				} else if (this.getindex() == 0) {//12v6,开幕对潜
-					return true;
+					return Boolean.FALSE;
+				} else if (this.getIndex() == 0) {//12v6,开幕对潜
+					return Boolean.TRUE;
 				} else if (bt == BattleType.COMBINEBATTLE_DAY_WATER) {
-					switch (this.getindex()) {
+					switch (this.getIndex()) {
 						case 1:
 						case 2:
-							return false;
+							return Boolean.FALSE;
 						case 3:
-							return true;
+							return Boolean.TRUE;
 					}
 				} else if (bt == BattleType.COMBINEBATTLE_DAY) {
-					switch (this.getindex()) {
+					switch (this.getIndex()) {
 						case 1:
-							return true;
+							return Boolean.TRUE;
 						case 2:
 						case 3:
-							return false;
+							return Boolean.FALSE;
 					}
-				} else {
-					System.out.println(AbstractBattleDay.this.getBattleType());
-					System.out.println(this.getindex());
 				}
 			}
 			return null;//敌联合舰队时,在BattleOneAttackSimulator内部判断
 		}
 
-		public int getindex() {
+		public int getIndex() {
 			return this.index;
 		}
 
@@ -533,12 +508,12 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 	}
 
 	public class OpeningAttack extends BattleDayStage {
-		private int[] frai;
-		private int[] erai;
-		private int[] fdam;
-		private int[] edam;
-		private int[] fydam;
-		private int[] eydam;
+		public int[] frai;
+		public int[] erai;
+		public int[] fdam;
+		public int[] edam;
+		public int[] fydam;
+		public int[] eydam;
 
 		public OpeningAttack(JsonObject json) {
 			//-1开头,长度1+(6or12)
@@ -551,80 +526,56 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 
 			switch (this.fdam.length) {//自方受伤
 				case 1 + 12:
-					this.getfAttackDamage().getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
-					this.getfAttackDamagecombine().getDamage(Arrays.copyOfRange(this.fdam, 7, 13));
+					this.fAttackDamage.getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
+					this.fAttackDamageco.getDamage(Arrays.copyOfRange(this.fdam, 7, 13));
 					break;
 				case 1 + 6:
 					if (AbstractBattleDay.this.getfDeckCombine() == null) {//自方非联合舰队
-						this.getfAttackDamage().getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
+						this.fAttackDamage.getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
 					} else {//自方联合舰队,2队受到雷击
-						this.getfAttackDamagecombine().getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
+						this.fAttackDamageco.getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
 					}
 					break;
 			}
 			switch (this.edam.length) {//敌方受伤
 				case 1 + 12:
-					this.geteAttackDamage().getDamage(Arrays.copyOfRange(this.edam, 1, 7));
-					this.geteAttackDamagecombine().getDamage(Arrays.copyOfRange(this.edam, 7, 13));
+					this.eAttackDamage.getDamage(Arrays.copyOfRange(this.edam, 1, 7));
+					this.eAttackDamageco.getDamage(Arrays.copyOfRange(this.edam, 7, 13));
 					break;
 				case 1 + 6:
 					if (AbstractBattleDay.this.geteDeckCombine() == null) {//敌方非联合舰队
-						this.geteAttackDamage().getDamage(Arrays.copyOfRange(this.edam, 1, 7));
+						this.eAttackDamage.getDamage(Arrays.copyOfRange(this.edam, 1, 7));
 					} else {
-						this.geteAttackDamagecombine().getDamage(Arrays.copyOfRange(this.edam, 1, 7));
+						this.eAttackDamageco.getDamage(Arrays.copyOfRange(this.edam, 1, 7));
 					}
 					break;
 			}
 			switch (this.fydam.length) {//自方攻击
 				case 1 + 12:
-					this.getfAttackDamage().setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
-					this.getfAttackDamagecombine().setAttack(Arrays.copyOfRange(this.fydam, 7, 13));
+					this.fAttackDamage.setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
+					this.fAttackDamageco.setAttack(Arrays.copyOfRange(this.fydam, 7, 13));
 					break;
 				case 1 + 6:
 					if (AbstractBattleDay.this.getfDeckCombine() == null) {//自方非联合舰队
-						this.getfAttackDamage().setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
+						this.fAttackDamage.setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
 					} else {//自方联合舰队
-						this.getfAttackDamagecombine().setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
+						this.fAttackDamageco.setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
 					}
 					break;
 			}
 			switch (this.eydam.length) {//敌方攻击
 				case 1 + 12:
-					this.geteAttackDamage().setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
-					this.geteAttackDamagecombine().setAttack(Arrays.copyOfRange(this.eydam, 7, 13));
+					this.eAttackDamage.setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
+					this.eAttackDamageco.setAttack(Arrays.copyOfRange(this.eydam, 7, 13));
 					break;
 				case 1 + 6:
 					if (AbstractBattleDay.this.geteDeckCombine() == null) {//敌方非联合舰队
-						this.geteAttackDamage().setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
+						this.eAttackDamage.setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
 					} else {
-						this.geteAttackDamagecombine().setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
+						this.eAttackDamageco.setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
 					}
 					break;
 			}
-		}
-
-		public int[] getFrai() {
-			return this.frai;
-		}
-
-		public int[] getErai() {
-			return this.erai;
-		}
-
-		public int[] getFdam() {
-			return this.fdam;
-		}
-
-		public int[] getEdam() {
-			return this.edam;
-		}
-
-		public int[] getFydam() {
-			return this.fydam;
-		}
-
-		public int[] getEydam() {
-			return this.eydam;
 		}
 
 		@Override
@@ -634,14 +585,13 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 	}
 
 	public class Hougeki extends OpeningTaisen {
-
 		public Hougeki(int index, JsonObject json) {
 			super(index, json);
 		}
 
 		@Override
 		public String getStageName() {
-			return "第" + new String[] { "零", "一", "二", "三", "四" }[this.getindex()] + "轮" + super.getStageName();
+			return "第" + new String[] { "零", "一", "二", "三", "四" }[this.getIndex()] + "轮" + super.getStageName();
 		}
 
 		@Override
@@ -651,7 +601,6 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 	}
 
 	public class Raigeki extends OpeningAttack {
-
 		public Raigeki(JsonObject json) {
 			super(json);
 		}

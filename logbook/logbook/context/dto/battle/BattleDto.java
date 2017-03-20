@@ -1,8 +1,8 @@
 package logbook.context.dto.battle;
 
-import java.awt.Point;
 import java.util.ArrayList;
 
+import logbook.config.AppConstants;
 import logbook.gui.logic.TimeString;
 
 /**
@@ -211,17 +211,14 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 	 * 战斗时的舰队的信息
 	 * @author MoeKagari
 	 */
-	public class BattleDeck {
-		private ArrayList<Integer> escapes = new ArrayList<>();
-		private final boolean isCombine;
-		private final boolean isEnemy;
-		private final int[] nowhps;
-		private final int[] maxhps;
-		private String[] names = new String[6];
+	public static class BattleDeck {
+		public final ArrayList<Integer> escapes = new ArrayList<>();
+		public final boolean isCombine;
+		public final boolean isEnemy;
+		public final int[] nowhps;
+		public final int[] maxhps;
+		public String[] names = AppConstants.EMPTY_NAMES;
 
-		/**
-		 * 长度为6
-		 */
 		public BattleDeck(boolean isCombine, boolean isEnemy, int[] nowhps, int[] maxhps) {
 			this.isCombine = isCombine;
 			this.isEnemy = isEnemy;
@@ -238,10 +235,6 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 			return false;
 		}
 
-		public ArrayList<Integer> getEscapes() {
-			return this.escapes;
-		}
-
 		public int getShipCount() {
 			int count = 0;
 			for (int i = 0; i < 6; i++) {
@@ -252,28 +245,8 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 			return count;
 		}
 
-		public int[] getNowhp() {
-			return this.nowhps;
-		}
-
-		public int[] getMaxhp() {
-			return this.maxhps;
-		}
-
-		public boolean isEnemy() {
-			return this.isEnemy;
-		}
-
-		public boolean isCombine() {
-			return this.isCombine;
-		}
-
 		public void setNames(String[] names) {
 			this.names = names;
-		}
-
-		public String[] getName() {
-			return this.names;
 		}
 	}
 
@@ -281,14 +254,14 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 	 * 昼战开幕反潜,三次炮击战,夜战
 	 * @author MoeKagari
 	 */
-	public class BattleOneAttack {
+	public static class BattleOneAttack {
 		/** 敌联合舰队时存在(因为有混战)  */
-		private final Boolean enemyAttack;
-		private final int attackIndex;//攻击方位置(1-12),enemyAttack所代表的两只舰队,非联合舰队时,自方舰队在前,联合舰队时,第一舰队在前
-		private final int[] defenseIndexs;//attackIndex的对方
-		private final int[] dmgs;//此次造成的伤害,与defenseIndexs长度相同
-		private final int attackType;//攻击类型,昼夜战不同
-		private boolean isMidnight;
+		public final Boolean enemyAttack;
+		public final int attackIndex;//攻击方位置(1-12),enemyAttack所代表的两只舰队,非联合舰队时,自方舰队在前,联合舰队时,第一舰队在前
+		public final int[] defenseIndexs;//attackIndex的对方
+		public final int[] dmgs;//此次造成的伤害,与defenseIndexs长度相同
+		public final int attackType;//攻击类型,昼夜战不同
+		public final boolean isMidnight;
 
 		/**
 		 * 夜战用
@@ -308,107 +281,51 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 			this.attackType = attackType;
 			this.isMidnight = isMidnight;
 		}
-
-		public Boolean isEnemyAttack() {
-			return this.enemyAttack;
-		}
-
-		public int getAttackType() {
-			return this.attackType;
-		}
-
-		public boolean isMidnight() {
-			return this.isMidnight;
-		}
-
-		public int getAttackIndex() {
-			return this.attackIndex;
-		}
-
-		public int[] getDefenseIndexs() {
-			return this.defenseIndexs;
-		}
-
-		public int[] getDamages() {
-			return this.dmgs;
-		}
 	}
 
 	/**
 	 * 接收{@link BattleOneAttack}进行模拟
 	 * @author MoeKagari
 	 */
-	public class BattleOneAttackSimulator {
-		private final int[] fdmg = new int[6];
-		private final int[] fatt = new int[6];
-		private final int[] edmg = new int[6];
-		private final int[] eatt = new int[6];
-		private final int[] fdmgco = new int[6];
-		private final int[] fattco = new int[6];
-		private final int[] edmgco = new int[6];
-		private final int[] eattco = new int[6];
+	public static class BattleOneAttackSimulator {
+		public final int[] fdmg = new int[6];
+		public final int[] fatt = new int[6];
+		public final int[] edmg = new int[6];
+		public final int[] eatt = new int[6];
+		public final int[] fdmgco = new int[6];
+		public final int[] fattco = new int[6];
+		public final int[] edmgco = new int[6];
+		public final int[] eattco = new int[6];
 
 		/**
 		 * @param fcombine 自方参战deck是否是联合舰队
 		 */
 		public void accept(BattleOneAttack boa, Boolean fcombine) {
-			Boolean enemyAttack = boa.isEnemyAttack();
-			int attackIndex = boa.getAttackIndex();
-			int[] defenseIndexs = boa.getDefenseIndexs();
-			int[] damages = boa.getDamages();
+			Boolean enemyAttack = boa.enemyAttack;
+			int attackIndex = boa.attackIndex;
+			int[] defenseIndexs = boa.defenseIndexs;
+			int[] damages = boa.dmgs;
+
+			int[][] atter = null, dmger = null;
+			if (enemyAttack == null && fcombine != null) {//敌方非联合舰队
+				atter = new int[][] { fcombine == Boolean.TRUE ? this.fattco : this.fatt, this.eatt };
+				dmger = new int[][] { fcombine == Boolean.TRUE ? this.fdmgco : this.fdmg, this.edmg };
+			} else if (enemyAttack == Boolean.FALSE) {//敌联合舰队,我方攻击
+				atter = new int[][] { this.fatt, this.fattco };
+				dmger = new int[][] { this.edmg, this.edmgco };
+			} else if (enemyAttack == Boolean.TRUE) {//敌联合舰队,敌方攻击
+				atter = new int[][] { this.eatt, this.eattco };
+				dmger = new int[][] { this.fdmg, this.fdmgco };
+			} else {
+				System.out.println("enemyAttack == null && fcombine == null");
+			}
+
 			for (int i = 0; i < damages.length; i++) {
 				if (defenseIndexs[i] == -1) continue;//三炮CI -> [index,-1,-1]
 
-				int da = damages[i];
-				if (da < 0) continue;
-
-				Point p1 = new Point((attackIndex - 1) / 6, (attackIndex - 1) % 6);
-				Point p2 = new Point((defenseIndexs[i] - 1) / 6, (defenseIndexs[i] - 1) % 6);
-				if (enemyAttack == null && fcombine != null) {//敌方非联合舰队
-					new int[][] { fcombine == Boolean.TRUE ? this.fattco : this.fatt, this.eatt }[p1.x][p1.y] += da;
-					new int[][] { fcombine == Boolean.TRUE ? this.fdmgco : this.fdmg, this.edmg }[p2.x][p2.y] += da;
-				} else if (enemyAttack == Boolean.FALSE) {//敌联合舰队,我方攻击
-					new int[][] { this.fatt, this.fattco }[p1.x][p1.y] += da;
-					new int[][] { this.edmg, this.edmgco }[p2.x][p2.y] += da;
-				} else if (enemyAttack == Boolean.TRUE) {//敌联合舰队,敌方攻击
-					new int[][] { this.eatt, this.eattco }[p1.x][p1.y] += da;
-					new int[][] { this.fdmg, this.fdmgco }[p2.x][p2.y] += da;
-				} else {
-					System.out.println("enemyAttack == null && fcombine == null");
-				}
+				if (atter != null) atter[(attackIndex - 1) / 6][(attackIndex - 1) % 6] += damages[i];
+				if (dmger != null) dmger[(defenseIndexs[i] - 1) / 6][(defenseIndexs[i] - 1) % 6] += damages[i];
 			}
-		}
-
-		public int[] getFdmg() {
-			return this.fdmg;
-		}
-
-		public int[] getFatt() {
-			return this.fatt;
-		}
-
-		public int[] getEdmg() {
-			return this.edmg;
-		}
-
-		public int[] getEatt() {
-			return this.eatt;
-		}
-
-		public int[] getFdmgco() {
-			return this.fdmgco;
-		}
-
-		public int[] getFattco() {
-			return this.fattco;
-		}
-
-		public int[] getEdmgco() {
-			return this.edmgco;
-		}
-
-		public int[] getEattco() {
-			return this.eattco;
 		}
 	}
 
@@ -418,16 +335,8 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 	 * @author MoeKagari
 	 */
 	public static class BattleDeckAttackDamage {
-		private final int[] dmg = new int[6];
-		private final int[] attack = new int[6];
-
-		public int[] getDamage() {
-			return this.dmg;
-		}
-
-		public int[] getAttack() {
-			return this.attack;
-		}
+		public final int[] dmg = new int[6];
+		public final int[] attack = new int[6];
 
 		/**
 		 * 受到伤害

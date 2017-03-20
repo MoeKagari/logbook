@@ -7,7 +7,6 @@ import org.eclipse.swt.widgets.MenuItem;
 
 import logbook.context.dto.data.record.DestroyShipDto;
 import logbook.context.update.GlobalContext;
-import logbook.context.update.data.DataType;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
@@ -31,10 +30,4 @@ public class DestroyShipTable extends AbstractTable<DestroyShipDto> {
 	protected void updateData(List<DestroyShipDto> datas) {
 		datas.addAll(GlobalContext.getDestroyshiplist());
 	}
-
-	@Override
-	protected boolean needUpdate(DataType type) {
-		return this.isVisible() && type == DataType.DESTROYSHIP;
-	}
-
 }

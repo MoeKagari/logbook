@@ -8,10 +8,10 @@ import org.eclipse.swt.widgets.MenuItem;
 import logbook.context.dto.data.record.CreateshipDto;
 import logbook.context.dto.translator.ShipDtoTranslator;
 import logbook.context.update.GlobalContext;
-import logbook.context.update.data.DataType;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.util.ToolUtils;
 
 /**
  * 建造记录
@@ -34,16 +34,13 @@ public class CreateShipTable extends AbstractTable<CreateshipDto> {
 		tcms.add(new TableColumnManager("开发资材", true, rd -> Integer.toString(rd.zhicai())));
 		tcms.add(new TableColumnManager("大型建造", rd -> rd.largeflag() ? "是" : ""));
 		tcms.add(new TableColumnManager("高速建造", rd -> rd.highspeed() ? "是" : ""));
+		tcms.add(new TableColumnManager("秘书舰", rd -> ToolUtils.notNullThenHandle(rd.getFlagship(), ToolUtils::returnOneself, "")));
+		tcms.add(new TableColumnManager("秘书舰LV", rd -> ToolUtils.ifHandle(rd.getFlagship() != null, () -> String.valueOf(rd.getFlagshipLevel()), "")));
+		tcms.add(new TableColumnManager("空渠", true, rd -> String.valueOf(rd.getEmptyCount())));
 	}
 
 	@Override
 	protected void updateData(List<CreateshipDto> datas) {
 		datas.addAll(GlobalContext.getCreateshiplist());
 	}
-
-	@Override
-	protected boolean needUpdate(DataType type) {
-		return this.isVisible() && type == DataType.CREATESHIP;
-	}
-
 }

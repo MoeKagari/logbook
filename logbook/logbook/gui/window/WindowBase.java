@@ -1,6 +1,7 @@
 package logbook.gui.window;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
@@ -14,6 +15,7 @@ import logbook.context.update.data.EventListener;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.NotCloseButHiddenShellListener;
 import logbook.util.SwtUtils;
+import logbook.util.ToolUtils;
 
 /**
  * 呼出式窗口的super class
@@ -36,15 +38,14 @@ public abstract class WindowBase implements EventListener {
 		this.shell.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
 		this.shell.setLayoutData(new GridData(GridData.FILL_BOTH));
 		this.shell.addShellListener(new NotCloseButHiddenShellListener(ev -> this.setVisible(false)));
+		this.shell.addShellListener(new NotCloseButHiddenShellListener(this::handlerAfterHidden));
 
 		this.composite = new Composite(this.shell, SWT.NONE);
 		this.composite.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
 		this.composite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		this.menuItem = menuItem;
-		if (menuItem != null) {
-			this.menuItem.addSelectionListener(new ControlSelectionListener(ev -> this.setVisible(this.menuItem.getSelection())));
-		}
+		ToolUtils.notNullThenHandle(menuItem, mi -> mi.addSelectionListener(new ControlSelectionListener(ev -> this.setVisible(mi.getSelection()))));
 
 		this.menuBar = new Menu(this.shell, SWT.BAR);
 		this.shell.setMenuBar(this.menuBar);
@@ -74,29 +75,41 @@ public abstract class WindowBase implements EventListener {
 	}
 
 	public void setVisible(boolean visible) {
-		if (this.menuItem != null) {
-			this.menuItem.setSelection(visible);
-		}
+		ToolUtils.ifHandle(visible, this::handlerBeforeDisplay);
+		ToolUtils.notNullThenHandle(this.menuItem, mi -> mi.setSelection(visible));
+		ToolUtils.ifHandle(visible, () -> this.shell.setMinimized(false));
 		this.shell.setVisible(visible);
-		if (visible) {
-			this.shell.setMinimized(false);
-			this.shell.forceFocus();
-		}
+		ToolUtils.ifHandle(visible, () -> this.shell.forceActive());
 	}
 
-	public boolean isVisible() {
+	protected boolean isVisible() {
 		return this.shell.isVisible() && (this.shell.getMinimized() == false);
 	}
 
 	/*------------------------------------------------------------------------------------------------------------*/
 
+	/** 显示窗口前的操作 */
+	protected void handlerBeforeDisplay() {}
+
+	/** 关闭窗口时的操作 */
+	protected void handlerAfterHidden(ShellEvent ev) {}
+
+	/** 更新窗口(延迟redraw) */
+	protected void updateWindowRedraw(Runnable run) {
+		this.shell.setRedraw(false);
+		run.run();
+		this.shell.setRedraw(true);
+	}
+
 	@Override
 	public void update(DataType type) {}
 
+	/** 默认size */
 	public Point getDefaultSize() {
 		return SwtUtils.DPIAwareSize(new Point(400, 200));
 	}
 
+	/** 默认shellstyle */
 	public int getShellStyle() {
 		return SWT.CLOSE | SWT.TITLE | SWT.RESIZE | SWT.MIN;
 	}

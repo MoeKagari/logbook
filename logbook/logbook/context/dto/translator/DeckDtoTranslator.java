@@ -2,6 +2,7 @@ package logbook.context.dto.translator;
 
 import java.util.Arrays;
 
+import logbook.config.AppConstants;
 import logbook.context.dto.data.DeckDto;
 import logbook.context.dto.data.ShipDto;
 import logbook.context.update.GlobalContext;
@@ -33,14 +34,11 @@ public class DeckDtoTranslator {
 	}
 
 	public static String[] getShipNames(DeckDto deck) {
-		String[] names = new String[6];
 		if (deck != null) {
-			int[] ships = deck.getShips();
-			for (int i = 0; i < 6; i++) {
-				names[i] = ToolUtils.notNullThenHandle(GlobalContext.getShipMap().get(ships[i]), ShipDtoTranslator::getName, null);
-			}
+			return ToolUtils.toStringArray(deck.getShips(), ship -> ToolUtils.notNullThenHandle(GlobalContext.getShipMap().get(ship), ShipDtoTranslator::getName, ""));
+		} else {
+			return AppConstants.EMPTY_NAMES;
 		}
-		return names;
 	}
 
 	public static boolean canAkashiRepair(DeckDto deck) {

@@ -8,7 +8,7 @@ import logbook.context.update.GlobalContext;
 public class ShipDtoTranslator {
 
 	public static String getName(ShipDto ship) {
-		return getName(ship.getShipId());
+		return ship == null ? "" : getName(ship.getShipId());
 	}
 
 	public static String getName(int shipId) {

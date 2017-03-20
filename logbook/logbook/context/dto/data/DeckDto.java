@@ -58,7 +58,7 @@ public class DeckDto {
 
 	/*-------------------------------------------------------------------------------------------*/
 
-	public void setShips(int[] shipsTemp) {
+	private void setShips(int[] shipsTemp) {
 		int notnull = 0;//非 -1 提到前面
 
 		for (int i = 0; i < shipsTemp.length; i++) {

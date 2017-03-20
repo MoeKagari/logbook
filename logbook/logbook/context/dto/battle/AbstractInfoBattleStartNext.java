@@ -7,6 +7,7 @@ import javax.json.JsonObject;
 import logbook.context.update.data.Data;
 
 public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
+	private final int bossCellNo;
 	private final int mapareaId;
 	private final int mapareaNo;
 	private final int next;
@@ -16,6 +17,7 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 	private final ArrayList<BattleStartNext_GetItem> items = new ArrayList<>();
 
 	public AbstractInfoBattleStartNext(Data data, JsonObject json) {
+		this.bossCellNo = json.getInt("api_bosscell_no");
 		this.mapareaId = json.getInt("api_maparea_id");
 		this.mapareaNo = json.getInt("api_mapinfo_no");
 		this.next = json.getInt("api_no");
@@ -29,6 +31,10 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 
 	public ArrayList<BattleStartNext_GetItem> getItems() {
 		return this.items;
+	}
+
+	public boolean isBoss() {
+		return this.bossCellNo == this.next;
 	}
 
 	public boolean isGoal() {

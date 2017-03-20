@@ -506,6 +506,10 @@ public class GlobalContext {
 		ToolUtils.notNullThenHandle(shipMap.get(id), handler);
 	}
 
+	public static ShipDto getSecretaryship() {
+		return ToolUtils.notNullThenHandle(deckRoom[0].getDeck(), deck -> GlobalContext.shipMap.get(deck.getShips()[0]), null);
+	}
+
 	/*----------------------------------------------getter------------------------------------------------------------------*/
 
 	public static PLTime getPLTIME() {

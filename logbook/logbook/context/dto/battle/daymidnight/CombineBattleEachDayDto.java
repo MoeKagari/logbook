@@ -7,7 +7,6 @@ import logbook.context.dto.battle.BattleType;
 import logbook.context.update.data.Data;
 
 public class CombineBattleEachDayDto extends AbstractBattleDay {
-
 	public CombineBattleEachDayDto(Data data, JsonObject json) {
 		super(data, json);
 	}
@@ -21,5 +20,4 @@ public class CombineBattleEachDayDto extends AbstractBattleDay {
 	public BattleType getBattleType() {
 		return BattleType.COMBINEBATTLE_EACH_DAY;
 	}
-
 }

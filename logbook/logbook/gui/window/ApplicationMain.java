@@ -51,6 +51,7 @@ import logbook.internal.ShutdownHookThread;
 import logbook.internal.SyncExecApplicationMain;
 import logbook.server.proxy.ProxyServer;
 import logbook.util.SwtUtils;
+import logbook.util.ToolUtils;
 
 public class ApplicationMain {
 
@@ -118,6 +119,8 @@ public class ApplicationMain {
 
 	/** 战斗窗口 */
 	private BattleWindow battleWindow;
+	/** 地图详情 */
+	private MapinfoWindow mapinfoWindow;
 
 	/** 开发记录 */
 	private CreateItemTable createItemTable;
@@ -127,24 +130,23 @@ public class ApplicationMain {
 	private MissionResultTable missionResultTable;
 	/** 资源记录 */
 	private MaterialRecordTable materialRecordTable;
+
 	/** 解体记录 */
 	private DestroyShipTable destroyShipTable;
 	/** 废弃记录 */
 	private DestroyItemTable destroyItemTable;
-	/** 战斗记录 */
-	private BattleListTable battleTable;
-	/** 掉落记录 */
-	private DropListTable dropTable;
 
-	/** 所有任务 */
-	private QuestListTable questListTable;
+	/** 战斗记录 */
+	private BattleListTable battleListTable;
+	/** 掉落记录 */
+	private DropListTable dropListTable;
+
 	/** 所有舰娘 */
 	private ShipListTable shipListTable;
 	/** 所有装备 */
 	private ItemListTable itemListTable;
-
-	/** 地图详情 */
-	private MapinfoWindow mapinfoWindow;
+	/** 所有任务 */
+	private QuestListTable questListTable;
 
 	/*------------------------------------------------------------------------------------------------------*/
 
@@ -422,11 +424,11 @@ public class ApplicationMain {
 
 			MenuItem battle = new MenuItem(recordMenu, SWT.CHECK);
 			battle.setText("战斗记录");
-			this.battleTable = new BattleListTable(this, battle, battle.getText());
+			this.battleListTable = new BattleListTable(this, battle, battle.getText());
 
 			MenuItem drop = new MenuItem(recordMenu, SWT.CHECK);
 			drop.setText("掉落记录");
-			this.dropTable = new DropListTable(this, drop, drop.getText());
+			this.dropListTable = new DropListTable(this, drop, drop.getText());
 		}
 
 		MenuItem fleetMenuItem = new MenuItem(this.menubar, SWT.CASCADE);
@@ -557,7 +559,7 @@ public class ApplicationMain {
 				this.missionResultTable, this.materialRecordTable, //
 				this.questListTable, this.shipListTable, this.itemListTable,//
 				this.destroyShipTable, this.destroyItemTable,//
-				this.battleTable, this.dropTable//
+				this.battleListTable, this.dropListTable//
 		};
 	}
 
@@ -590,8 +592,7 @@ public class ApplicationMain {
 		this.printNewDay(TimeString.getCurrentTime());
 		this.logPrint("航海日志启动");
 		this.shell.open();
-		this.shell.setFocus();
-		this.shell.forceFocus();
+		this.shell.forceActive();
 		while (this.shell.isDisposed() == false) {
 			if (this.display.readAndDispatch() == false) {
 				this.display.sleep();
@@ -600,12 +601,9 @@ public class ApplicationMain {
 	}
 
 	private void setVisible(boolean visible) {
+		ToolUtils.ifHandle(visible, () -> this.shell.setMinimized(false));
 		this.shell.setVisible(visible);
-		if (visible) {
-			this.shell.setMinimized(false);
-			this.shell.setFocus();
-			this.shell.forceFocus();
-		}
+		ToolUtils.ifHandle(visible, () -> this.shell.forceActive());
 	}
 
 	private void dispose() {

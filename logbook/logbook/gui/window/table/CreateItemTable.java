@@ -8,7 +8,6 @@ import org.eclipse.swt.widgets.MenuItem;
 import logbook.context.dto.data.record.CreateItemDto;
 import logbook.context.dto.translator.ItemDtoTranslator;
 import logbook.context.update.GlobalContext;
-import logbook.context.update.data.DataType;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
@@ -28,20 +27,14 @@ public class CreateItemTable extends AbstractTable<CreateItemDto> {
 		tcms.add(new TableColumnManager("日期", rd -> TimeString.timeToStringForTable(rd.getTime())));
 		tcms.add(new TableColumnManager("状态", rd -> rd.isSuccess() ? "成功" : "失败"));
 		tcms.add(new TableColumnManager("装备", rd -> rd.isSuccess() ? ItemDtoTranslator.getName(rd.getSlotitemId()) : ""));
-		tcms.add(new TableColumnManager("油", true, rd -> Integer.toString(rd.getMaterial()[0])));
-		tcms.add(new TableColumnManager("弹", true, rd -> Integer.toString(rd.getMaterial()[1])));
-		tcms.add(new TableColumnManager("钢", true, rd -> Integer.toString(rd.getMaterial()[2])));
-		tcms.add(new TableColumnManager("铝", true, rd -> Integer.toString(rd.getMaterial()[3])));
+		tcms.add(new TableColumnManager("油", true, rd -> rd.getMaterial()[0]));
+		tcms.add(new TableColumnManager("弹", true, rd -> rd.getMaterial()[1]));
+		tcms.add(new TableColumnManager("钢", true, rd -> rd.getMaterial()[2]));
+		tcms.add(new TableColumnManager("铝", true, rd -> rd.getMaterial()[3]));
 	}
 
 	@Override
 	protected void updateData(List<CreateItemDto> datas) {
 		datas.addAll(GlobalContext.getCreateitemlist());
 	}
-
-	@Override
-	protected boolean needUpdate(DataType type) {
-		return this.isVisible() && type == DataType.CREATEITEM;
-	}
-
 }

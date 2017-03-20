@@ -7,7 +7,6 @@ import logbook.context.dto.battle.BattleType;
 import logbook.context.update.data.Data;
 
 public class BattleAirbattleLDDto extends AbstractBattleDay {
-
 	public BattleAirbattleLDDto(Data data, JsonObject json) {
 		super(data, json);
 	}
@@ -16,5 +15,4 @@ public class BattleAirbattleLDDto extends AbstractBattleDay {
 	public BattleType getBattleType() {
 		return BattleType.BATTLE_AIRBATTLE_LD;
 	}
-
 }

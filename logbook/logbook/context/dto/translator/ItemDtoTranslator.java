@@ -25,8 +25,7 @@ public class ItemDtoTranslator {
 
 	public static String getTypeString(int slotitemId) {
 		MasterSlotitemDataDto msd = MasterDataDtoTranslator.getMasterSlotitemDataDto(slotitemId);
-		return msd == null ? "" : Arrays.toString(msd.getType());
-
+		return ToolUtils.notNullThenHandle(msd, m -> Arrays.toString(m.getType()), "");
 	}
 
 	public static char getOneWordName(ItemDto item) {

@@ -7,7 +7,6 @@ import logbook.context.dto.battle.BattleType;
 import logbook.context.update.data.Data;
 
 public class BattleMidnightSPDto extends AbstractBattleMidnight {
-
 	public BattleMidnightSPDto(Data data, JsonObject json) {
 		super(data, json);
 	}
@@ -21,5 +20,4 @@ public class BattleMidnightSPDto extends AbstractBattleMidnight {
 	public BattleType getBattleType() {
 		return BattleType.BATTLE_MIDNIGHT_SP;
 	}
-
 }

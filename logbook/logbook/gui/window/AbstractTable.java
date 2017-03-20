@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Event;
@@ -18,7 +19,6 @@ import org.eclipse.swt.widgets.TableItem;
 
 import logbook.context.update.data.DataType;
 import logbook.gui.listener.ControlSelectionListener;
-import logbook.gui.listener.NotCloseButHiddenShellListener;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
@@ -33,7 +33,6 @@ public abstract class AbstractTable<T> extends WindowBase {
 		this.initTCMS(this.tcms);
 		this.initTable();
 		this.initMenuBar();
-		this.getShell().addShellListener(new NotCloseButHiddenShellListener(ev -> this.table.removeAll()));
 	}
 
 	private void initTable() {
@@ -56,7 +55,7 @@ public abstract class AbstractTable<T> extends WindowBase {
 		{
 			MenuItem update = new MenuItem(cmdMenu, SWT.PUSH);
 			update.setText("刷新");
-			update.addSelectionListener(new ControlSelectionListener(ev -> this.updateTable()));
+			update.addSelectionListener(new ControlSelectionListener(ev -> this.updateWindowRedraw(this::updateTable)));
 		}
 	}
 
@@ -64,13 +63,10 @@ public abstract class AbstractTable<T> extends WindowBase {
 
 	@Override
 	public void update(DataType type) {
-		if (this.getShell().isVisible() && this.needUpdate(type)) {
-			this.updateTable();
-		}
+		ToolUtils.ifHandle(this.getShell().isVisible() && this.needUpdate(type), () -> this.updateWindowRedraw(this::updateTable));
 	}
 
 	private void updateTable() {
-		this.getShell().setRedraw(false);
 		ToolUtils.forEach(this.table.getItems(), TableItem::dispose);
 
 		//更新数据
@@ -79,22 +75,38 @@ public abstract class AbstractTable<T> extends WindowBase {
 			T data = this.datas.get(row);
 			TableItem tableItem = new TableItem(this.table, SWT.NONE);
 			for (int col = 0; col < this.tcms.size(); col++) {
-				String text = this.tcms.get(col).getValue(row + 1, data);
-				tableItem.setText(col, text);
+				tableItem.setText(col, this.tcms.get(col).getValue(row + 1, data));
 			}
 		}
 		this.datas.clear();
 
 		//排序
-		TableColumn tableColumn = this.table.getSortColumn();
-		for (TableColumnManager tcm : this.tcms) {
-			if (tcm.stc.tableColumn == tableColumn) {
-				tcm.stc.sortTable();
-			}
-		}
+		TableColumn sortColumn = this.table.getSortColumn();
+		this.tcms.stream().filter(tcm -> tcm.stc.tableColumn == sortColumn).forEach(tcm -> this.sortTable(tcm.stc));
 
 		ToolUtils.forEach(this.table.getColumns(), TableColumn::pack);
-		this.getShell().setRedraw(true);
+	}
+
+	/**
+	 * 排序table
+	 * @param stc 需要排序的TableColumn
+	 */
+	private void sortTable(SortedTableColumn stc) {
+		TableItem[] tableItems = this.table.getItems();
+		for (int i = 1; i < tableItems.length; i++) {
+			TableItem tableItem = tableItems[i];
+			String value = tableItem.getText(stc.index);
+			for (int j = 0; j < i; j++) {
+				if (stc.compare(value, tableItems[j].getText(stc.index)) > 0) {
+					String[] values = ToolUtils.toStringArray(this.tcms.size(), n -> tableItem.getText(n));
+					tableItem.dispose();
+					new TableItem(this.table, SWT.NONE, j).setText(values);
+					tableItems = this.table.getItems();
+					break;
+				}
+			}
+		}//刷新行号
+		ToolUtils.forEach(this.table.getItems(), (tableItem, index) -> tableItem.setText(0, String.valueOf(index + 1)));
 	}
 
 	/*------------------------------------------------------------------------------------------------------------------------*/
@@ -118,9 +130,14 @@ public abstract class AbstractTable<T> extends WindowBase {
 	}
 
 	@Override
-	public void setVisible(boolean visible) {
-		if (visible) this.updateTable();
-		super.setVisible(visible);
+	protected void handlerAfterHidden(ShellEvent ev) {
+		ToolUtils.forEach(this.table.getItems(), TableItem::dispose);
+	}
+
+	/** 显示之前更新 */
+	@Override
+	protected void handlerBeforeDisplay() {
+		this.updateWindowRedraw(this::updateTable);
 	}
 
 	/**
@@ -133,18 +150,18 @@ public abstract class AbstractTable<T> extends WindowBase {
 		private final Function<T, Object> value;
 		private SortedTableColumn stc = null;
 
+		public TableColumnManager(String name, boolean isInteger, Function<T, Object> value) {
+			this.name = name;
+			this.isInteger = isInteger;
+			this.value = value;
+		}
+
 		public TableColumnManager(String name, Function<T, Object> value) {
 			this(name, false, value);
 		}
 
-		public TableColumnManager(String name, boolean isInteger, Function<T, Object> value) {
-			this.isInteger = isInteger;
-			this.name = name;
-			this.value = value;
-		}
-
-		public String getValue(int count, T t) {
-			return this.value == null ? Integer.toString(count) : this.value.apply(t).toString();//value==null,返回行号
+		public String getValue(int index, T t) {
+			return this.value == null ? Integer.toString(index) : this.value.apply(t).toString();
 		}
 	}
 
@@ -171,39 +188,11 @@ public abstract class AbstractTable<T> extends WindowBase {
 		public void handleEvent(Event ev) {
 			//不对行头排序
 			if (this.index == 0) return;
-
 			//如果不是改变排序列,则改变排序方向
-			if (AbstractTable.this.table.getSortColumn() == this.tableColumn) {
-				this.direction = !this.direction;
-			}
-			this.sortTable();
+			ToolUtils.ifHandle(AbstractTable.this.table.getSortColumn() == this.tableColumn, () -> this.direction = !this.direction);
+			AbstractTable.this.updateWindowRedraw(() -> AbstractTable.this.sortTable(this));
 			AbstractTable.this.table.setSortColumn(this.tableColumn);
 			AbstractTable.this.table.setSortDirection(this.direction ? SWT.UP : SWT.DOWN);
-		}
-
-		public void sortTable() {
-			AbstractTable.this.getShell().setRedraw(false);
-
-			TableItem[] tableItems = AbstractTable.this.table.getItems();
-			for (int i = 1; i < tableItems.length; i++) {
-				TableItem tableItem = tableItems[i];
-				String value = tableItem.getText(this.index);
-
-				for (int j = 0; j < i; j++) {
-					if (this.compare(value, tableItems[j].getText(this.index)) > 0) {
-						String[] values = ToolUtils.toStringArray(AbstractTable.this.tcms.size(), n -> tableItem.getText(n));
-						tableItem.dispose();
-						new TableItem(AbstractTable.this.table, SWT.NONE, j).setText(values);
-						tableItems = AbstractTable.this.table.getItems();
-						break;
-					}
-				}
-			}
-
-			//刷新行号
-			ToolUtils.forEach(AbstractTable.this.table.getItems(), (tableItem, i) -> tableItem.setText(0, String.valueOf(i + 1)));
-
-			AbstractTable.this.getShell().setRedraw(true);
 		}
 
 		public int compare(String value, String othervalue) {
@@ -225,4 +214,5 @@ public abstract class AbstractTable<T> extends WindowBase {
 			}
 		}
 	}
+
 }

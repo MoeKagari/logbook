@@ -75,15 +75,13 @@ public abstract class AbstractBattleMidnight extends AbstractBattle {
 			}
 
 			BattleOneAttackSimulator boas = new BattleOneAttackSimulator();
-			this.battleAttacks.forEach(boa -> boas.accept(boa, false));
-			this.accept(boas);
-		}
-
-		private void accept(BattleOneAttackSimulator boas) {
-			this.fAttackDamage.getDamage(boas.getFdmg());
-			this.fAttackDamage.setAttack(boas.getFatt());
-			this.eAttackDamage.getDamage(boas.getEdmg());
-			this.eAttackDamage.setAttack(boas.getEatt());
+			this.battleAttacks.forEach(boa -> boas.accept(boa, Boolean.FALSE));
+			{
+				this.fAttackDamage.getDamage(boas.fdmg);
+				this.fAttackDamage.setAttack(boas.fatt);
+				this.eAttackDamage.getDamage(boas.edmg);
+				this.eAttackDamage.setAttack(boas.eatt);
+			}
 		}
 
 		public BattleDeckAttackDamage getfAttackDamage() {

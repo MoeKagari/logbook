@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -33,14 +34,9 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("装备", SortItem::getName));
 		tcms.add(new TableColumnManager("种类", SortItem::getType));
-		tcms.add(new TableColumnManager("改修等级", true, rd -> {
-			int level = rd.getLevel();
-			return level > 0 ? level : "";
-		}));
-		tcms.add(new TableColumnManager("熟练度", true, rd -> {
-			int alv = rd.getAlv();
-			return alv > 0 ? alv : "";
-		}));
+		IntFunction<String> levelString = level -> level > 0 ? String.valueOf(level) : "";
+		tcms.add(new TableColumnManager("改修", true, rd -> levelString.apply(rd.getLevel())));
+		tcms.add(new TableColumnManager("熟练度", true, rd -> levelString.apply(rd.getAlv())));
 		tcms.add(new TableColumnManager("个数", true, SortItem::getCount));
 		tcms.add(new TableColumnManager("装备着的舰娘", rd -> rd.getWhichShipWithItem()));
 	}

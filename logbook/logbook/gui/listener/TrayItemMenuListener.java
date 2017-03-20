@@ -27,5 +27,4 @@ public class TrayItemMenuListener implements MenuDetectListener {
 	public void menuDetected(MenuDetectEvent e) {
 		this.menu.setVisible(true);
 	}
-
 }

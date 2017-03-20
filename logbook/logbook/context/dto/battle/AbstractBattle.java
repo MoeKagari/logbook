@@ -8,6 +8,7 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
+import logbook.config.AppConstants;
 import logbook.context.dto.battle.info.InfoBattleStartAirBaseDto;
 import logbook.context.dto.translator.DeckDtoTranslator;
 import logbook.context.dto.translator.ShipDtoTranslator;
@@ -51,15 +52,17 @@ public abstract class AbstractBattle extends BattleDto {
 				this.fDeck.setNames(DeckDtoTranslator.getShipNames(dissociateInt(json.get("api_deck_id"), 1)));
 			} else if (json.containsKey("api_dock_id")) {
 				this.fDeck.setNames(DeckDtoTranslator.getShipNames(dissociateInt(json.get("api_dock_id"), 1)));
+			} else {
+				this.fDeck.setNames(AppConstants.EMPTY_NAMES);
 			}
 		}
 		{//敌方
 			int[] ids = dissociateIntarray(json, "api_ship_ke");
-			this.eDeck.setNames(ToolUtils.intToString(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
+			this.eDeck.setNames(ToolUtils.toStringArray(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
 		}
 		if (json.containsKey("api_ship_ke_combined")) {
 			int[] ids = dissociateIntarray(json, "api_ship_ke_combined");
-			this.eDeckCombine.setNames(ToolUtils.intToString(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
+			this.eDeckCombine.setNames(ToolUtils.toStringArray(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
 		}
 
 		//索敌
@@ -69,10 +72,10 @@ public abstract class AbstractBattle extends BattleDto {
 
 		//退避
 		if (json.containsKey("api_escape_idx")) {
-			ToolUtils.forEach(JsonUtils.getIntArray(json, "api_escape_idx"), index -> this.fDeck.getEscapes().add(index - 1));
+			ToolUtils.forEach(JsonUtils.getIntArray(json, "api_escape_idx"), index -> this.fDeck.escapes.add(index - 1));
 		}
 		if (json.containsKey("api_escape_idx_combined")) {
-			ToolUtils.forEach(JsonUtils.getIntArray(json, "api_escape_idx_combined"), index -> this.fDeckCombine.getEscapes().add(index - 1));
+			ToolUtils.forEach(JsonUtils.getIntArray(json, "api_escape_idx_combined"), index -> this.fDeckCombine.escapes.add(index - 1));
 		}
 	}
 

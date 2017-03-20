@@ -7,6 +7,7 @@ public class AppConstants {
 
 	public static final String MAINWINDOWNAME = "航海日志";
 	public static final String[] DEFAULT_FLEET_NAME = { "第一舰队", "第二舰队", "第三舰队", "第四舰队" };
+	public static final String[] EMPTY_NAMES = { "", "", "", "", "", "" };
 
 	public static final SimpleDateFormat DECK_NDOCK_COMPLETE_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
 	public static final SimpleDateFormat DECK_NDOCK_COMPLETE_TIME_FORMAT_LONG = new SimpleDateFormat("MM-dd HH:mm:ss");

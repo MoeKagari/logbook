@@ -37,5 +37,4 @@ public class MaterialRecordTable extends AbstractTable<MaterialRecordDto> {
 	protected void updateData(List<MaterialRecordDto> datas) {
 		datas.addAll(GlobalContext.getMaterialRecord());
 	}
-
 }

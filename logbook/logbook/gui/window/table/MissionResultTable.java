@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import org.eclipse.swt.widgets.MenuItem;
 
 import logbook.context.dto.data.record.MissionResultDto;
 import logbook.context.dto.data.record.MissionResultDto.MissionResultItem;
 import logbook.context.update.GlobalContext;
-import logbook.context.update.data.DataType;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
@@ -30,7 +30,7 @@ public class MissionResultTable extends AbstractTable<MissionResultDto> {
 		tcms.add(new TableColumnManager("日期", rd -> TimeString.timeToStringForTable(rd.getTime())));
 		tcms.add(new TableColumnManager("远征", rd -> rd.getName()));
 		tcms.add(new TableColumnManager("状态", rd -> rd.getStateString()));
-		Function<Integer, String> materialString = material -> material == 0 ? "" : String.valueOf(material);
+		IntFunction<String> materialString = material -> material == 0 ? "" : String.valueOf(material);
 		tcms.add(new TableColumnManager("油", true, rd -> materialString.apply(rd.getMaterial()[0])));
 		tcms.add(new TableColumnManager("弹", true, rd -> materialString.apply(rd.getMaterial()[1])));
 		tcms.add(new TableColumnManager("钢", true, rd -> materialString.apply(rd.getMaterial()[2])));
@@ -46,10 +46,4 @@ public class MissionResultTable extends AbstractTable<MissionResultDto> {
 	protected void updateData(List<MissionResultDto> datas) {
 		datas.addAll(GlobalContext.getMissionlist());
 	}
-
-	@Override
-	protected boolean needUpdate(DataType type) {
-		return this.isVisible() && type == DataType.MISSIONRESULT;
-	}
-
 }

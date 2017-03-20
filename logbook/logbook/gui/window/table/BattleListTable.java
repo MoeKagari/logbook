@@ -29,7 +29,7 @@ public class BattleListTable extends AbstractTable<BattleListTable.SortBattle> {
 		tcms.add(new TableColumnManager("时间", rd -> AppConstants.TABLE_TIME_FORMAT.format(new Date(rd.getTime()))));
 		tcms.add(new TableColumnManager("舰队", SortBattle::getFleet));
 		tcms.add(new TableColumnManager("地图", SortBattle::getMap));
-		tcms.add(new TableColumnManager("起点", SortBattle::getStart));
+		tcms.add(new TableColumnManager("起点", true, SortBattle::getStart));
 	}
 
 	@Override

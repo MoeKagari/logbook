@@ -2,7 +2,7 @@ package logbook.gui.window.table;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import org.eclipse.swt.widgets.MenuItem;
 
@@ -30,7 +30,7 @@ public class QuestListTable extends AbstractTable<QuestDto> {
 		tcms.add(new TableColumnManager("任务名", rd -> rd.getInformation().getTitle()));
 		tcms.add(new TableColumnManager("种类", rd -> rd.getInformation().getCategoryString()));
 		tcms.add(new TableColumnManager("类型", rd -> rd.getInformation().getTypeString()));
-		Function<Integer, Object> materialString = material -> material <= 0 ? "" : material;
+		IntFunction<Object> materialString = material -> material <= 0 ? "" : material;
 		tcms.add(new TableColumnManager("油", true, rd -> materialString.apply(rd.getInformation().getMaterial()[0])));
 		tcms.add(new TableColumnManager("弹", true, rd -> materialString.apply(rd.getInformation().getMaterial()[1])));
 		tcms.add(new TableColumnManager("钢", true, rd -> materialString.apply(rd.getInformation().getMaterial()[2])));
@@ -47,5 +47,4 @@ public class QuestListTable extends AbstractTable<QuestDto> {
 	protected boolean needUpdate(DataType type) {
 		return type == DataType.QUEST_CLEAR || type == DataType.QUEST_LIST || type == DataType.QUEST_START || type == DataType.QUEST_STOP;
 	}
-
 }

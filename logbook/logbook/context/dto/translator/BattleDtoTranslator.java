@@ -27,6 +27,7 @@ import logbook.context.dto.battle.AbstractBattleDay.BattleDayStageType;
 import logbook.context.dto.battle.AbstractBattleDay.InjectionKouko;
 import logbook.context.dto.battle.AbstractBattleDay.Kouko;
 import logbook.context.dto.battle.AbstractBattleDay.OpeningAttack;
+import logbook.context.dto.battle.AbstractBattleDay.OpeningTaisen;
 import logbook.context.dto.battle.AbstractBattleMidnight;
 import logbook.context.dto.battle.AbstractBattleMidnight.BattleMidnightStage;
 import logbook.context.dto.battle.AbstractInfoBattle;
@@ -224,16 +225,16 @@ public class BattleDtoTranslator {
 
 		BiConsumer<BattleDeck, BattleDeckAttackDamage> addOneState = (bd, bdad) -> {
 			if (bd != null && bd.exist()) {
-				int[] nowhps = bd.getNowhp();
-				int[] maxhps = bd.getMaxhp();
-				int[] dmgs = bdad.getDamage();
+				int[] nowhps = bd.nowhps;
+				int[] maxhps = bd.maxhps;
+				int[] dmgs = bdad.dmg;
 				int count = bd.getShipCount();
 
 				String[] oneStateBefore = new String[count];
 				String[] oneStateAfter = new String[count];
 				for (int i = 0; i < count; i++) {
-					oneStateBefore[i] = bd.getEscapes().contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(nowhps[i] * 1.0 / maxhps[i]);
-					oneStateAfter[i] = bd.getEscapes().contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString((nowhps[i] - dmgs[i]) * 1.0 / maxhps[i]);
+					oneStateBefore[i] = bd.escapes.contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(nowhps[i] * 1.0 / maxhps[i]);
+					oneStateAfter[i] = bd.escapes.contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString((nowhps[i] - dmgs[i]) * 1.0 / maxhps[i]);
 				}
 				before.add(oneStateBefore);
 				after.add(oneStateAfter);
@@ -321,6 +322,13 @@ public class BattleDtoTranslator {
 		addBattleInformation(parent, battle);
 
 		SwtUtils.insertBlank(parent);
+		if (battle instanceof AbstractBattleMidnight) {
+			SwtUtils.initLabel(new Label(parent, SWT.CENTER), "夜战", new GridData(GridData.FILL_HORIZONTAL));
+
+			//夜战只有一个stage,所以只加入详细的攻击流程
+			AbstractBattleMidnight battleMidnight = ((AbstractBattleMidnight) battle);
+			addBattleAttack(parent, battle, battleMidnight.getBattleMidnightStage().getBattleAttacks(), enemyAttack -> Boolean.FALSE);
+		}
 		if (battle instanceof AbstractBattleDay) {
 			SwtUtils.initLabel(new Label(parent, SWT.CENTER), "昼战流程", new GridData(GridData.FILL_HORIZONTAL));
 
@@ -338,21 +346,25 @@ public class BattleDtoTranslator {
 				//详细的攻击流程,仅有,开幕对潜,开幕雷击,炮击战,雷击战
 				if (stage.getType() == BattleDayStageType.OPENINGTAISEN || stage.getType() == BattleDayStageType.HOUGEKI) {
 					haveAttack = true;
-					addBattleAttack(parent, stage.getBattleAttacks());
+					addBattleAttack(parent, battle, stage.battleAttacks, ((OpeningTaisen) stage)::getSimulatorObject);
 				} else if (stage.getType() == BattleDayStageType.OPENINGATTACK || stage.getType() == BattleDayStageType.RAIGEKI) {
 					haveAttack = true;
 					addRaigekiAttack(parent, battleDay, (OpeningAttack) stage);
-				} else if (stage.getType() == BattleDayStageType.INJECTIONKOUKO) {
+				}
+
+				//喷气机受损情况
+				if (stage.getType() == BattleDayStageType.INJECTIONKOUKO) {
 					String text;
 					InjectionKouko ik = (InjectionKouko) stage;
 					Function<int[], String> getPLSString = pls -> pls == null ? "" : (pls[0] + "→" + (pls[0] - pls[1]));
 
 					int[][] planeLostStage1 = ik.getPlaneLostStage1();
-					text = "自:" + getPLSString.apply(planeLostStage1[0]) + "," + getPLSString.apply(planeLostStage1[1]);
+					int[][] planeLostStage2 = ik.getPlaneLostStage2();
+
+					text = "自:" + getPLSString.apply(planeLostStage1[0]) + "," + getPLSString.apply(planeLostStage2[0]);
 					SwtUtils.initLabel(new Label(parent, SWT.LEFT), text, new GridData(GridData.FILL_HORIZONTAL));
 
-					int[][] planeLostStage2 = ik.getPlaneLostStage2();
-					text = "敌:" + getPLSString.apply(planeLostStage2[0]) + "," + getPLSString.apply(planeLostStage2[1]);
+					text = "敌:" + getPLSString.apply(planeLostStage1[1]) + "," + getPLSString.apply(planeLostStage2[1]);
 					SwtUtils.initLabel(new Label(parent, SWT.LEFT), text, new GridData(GridData.FILL_HORIZONTAL));
 				}
 
@@ -360,29 +372,22 @@ public class BattleDtoTranslator {
 				Composite deckNowState = new Composite(parent, SWT.NONE);
 				deckNowState.setLayout(new RowLayout());
 				if (battleDay.getfDeck() != null) {
-					addOnedeckNowState(deckNowState, battleDay.getfDeck(), fbdad, stage.getfAttackDamage(), haveAttack);
-					fbdad.add(stage.getfAttackDamage());
+					addOnedeckNowState(deckNowState, battleDay.getfDeck(), fbdad, stage.fAttackDamage, haveAttack);
+					fbdad.add(stage.fAttackDamage);
 				}
 				if (battleDay.getfDeckCombine() != null) {
-					addOnedeckNowState(deckNowState, battleDay.getfDeckCombine(), fbdadco, stage.getfAttackDamagecombine(), haveAttack);
-					fbdadco.add(stage.getfAttackDamagecombine());
+					addOnedeckNowState(deckNowState, battleDay.getfDeckCombine(), fbdadco, stage.fAttackDamageco, haveAttack);
+					fbdadco.add(stage.fAttackDamageco);
 				}
 				if (battleDay.geteDeck() != null) {
-					addOnedeckNowState(deckNowState, battleDay.geteDeck(), ebdad, stage.geteAttackDamage(), haveAttack);
-					ebdad.add(stage.geteAttackDamage());
+					addOnedeckNowState(deckNowState, battleDay.geteDeck(), ebdad, stage.eAttackDamage, haveAttack);
+					ebdad.add(stage.eAttackDamage);
 				}
 				if (battleDay.geteDeckCombine() != null) {
-					addOnedeckNowState(deckNowState, battleDay.geteDeckCombine(), ebdadco, stage.geteAttackDamagecombine(), haveAttack);
-					ebdadco.add(stage.geteAttackDamagecombine());
+					addOnedeckNowState(deckNowState, battleDay.geteDeckCombine(), ebdadco, stage.eAttackDamageco, haveAttack);
+					ebdadco.add(stage.eAttackDamageco);
 				}
 			});
-		}
-		if (battle instanceof AbstractBattleMidnight) {
-			SwtUtils.initLabel(new Label(parent, SWT.CENTER), "夜战", new GridData(GridData.FILL_HORIZONTAL));
-
-			//夜战只有一个stage,所以只加入详细的攻击流程
-			AbstractBattleMidnight battleMidnight = ((AbstractBattleMidnight) battle);
-			addBattleAttack(parent, battleMidnight.getBattleMidnightStage().getBattleAttacks());
 		}
 	}
 
@@ -420,11 +425,11 @@ public class BattleDtoTranslator {
 			parts[i] = part;
 		}
 
-		String[] names = bd.getName();
-		int[] nowhps = bd.getNowhp();
-		int[] maxhps = bd.getMaxhp();
-		int[] dmgs = bdad.getDamage();
-		int[] attacks = bdad.getAttack();
+		String[] names = bd.names;
+		int[] nowhps = bd.nowhps;
+		int[] maxhps = bd.maxhps;
+		int[] dmgs = bdad.dmg;
+		int[] attacks = bdad.attack;
 		for (int i = 0; i < 6; i++) {
 			if (nowhps[i] == -1) continue;
 
@@ -439,9 +444,9 @@ public class BattleDtoTranslator {
 			int after = before - dmg;
 			if (after < 0) after = 0;
 			{
-				addNewLabel(parts[0], name == null ? "" : name);
+				addNewLabel(parts[0], name);
 
-				state = bd.getEscapes().contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(before * 1.0 / max);
+				state = bd.escapes.contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(before * 1.0 / max);
 				color = HPMessage.getColor(state);
 				addNewLabel(parts[1], state, color);
 
@@ -449,7 +454,7 @@ public class BattleDtoTranslator {
 				addNewLabel(parts[3], "" + dmg);
 				addNewLabel(parts[4], after + "/" + max);
 
-				state = bd.getEscapes().contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(after * 1.0 / max);
+				state = bd.escapes.contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(after * 1.0 / max);
 				color = HPMessage.getColor(state);
 				addNewLabel(parts[5], state, color);
 
@@ -521,8 +526,8 @@ public class BattleDtoTranslator {
 		ToolUtils.forEach(infos, info -> addNewLabel(composite, info));
 	}
 
-	private static void addBattleAttack(Composite parent, ArrayList<BattleOneAttack> battleAttacks) {
-		if (battleAttacks.stream().mapToInt(ba -> ba.getAttackIndex()).filter(i -> i > 0).count() == 0) {
+	private static void addBattleAttack(Composite parent, AbstractBattle battle, ArrayList<BattleOneAttack> battleAttacks, Function<Boolean, Boolean> fun) {
+		if (battleAttacks.stream().mapToInt(ba -> ba.attackIndex).filter(i -> i > 0).count() == 0) {
 			return;
 		}
 
@@ -540,26 +545,50 @@ public class BattleDtoTranslator {
 			parts[i] = part;
 		}
 
-		battleAttacks.forEach(oneAttack -> addOneBattleAttack(parts, oneAttack));
+		battleAttacks.forEach(oneAttack -> addOneBattleAttack(parts, battle, oneAttack, fun));
 	}
 
-	private static void addOneBattleAttack(Composite[] parts, BattleOneAttack oneAttack) {
-		int attackIndex = oneAttack.getAttackIndex();
-		int attackType = oneAttack.getAttackType();
-		int[] defenseIndexs = oneAttack.getDefenseIndexs();
-		int[] damages = oneAttack.getDamages();
+	private static void addOneBattleAttack(Composite[] parts, AbstractBattle battle, BattleOneAttack oneAttack, Function<Boolean, Boolean> fun) {
+		Boolean enemyAttack = oneAttack.enemyAttack;
+		Boolean fcombine = fun.apply(enemyAttack);
+		int attackIndex = oneAttack.attackIndex;
+		int attackType = oneAttack.attackType;
+		int[] defenseIndexs = oneAttack.defenseIndexs;
+		int[] damages = oneAttack.dmgs;
+
+		String[] atters = null, dmgers = null;
+		if (enemyAttack == null && fcombine != null) {//敌方非联合舰队
+			if (battle.isMidnight()) {
+				AbstractBattleMidnight midnight = (AbstractBattleMidnight) battle;
+				atters = ArrayUtils.addAll(midnight.getActiveDeck()[0].names, midnight.getActiveDeck()[1].names);
+			} else {
+				atters = ArrayUtils.addAll(fcombine == Boolean.TRUE ? battle.getfDeckCombine().names : battle.getfDeck().names, battle.geteDeck().names);
+			}
+			dmgers = atters;
+		} else if (enemyAttack == Boolean.FALSE) {//敌联合舰队,我方攻击
+			atters = ArrayUtils.addAll(battle.getfDeckCombine().names, battle.getfDeck().names);
+			dmgers = ArrayUtils.addAll(battle.geteDeckCombine().names, battle.geteDeck().names);
+		} else if (enemyAttack == Boolean.TRUE) {//敌联合舰队,敌方攻击
+			atters = ArrayUtils.addAll(battle.geteDeckCombine().names, battle.geteDeck().names);
+			dmgers = ArrayUtils.addAll(battle.getfDeckCombine().names, battle.getfDeck().names);
+		}
+
 		for (int i = 0; i < defenseIndexs.length; i++) {
 			if (defenseIndexs[i] == -1) continue;
 
+			String atter = atters == null ? "" : atters[attackIndex - 1];
+			String dmger = dmgers == null ? "" : dmgers[defenseIndexs[i] - 1];
+			String type = getBattleAttackType(battle.isMidnight(), attackType);
 			if (i == 0) {
-				addNewLabel(parts[0], "" + attackIndex);
-				addNewLabel(parts[1], "" + attackType);
+				addNewLabel(parts[0], "" + atter);
+				addNewLabel(parts[1], "" + type);
+				addNewLabel(parts[2], "" + dmger);
 			} else {
 				addNewLabel(parts[0], "");
 				addNewLabel(parts[1], "");
+				addNewLabel(parts[2], "");
 			}
 
-			addNewLabel(parts[2], "" + defenseIndexs[i]);
 			addNewLabel(parts[3], "" + damages[i]);
 			addNewLabel(parts[4], "now/max");
 			addNewLabel(parts[5], "状态");
@@ -568,12 +597,12 @@ public class BattleDtoTranslator {
 
 	private static void addRaigekiAttack(Composite parent, AbstractBattleDay day, OpeningAttack raigeki) {
 		//frai与fydam长度相同
-		int[] frai = raigeki.getFrai();//目标
-		int[] erai = raigeki.getErai();
-		int[] fdam = raigeki.getFdam();//伤害
-		int[] edam = raigeki.getEdam();
-		int[] fydam = raigeki.getFydam();//攻击
-		int[] eydam = raigeki.getEydam();
+		int[] frai = raigeki.frai;//目标
+		int[] erai = raigeki.erai;
+		int[] fdam = raigeki.fdam;//伤害
+		int[] edam = raigeki.edam;
+		int[] fydam = raigeki.fydam;//攻击
+		int[] eydam = raigeki.eydam;
 
 		//有雷击战但无攻击
 		if (Arrays.stream(frai).filter(i -> i > 0).count() == 0 && Arrays.stream(erai).filter(i -> i > 0).count() == 0) {
@@ -605,25 +634,25 @@ public class BattleDtoTranslator {
 
 				switch (frai.length) {
 					case 1 + 12:
-						attacker = ArrayUtils.addAll(day.getfDeck().getName(), day.getfDeckCombine().getName())[attackindex];
+						attacker = ArrayUtils.addAll(day.getfDeck().names, day.getfDeckCombine().names)[attackindex];
 						break;
 					case 1 + 6:
 						if (day.getfDeckCombine() == null) {
-							attacker = day.getfDeck().getName()[attackindex];
+							attacker = day.getfDeck().names[attackindex];
 						} else {
-							attacker = day.getfDeckCombine().getName()[attackindex];
+							attacker = day.getfDeckCombine().names[attackindex];
 						}
 						break;
 				}
 				switch (edam.length) {
 					case 1 + 12:
-						defenser = ArrayUtils.addAll(day.geteDeck().getName(), day.geteDeckCombine().getName())[defenseindex];
+						defenser = ArrayUtils.addAll(day.geteDeck().names, day.geteDeckCombine().names)[defenseindex];
 						break;
 					case 1 + 6:
 						if (day.geteDeckCombine() == null) {
-							defenser = day.geteDeck().getName()[defenseindex];
+							defenser = day.geteDeck().names[defenseindex];
 						} else {
-							defenser = day.geteDeckCombine().getName()[defenseindex];
+							defenser = day.geteDeckCombine().names[defenseindex];
 						}
 						break;
 				}
@@ -644,25 +673,25 @@ public class BattleDtoTranslator {
 
 				switch (erai.length) {
 					case 1 + 12:
-						attacker = ArrayUtils.addAll(day.geteDeck().getName(), day.geteDeckCombine().getName())[attackindex];
+						attacker = ArrayUtils.addAll(day.geteDeck().names, day.geteDeckCombine().names)[attackindex];
 						break;
 					case 1 + 6:
 						if (day.geteDeckCombine() == null) {
-							attacker = day.geteDeck().getName()[attackindex];
+							attacker = day.geteDeck().names[attackindex];
 						} else {
-							attacker = day.geteDeckCombine().getName()[attackindex];
+							attacker = day.geteDeckCombine().names[attackindex];
 						}
 						break;
 				}
 				switch (fdam.length) {
 					case 1 + 12:
-						defenser = ArrayUtils.addAll(day.getfDeck().getName(), day.getfDeckCombine().getName())[defenseindex];
+						defenser = ArrayUtils.addAll(day.getfDeck().names, day.getfDeckCombine().names)[defenseindex];
 						break;
 					case 1 + 6:
 						if (day.getfDeckCombine() == null) {
-							defenser = day.getfDeck().getName()[defenseindex];
+							defenser = day.getfDeck().names[defenseindex];
 						} else {
-							defenser = day.getfDeckCombine().getName()[defenseindex];
+							defenser = day.getfDeckCombine().names[defenseindex];
 						}
 						break;
 				}
@@ -689,12 +718,12 @@ public class BattleDtoTranslator {
 			parts[i] = part;
 		}
 
-		String[] names = bd.getName();
-		int[] nowhps = bd.getNowhp();
-		int[] maxhps = bd.getMaxhp();
-		int[] dmg1 = bdad.getDamage();
-		int[] atts = ad.getAttack();
-		int[] dmg2 = ad.getDamage();
+		String[] names = bd.names;
+		int[] nowhps = bd.nowhps;
+		int[] maxhps = bd.maxhps;
+		int[] dmg1 = bdad.dmg;
+		int[] atts = ad.attack;
+		int[] dmg2 = ad.dmg;
 		for (int i = 0; i < 6; i++) {
 			if (nowhps[i] == -1) continue;
 
@@ -706,10 +735,10 @@ public class BattleDtoTranslator {
 			int dmg = dmg2[i];
 			{
 				Label nameLabel = new Label(parts[0], SWT.CENTER);
-				SwtUtils.initLabel(nameLabel, name == null ? "" : name, new GridData(SWT.CENTER, SWT.CENTER, false, false), 55);
+				SwtUtils.initLabel(nameLabel, name, new GridData(SWT.CENTER, SWT.CENTER, false, false), 55);
 				ToolUtils.notNullThenHandle(name, n -> nameLabel.setToolTipText(n));
 
-				String state = bd.getEscapes().contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(now * 1.0 / max);
+				String state = bd.escapes.contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(now * 1.0 / max);
 				Color color = HPMessage.getColor(state);
 				addNewLabel(parts[1], state, color);
 
@@ -720,6 +749,8 @@ public class BattleDtoTranslator {
 		}
 	}
 
+	/*------------------------------------------------------------------------------*/
+
 	private static void addNewLabel(Composite parent, String text) {
 		SwtUtils.initLabel(new Label(parent, SWT.CENTER), text, new GridData(SWT.CENTER, SWT.CENTER, false, false));
 	}
@@ -728,19 +759,50 @@ public class BattleDtoTranslator {
 		SwtUtils.initLabel(new Label(parent, SWT.CENTER), text, new GridData(SWT.CENTER, SWT.CENTER, false, false), color);
 	}
 
-	/*------------------------------------------------------------------------------*/
-
 	public static boolean haveDamage(AbstractBattle battle) {
-		Predicate<BattleDeckAttackDamage> haveDamage = bdad -> Arrays.stream(bdad.getDamage()).anyMatch(i -> i != 0);
-		if (battle instanceof AbstractBattleDay) {
-			AbstractBattleDay day = (AbstractBattleDay) battle;
-			return haveDamage.test(day.getfDeckAttackDamage()) && haveDamage.test(day.getfDeckCombineAttackDamage());
-		}
-		if (battle instanceof AbstractBattleMidnight) {
+		Predicate<BattleDeckAttackDamage> haveDamage = bdad -> Arrays.stream(bdad.dmg).anyMatch(i -> i != 0);
+		if (battle.isMidnight()) {
 			AbstractBattleMidnight midnight = (AbstractBattleMidnight) battle;
 			return haveDamage.test(midnight.getBattleMidnightStage().getfAttackDamage());
+		} else {
+			AbstractBattleDay day = (AbstractBattleDay) battle;
+			return haveDamage.test(day.getfDeckAttackDamage()) || haveDamage.test(day.getfDeckCombineAttackDamage());
 		}
-		return false;
+	}
+
+	public static String getBattleAttackType(boolean isMidnight, int attackType) {
+		if (isMidnight) {
+			switch (attackType) {
+				case 0://普通单击
+					return "";
+				case 1:
+					return "二连";
+				case 2:
+					return "炮雷CI";
+				case 3:
+					return "鱼雷CI";
+				case 4:
+					return "主副CI";
+				case 5:
+					return "主主CI";
+			}
+		} else {
+			switch (attackType) {
+				case 0://普通单击
+					return "";
+				case 2:
+					return "二连";
+				case 3:
+					return "主副CI";
+				case 4:
+					return "主电CI";
+				case 5:
+					return "主撤CI";
+				case 6:
+					return "主主CI";
+			}
+		}
+		return String.valueOf(attackType);
 	}
 
 }

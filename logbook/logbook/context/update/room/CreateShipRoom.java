@@ -1,5 +1,7 @@
 package logbook.context.update.room;
 
+import java.util.Arrays;
+
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
@@ -32,6 +34,9 @@ public class CreateShipRoom extends Room {
 			}
 
 			if (this.kdock != null && this.createshipDto != null) {//记录
+				this.createshipDto.setEmptyCount(//空渠数为总渠减去正在建造
+						GlobalContext.getBasicInformation().getKdockLength()
+								- (int) Arrays.stream(GlobalContext.getCreateShipRoom()).map(csr -> csr.kdock).filter(kd -> kd != null && kd.getTime() > TimeString.getCurrentTime()).count());
 				this.createshipDto.setShipId(this.kdock.getShipId());
 				GlobalContext.getCreateshiplist().add(this.createshipDto);
 			}
@@ -57,7 +62,7 @@ public class CreateShipRoom extends Room {
 					0, Integer.parseInt(data.getField("api_item5")), 0 //
 			};
 
-			this.createshipDto = new CreateshipDto(mm, TimeString.getCurrentTime());
+			this.createshipDto = new CreateshipDto(GlobalContext.getSecretaryship(), mm, TimeString.getCurrentTime());
 			//后接kdock,material,所以无需GlobalContext.reduceMaterial(mm);
 		} catch (Exception e) {
 			this.getLog().get().warn("doCreateship" + this.id + "处理错误", e);

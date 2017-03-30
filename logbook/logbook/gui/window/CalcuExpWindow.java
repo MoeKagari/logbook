@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.function.BiConsumer;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
@@ -19,7 +18,6 @@ import logbook.context.dto.data.DeckDto;
 import logbook.context.dto.data.ShipDto;
 import logbook.context.dto.translator.ShipDtoTranslator;
 import logbook.context.update.GlobalContext;
-import logbook.context.update.data.DataType;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.SpinnerMouseWheelListener;
 import logbook.gui.logic.CalcuExp;
@@ -27,6 +25,7 @@ import logbook.gui.logic.data.EvalMap;
 import logbook.gui.logic.data.SeaExpMap;
 import logbook.gui.logic.data.ShipExpMap;
 import logbook.util.SwtUtils;
+import logbook.util.ToolUtils;
 
 public class CalcuExpWindow extends WindowBase {
 	private Combo shipcombo;
@@ -191,29 +190,24 @@ public class CalcuExpWindow extends WindowBase {
 	/*-----------------------------------------------------------------------------------------------------------------*/
 
 	@Override
-	public Point getDefaultSize() {
-		return SwtUtils.DPIAwareSize(new Point(400, 300));
+	protected void handlerBeforeDisplay() {
+		this.updateDatas();
+	}
+
+	@Override
+	protected void handlerAfterHidden() {
+		this.ships.clear();
+		this.shipcombo.removeAll();
 	}
 
 	/*-----------------------------------------------------------------------------------------------------------------*/
-
-	@Override
-	public void update(DataType type) {
-		switch (type) {
-			case PORT:
-				if (this.isVisible()) this.updateDatas();
-				break;
-			default:
-				break;
-		}
-	}
 
 	private void updateDatas() {
 		this.shipcombo.removeAll();
 		this.ships.clear();
 		this.ships.addAll(GlobalContext.getShipMap().values());
-		if (AppConfig.get().isNotCalcuExpForLevel99Ship()) this.ships.removeIf(ship -> ship.getLv() == 99);
-		Collections.sort(this.ships, (a, b) -> -Integer.compare(a.getLv(), b.getLv()));
+		ToolUtils.ifHandle(AppConfig.get().isNotCalcuExpForLevel99Ship(), () -> this.ships.removeIf(ship -> ship.getLv() == 99));
+		Collections.sort(this.ships, (a, b) -> Integer.compare(b.getLv(), a.getLv()));
 
 		for (int i = 0; i < this.ships.size(); i++) {
 			ShipDto ship = this.ships.get(i);

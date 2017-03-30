@@ -94,7 +94,6 @@ public class UndefinedData implements Data {
 		if (type == null) return this;
 
 		try {
-			// リクエストのフィールドを復号します
 			Map<String, String> field = null;
 			if (this.request != null) {
 				field = getQueryMap(URLDecoder.decode(new String(this.request).trim(), "UTF-8"));

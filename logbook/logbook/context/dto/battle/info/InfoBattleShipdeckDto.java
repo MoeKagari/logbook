@@ -3,7 +3,6 @@ package logbook.context.dto.battle.info;
 import javax.json.JsonObject;
 
 import logbook.context.dto.battle.AbstractInfoBattle;
-import logbook.context.dto.battle.BattleDto;
 import logbook.context.dto.battle.BattleType;
 import logbook.context.dto.data.ShipDto;
 import logbook.context.dto.translator.ShipDtoTranslator;
@@ -21,13 +20,7 @@ public class InfoBattleShipdeckDto extends AbstractInfoBattle {
 	}
 
 	@Override
-	public boolean hasDownArrow(BattleDto pre) {
-		return false;
-	}
-
-	@Override
 	public BattleType getBattleType() {
 		return BattleType.INFOBATTLE_SHIPDECK;
 	}
-
 }

@@ -1,6 +1,7 @@
 package logbook.context.dto.battle;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import logbook.config.AppConstants;
 import logbook.gui.logic.TimeString;
@@ -9,7 +10,7 @@ import logbook.gui.logic.TimeString;
  * 出击之后到回港之前所有dto的超类
  * @author MoeKagari
  */
-public abstract class BattleDto implements HasDownArrow<BattleDto> {
+public abstract class BattleDto {
 
 	public static String getSearch(int id) {
 		switch (id) {
@@ -92,7 +93,7 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 			case 2:
 				switch (nextEventKind) {
 					case 0:
-						return "资源获得";
+						return "资源";
 				}
 				break;
 			case 3:
@@ -108,9 +109,9 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 					case 2:
 						return "夜战";
 					case 4:
-						return "空袭战";
+						return "航空战";
 					case 6:
-						return "长距离空袭战";
+						return "空袭战";
 				}
 				break;
 			case 5:
@@ -134,12 +135,6 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 				}
 				break;
 			case 7:
-				switch (nextEventKind) {
-					case 0:
-						return "航空侦察";
-					case 4:
-						return "航空战";
-				}
 				break;
 			case 8:
 				switch (nextEventKind) {
@@ -227,15 +222,10 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 		}
 
 		public boolean exist() {
-			for (int nowhp : this.nowhps) {
-				if (nowhp != -1) {
-					return true;
-				}
-			}
-			return false;
+			return Arrays.stream(this.nowhps).anyMatch(nowhp -> nowhp != -1);
 		}
 
-		public int getShipCount() {
+		public int getDeckLength() {
 			int count = 0;
 			for (int i = 0; i < 6; i++) {
 				if (this.nowhps[i] != -1) {
@@ -335,7 +325,7 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 	 * @author MoeKagari
 	 */
 	public static class BattleDeckAttackDamage {
-		public final int[] dmg = new int[6];
+		public final int[] dmgs = new int[6];
 		public final int[] attack = new int[6];
 
 		/**
@@ -343,7 +333,7 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 		 */
 		public void getDamage(int[] gd) {
 			for (int i = 0; i < 6; i++) {
-				this.dmg[i] += gd[i];
+				this.dmgs[i] += gd[i];
 			}
 		}
 
@@ -358,7 +348,7 @@ public abstract class BattleDto implements HasDownArrow<BattleDto> {
 
 		public BattleDeckAttackDamage add(BattleDeckAttackDamage next) {
 			for (int i = 0; i < 6; i++) {
-				this.dmg[i] = this.dmg[i] + next.dmg[i];
+				this.dmgs[i] = this.dmgs[i] + next.dmgs[i];
 				this.attack[i] = this.attack[i] + next.attack[i];
 			}
 			return this;

@@ -274,6 +274,11 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		}
 
 		@Override
+		public String getStageName() {
+			return "第" + new String[] { "一", "二", "三", "四" }[this.index] + "轮" + super.getStageName();
+		}
+
+		@Override
 		public BattleDayStageType getType() {
 			return BattleDayStageType.AIRBASEATTACK;
 		}
@@ -286,6 +291,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		private int[] touch = null;
 		private int[][] planeLostStage1 = new int[][] { null, null };
 		private int[][] planeLostStage2 = new int[][] { null, null };
+		private int[] duikongci = null;//[index,kind]
 
 		public Kouko(int index, int[] flags, JsonObject json) {
 			this.index = index;
@@ -302,6 +308,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 				this.planeLostStage2[0] = new int[] { stage2.getInt("api_f_count"), stage2.getInt("api_f_lostcount") };
 				this.planeLostStage2[1] = new int[] { stage2.getInt("api_e_count"), stage2.getInt("api_e_lostcount") };
 				//对空CI信息,在此
+				if (stage2.containsKey("api_air_fire")) {
+					JsonObject air_fire = stage2.getJsonObject("api_air_fire");
+					this.duikongci = new int[] { air_fire.getInt("api_idx"), air_fire.getInt("api_kind") };
+				}
 			}
 
 			int[] fdmg = new int[6];
@@ -359,6 +369,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			return this.planeLostStage2;
 		}
 
+		public int[] getDuikongci() {
+			return this.duikongci;
+		}
+
 		@Override
 		public String getStageName() {
 			return (this.index != 1 ? ("第" + new String[] { "零", "一", "二", "三", "四" }[this.index] + "轮") : "") + super.getStageName();
@@ -372,10 +386,6 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 
 	public class SupportAttack extends BattleDayStage {
 		private final int type;
-		//type = 1时(航空支援)
-		private boolean[] stages;
-		private int[][] planeLostStage1 = new int[][] { null, null };
-		private int[] planeLostStage2 = null;//只有自方有损失
 
 		public SupportAttack(int type, JsonObject json) {
 			this.type = type;
@@ -384,17 +394,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			if (type == 1) {//航空支援
 				JsonObject airattack = json.getJsonObject("api_support_airatack");
 				int[] flags = JsonUtils.getIntArray(airattack, "api_stage_flag");
-				this.stages = new boolean[] { flags[0] == 1, flags[1] == 1, flags[2] == 1 };
-				if (this.stages[0]) {
-					JsonObject stage1 = airattack.getJsonObject("api_stage1");
-					this.planeLostStage1[0] = new int[] { stage1.getInt("api_f_count"), stage1.getInt("api_f_lostcount") };
-					this.planeLostStage1[1] = new int[] { stage1.getInt("api_e_count"), stage1.getInt("api_e_lostcount") };
-				}
-				if (this.stages[1]) {
-					JsonObject stage2 = airattack.getJsonObject("api_stage2");
-					this.planeLostStage2 = new int[] { stage2.getInt("api_f_count"), stage2.getInt("api_f_lostcount") };
-				}
-				if (this.stages[2]) {
+				if (flags[2] == 1) {
 					JsonObject stage3 = airattack.getJsonObject("api_stage3");
 					damage = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_edam"));
 				}
@@ -414,18 +414,6 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 
 		public String getSupportType() {
 			return BattleDto.getSupportType(this.type);
-		}
-
-		public boolean[] getStages() {
-			return this.stages;
-		}
-
-		public int[][] getPlaneLostStage1() {
-			return this.planeLostStage1;
-		}
-
-		public int[] getPlaneLostStage2() {
-			return this.planeLostStage2;
 		}
 
 		@Override
@@ -530,10 +518,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					this.fAttackDamageco.getDamage(Arrays.copyOfRange(this.fdam, 7, 13));
 					break;
 				case 1 + 6:
-					if (AbstractBattleDay.this.getfDeckCombine() == null) {//自方非联合舰队
-						this.fAttackDamage.getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
-					} else {//自方联合舰队,2队受到雷击
+					if (AbstractBattleDay.this.getfDeckCombine() != null && AbstractBattleDay.this.getfDeckCombine().exist()) {//自方联合舰队,2队受到雷击
 						this.fAttackDamageco.getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
+					} else {//自方非联合舰队
+						this.fAttackDamage.getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
 					}
 					break;
 			}
@@ -543,10 +531,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					this.eAttackDamageco.getDamage(Arrays.copyOfRange(this.edam, 7, 13));
 					break;
 				case 1 + 6:
-					if (AbstractBattleDay.this.geteDeckCombine() == null) {//敌方非联合舰队
-						this.eAttackDamage.getDamage(Arrays.copyOfRange(this.edam, 1, 7));
-					} else {
+					if (AbstractBattleDay.this.geteDeckCombine() != null && AbstractBattleDay.this.geteDeckCombine().exist()) {
 						this.eAttackDamageco.getDamage(Arrays.copyOfRange(this.edam, 1, 7));
+					} else {//敌方非联合舰队
+						this.eAttackDamage.getDamage(Arrays.copyOfRange(this.edam, 1, 7));
 					}
 					break;
 			}
@@ -556,10 +544,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					this.fAttackDamageco.setAttack(Arrays.copyOfRange(this.fydam, 7, 13));
 					break;
 				case 1 + 6:
-					if (AbstractBattleDay.this.getfDeckCombine() == null) {//自方非联合舰队
-						this.fAttackDamage.setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
-					} else {//自方联合舰队
+					if (AbstractBattleDay.this.getfDeckCombine() != null && AbstractBattleDay.this.getfDeckCombine().exist()) {//自方联合舰队
 						this.fAttackDamageco.setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
+					} else {//自方非联合舰队
+						this.fAttackDamage.setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
 					}
 					break;
 			}
@@ -569,10 +557,10 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					this.eAttackDamageco.setAttack(Arrays.copyOfRange(this.eydam, 7, 13));
 					break;
 				case 1 + 6:
-					if (AbstractBattleDay.this.geteDeckCombine() == null) {//敌方非联合舰队
-						this.eAttackDamage.setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
-					} else {
+					if (AbstractBattleDay.this.geteDeckCombine() != null && AbstractBattleDay.this.geteDeckCombine().exist()) {
 						this.eAttackDamageco.setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
+					} else {//敌方非联合舰队
+						this.eAttackDamage.setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
 					}
 					break;
 			}

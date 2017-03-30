@@ -7,21 +7,18 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.ToolTip;
 
 import logbook.gui.window.ApplicationMain;
+import logbook.util.ToolUtils;
 
 public class TrayMessageBox {
-	private final LinkedHashMap<String, String> title_notice = new LinkedHashMap<>();
+	private LinkedHashMap<String, String> title_notice = null;//延迟初始化到add时
 
 	public void add(String title, String notice) {
-		if (this.title_notice.containsKey(title)) {
-			String value = this.title_notice.get(title);
-			value = value + "\n" + notice;
-			this.title_notice.put(title, value);
-		} else {
-			this.title_notice.put(title, notice);
-		}
+		if (this.title_notice == null) this.title_notice = new LinkedHashMap<>();
+		this.title_notice.put(title, ToolUtils.notNullThenHandle(this.title_notice.get(title), value -> value + "\n" + notice, notice));
 	}
 
 	public static void show(ApplicationMain main, TrayMessageBox box) {
+		if (box.title_notice == null) return;
 		if (box.title_notice.size() == 0) return;
 
 		main.getDisplay().asyncExec(() -> {
@@ -32,5 +29,4 @@ public class TrayMessageBox {
 			tip.setVisible(true);
 		});
 	}
-
 }

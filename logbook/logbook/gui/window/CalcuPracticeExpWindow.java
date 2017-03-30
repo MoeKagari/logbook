@@ -1,7 +1,6 @@
 package logbook.gui.window;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -114,13 +113,6 @@ public class CalcuPracticeExpWindow extends WindowBase {
 	/*------------------------------------------------------------------------------------------------------------*/
 
 	@Override
-	public Point getDefaultSize() {
-		return SwtUtils.DPIAwareSize(new Point(400, 300));
-	}
-
-	/*------------------------------------------------------------------------------------------------------------*/
-
-	@Override
 	public void update(DataType type) {
 		switch (type) {
 			case PRACTICE_ENEMYINFO:
@@ -135,7 +127,6 @@ public class CalcuPracticeExpWindow extends WindowBase {
 	private void update() {
 		if (GlobalContext.getPracticeEnemy() == null) return;
 		PracticeEnemyShip[] ships = GlobalContext.getPracticeEnemy().getShips();
-		if (ships == null) return;
 
 		for (int i = 0; i < ships.length; i++) {
 			PracticeEnemyShip ship = ships[i];
@@ -163,5 +154,4 @@ public class CalcuPracticeExpWindow extends WindowBase {
 			}
 		}
 	}
-
 }

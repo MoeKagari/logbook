@@ -3,9 +3,9 @@ package logbook.config;
 public class AppConfigBean {
 
 	private int listenPort = 8889;
-	private boolean useProxy = true;
+	private boolean useProxy = false;
 	private String proxyHost = "127.0.0.1";
-	private int proxyPort = 1080;
+	private int proxyPort = 8123;
 	private boolean allowOnlyFromLocalhost = true;
 	private boolean closeOutsidePort = true;
 
@@ -20,11 +20,8 @@ public class AppConfigBean {
 	private boolean showNameOnTitle = true;
 	private boolean checkDoit = true;
 	private boolean minimizedToTray = false;
-
 	private boolean notCalcuExpForLevel99Ship = true;
-
 	private boolean noticeDeckmissionAgain = true;
-
 	private boolean autoUpdateBattleFlow = true;
 
 	public boolean isNoticeDeckmission() {

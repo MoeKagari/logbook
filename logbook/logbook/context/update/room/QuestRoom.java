@@ -28,6 +28,7 @@ public class QuestRoom extends Room {
 			int currentPage = jo.getInt("api_disp_page");
 			int tab_id = Integer.parseInt(data.getField("api_tab_id"));
 			//进行差分处理
+			//未完善 TODO
 			if (value instanceof JsonArray) {
 				JsonArray array = (JsonArray) value;
 				for (int no = 0; no < array.size(); no++) {

@@ -19,10 +19,13 @@ import logbook.context.update.data.DataType;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
+/**
+ * 地图详情
+ * @author MoeKagari
+ */
 public class MapinfoWindow extends WindowBase {
-
-	private ScrolledComposite sc;
-	private Composite contentComposite;
+	private final ScrolledComposite sc;
+	private final Composite contentComposite;
 
 	public MapinfoWindow(ApplicationMain main, MenuItem menuItem, String title) {
 		super(main, menuItem, title);
@@ -44,16 +47,14 @@ public class MapinfoWindow extends WindowBase {
 	@Override
 	public void update(DataType type) {
 		if (type == DataType.MAPINFO && this.getShell().isVisible()) {
-			this.updateWindow();
+			this.updateWindowRedraw(this::updateWindow);
 		}
 	}
 
 	private void updateWindow() {
-		this.getShell().setRedraw(false);
 		ToolUtils.forEach(this.contentComposite.getChildren(), Control::dispose);
 		ToolUtils.notNullThenHandle(GlobalContext.getMapinfo(), mapinfo -> mapinfo.getMaps().forEach(map -> this.updateOneMap(map)));
 		this.contentComposite.layout();
-		this.getShell().setRedraw(true);
 	}
 
 	private void updateOneMap(OneMap map) {
@@ -108,9 +109,13 @@ public class MapinfoWindow extends WindowBase {
 	}
 
 	@Override
-	public void setVisible(boolean visible) {
-		if (visible) this.updateWindow();
-		super.setVisible(visible);
+	protected void handlerBeforeDisplay() {
+		this.updateWindowRedraw(this::updateWindow);
+	}
+
+	@Override
+	protected void handlerAfterHidden() {
+		ToolUtils.forEach(this.contentComposite.getChildren(), Control::dispose);
 	}
 
 	@Override

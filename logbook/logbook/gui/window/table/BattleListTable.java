@@ -57,7 +57,7 @@ public class BattleListTable extends AbstractTable<BattleListTable.SortBattle> {
 		}
 
 		public String getMap() {
-			return this.battle.getMap();
+			return this.battle.getMapString();
 		}
 	}
 }

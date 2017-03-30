@@ -107,10 +107,10 @@ public class ApplicationMain {
 
 	/*------------------------------------------------------------------------------------------------------*/
 
-	/** 外置舰队面板 */
-	private FleetWindowOut[] fleetWindowOuts;
 	/** 舰队面板-全 */
 	private FleetWindowAll fleetWindowAll;
+	/** 舰队面板-单 */
+	private FleetWindowOut[] fleetWindowOuts;
 
 	/** 经验计算器 */
 	private CalcuExpWindow calcuExpWindow;
@@ -233,12 +233,9 @@ public class ApplicationMain {
 			{
 				this.itemList = new Button(buttonComposite, SWT.PUSH);
 				this.itemList.setText("装备(0/0)");
-				this.itemList.addSelectionListener(new ControlSelectionListener(ev -> this.itemListTable.setVisible(true)));
-			}
-			{
+
 				this.shipList = new Button(buttonComposite, SWT.PUSH);
 				this.shipList.setText("舰娘(0/0)");
-				this.shipList.addSelectionListener(new ControlSelectionListener(ev -> this.shipListTable.setVisible(true)));
 			}
 		}
 		{
@@ -265,20 +262,17 @@ public class ApplicationMain {
 				this.deckNotice.setText("远征");
 				this.deckNotice.setSelection(AppConfig.get().isNoticeDeckmission());
 				this.deckNotice.addSelectionListener(new ControlSelectionListener(ev -> AppConfig.get().setNoticeDeckmission(this.deckNotice.getSelection())));
-			}
-			{
+
 				this.ndockNotice = new Button(this.notifySettingGroup, SWT.CHECK);
 				this.ndockNotice.setText("入渠");
 				this.ndockNotice.setSelection(AppConfig.get().isNoticeNdock());
 				this.ndockNotice.addSelectionListener(new ControlSelectionListener(ev -> AppConfig.get().setNoticeNdock(this.ndockNotice.getSelection())));
-			}
-			{
+
 				this.akashiNotice = new Button(this.notifySettingGroup, SWT.CHECK);
 				this.akashiNotice.setText("泊地修理");
 				this.akashiNotice.setSelection(AppConfig.get().isNoticeAkashi());
 				this.akashiNotice.addSelectionListener(new ControlSelectionListener(ev -> AppConfig.get().setNoticeAkashi(this.akashiNotice.getSelection())));
-			}
-			{
+
 				this.condNotice = new Button(this.notifySettingGroup, SWT.CHECK);
 				this.condNotice.setText("疲劳");
 				this.condNotice.setSelection(AppConfig.get().isNoticeCond());
@@ -363,10 +357,12 @@ public class ApplicationMain {
 			MenuItem ship = new MenuItem(cmdMenu, SWT.CHECK);
 			ship.setText("所有舰娘");
 			this.shipListTable = new ShipListTable(this, ship, ship.getText());
+			this.shipList.addSelectionListener(new ControlSelectionListener(this.shipListTable::displayWindow));
 
 			MenuItem item = new MenuItem(cmdMenu, SWT.CHECK);
 			item.setText("所有装备");
 			this.itemListTable = new ItemListTable(this, item, item.getText());
+			this.itemList.addSelectionListener(new ControlSelectionListener(this.itemListTable::displayWindow));
 
 			MenuItem quest = new MenuItem(cmdMenu, SWT.CHECK);
 			quest.setText("任务列表");
@@ -503,6 +499,14 @@ public class ApplicationMain {
 		return this.shipList;
 	}
 
+	public Group getDeckGroup() {
+		return this.deckGroup;
+	}
+
+	public Group getNdockGroup() {
+		return this.ndockGroup;
+	}
+
 	public Label[] getResourceLabel() {
 		return this.resourceLabels;
 	}
@@ -566,12 +570,7 @@ public class ApplicationMain {
 	/*----------------------------------------------------------------------------------------------------------------*/
 
 	public void logPrint(String mes) {
-		String message = AppConstants.CONSOLE_TIME_FORMAT.format(new Date()) + "  " + mes;
-		if (Thread.currentThread() == this.display.getThread()) {
-			this.printMessage(message);
-		} else {
-			this.display.asyncExec(() -> this.printMessage(message));
-		}
+		this.display.asyncExec(() -> this.printMessage(AppConstants.CONSOLE_TIME_FORMAT.format(new Date()) + "  " + mes));
 		userLogger.get().info(mes);
 	}
 
@@ -581,8 +580,8 @@ public class ApplicationMain {
 
 	private void printMessage(String message) {
 		if (this.console.isDisposed()) return;
-		if (this.console.getItemCount() >= 200) this.console.remove(0);
 
+		ToolUtils.ifHandle(this.console.getItemCount() >= 200, () -> this.console.remove(0));
 		this.console.add(message);
 		this.console.setSelection(this.console.getItemCount() - 1);
 		this.console.deselectAll();
@@ -594,9 +593,7 @@ public class ApplicationMain {
 		this.shell.open();
 		this.shell.forceActive();
 		while (this.shell.isDisposed() == false) {
-			if (this.display.readAndDispatch() == false) {
-				this.display.sleep();
-			}
+			ToolUtils.ifNotHandle(this.display.readAndDispatch(), this.display::sleep);
 		}
 	}
 

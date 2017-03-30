@@ -12,6 +12,10 @@ public class NotCloseButHiddenShellListener extends ShellAdapter {
 		this.handler = handler;
 	}
 
+	public NotCloseButHiddenShellListener(Runnable run) {
+		this.handler = ev -> run.run();
+	}
+
 	@Override
 	public void shellClosed(ShellEvent ev) {
 		ev.doit = false;

@@ -9,7 +9,6 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 
 import logbook.config.AppConstants;
-import logbook.context.dto.battle.info.InfoBattleStartAirBaseDto;
 import logbook.context.dto.translator.DeckDtoTranslator;
 import logbook.context.dto.translator.ShipDtoTranslator;
 import logbook.util.JsonUtils;
@@ -44,7 +43,7 @@ public abstract class AbstractBattle extends BattleDto {
 		}
 
 		//BattleDeck的舰娘名
-		if (this.fDeckCombine != null) {//我方为联合舰队
+		if (this.fDeckCombine != null && this.fDeckCombine.exist()) {//我方为联合舰队
 			this.fDeck.setNames(DeckDtoTranslator.getShipNames(1));
 			this.fDeckCombine.setNames(DeckDtoTranslator.getShipNames(2));
 		} else {
@@ -77,11 +76,6 @@ public abstract class AbstractBattle extends BattleDto {
 		if (json.containsKey("api_escape_idx_combined")) {
 			ToolUtils.forEach(JsonUtils.getIntArray(json, "api_escape_idx_combined"), index -> this.fDeckCombine.escapes.add(index - 1));
 		}
-	}
-
-	@Override
-	public boolean hasDownArrow(BattleDto pre) {
-		return pre != null && ((pre instanceof AbstractInfoBattle) || (pre instanceof InfoBattleStartAirBaseDto));
 	}
 
 	public boolean isMidnight() {

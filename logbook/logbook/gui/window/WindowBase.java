@@ -1,13 +1,17 @@
 package logbook.gui.window;
 
+import java.util.function.Consumer;
+
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.swt.widgets.ToolItem;
 
 import logbook.context.update.GlobalContextUpdater;
 import logbook.context.update.data.DataType;
@@ -27,6 +31,7 @@ public abstract class WindowBase implements EventListener {
 	private final MenuItem menuItem;
 	private final Composite composite;
 	private final Menu menuBar;
+	private ToolBar toolBar = null;
 
 	public WindowBase(ApplicationMain main, MenuItem menuItem, String title, boolean top) {
 		this.main = main;
@@ -37,7 +42,7 @@ public abstract class WindowBase implements EventListener {
 		this.shell.setSize(this.getDefaultSize());
 		this.shell.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
 		this.shell.setLayoutData(new GridData(GridData.FILL_BOTH));
-		this.shell.addShellListener(new NotCloseButHiddenShellListener(ev -> this.setVisible(false)));
+		this.shell.addShellListener(new NotCloseButHiddenShellListener(this::closeWindow));
 		this.shell.addShellListener(new NotCloseButHiddenShellListener(this::handlerAfterHidden));
 
 		this.composite = new Composite(this.shell, SWT.NONE);
@@ -45,10 +50,16 @@ public abstract class WindowBase implements EventListener {
 		this.composite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		this.menuItem = menuItem;
-		ToolUtils.notNullThenHandle(menuItem, mi -> mi.addSelectionListener(new ControlSelectionListener(ev -> this.setVisible(mi.getSelection()))));
+		ToolUtils.notNullThenHandle(this.menuItem, mi -> ControlSelectionListener.add(mi, () -> this.setVisible(mi.getSelection())));
 
 		this.menuBar = new Menu(this.shell, SWT.BAR);
 		this.shell.setMenuBar(this.menuBar);
+
+		if (this.haveToolBar()) {
+			this.toolBar = new ToolBar(this.composite, SWT.WRAP);
+			this.toolBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		}
+
 		GlobalContextUpdater.addEventListener(this);
 	}
 
@@ -74,25 +85,43 @@ public abstract class WindowBase implements EventListener {
 		return this.composite;
 	}
 
-	public void setVisible(boolean visible) {
-		ToolUtils.ifHandle(visible, this::handlerBeforeDisplay);
-		ToolUtils.notNullThenHandle(this.menuItem, mi -> mi.setSelection(visible));
-		ToolUtils.ifHandle(visible, () -> this.shell.setMinimized(false));
-		this.shell.setVisible(visible);
-		ToolUtils.ifHandle(visible, () -> this.shell.forceActive());
-	}
-
 	protected boolean isVisible() {
 		return this.shell.isVisible() && (this.shell.getMinimized() == false);
 	}
 
+	public void closeWindow() {
+		this.setVisible(false);
+	}
+
+	public void displayWindow() {
+		this.setVisible(true);
+	}
+
+	private void setVisible(boolean visible) {
+		ToolUtils.ifHandle(visible, this::handlerBeforeDisplay);
+		ToolUtils.notNullThenHandle(this.menuItem, mi -> mi.setSelection(visible));
+		ToolUtils.ifHandle(visible, () -> this.shell.setMinimized(false));
+		this.shell.setVisible(visible);
+		ToolUtils.ifHandle(visible, this.shell::forceActive);
+	}
+
 	/*------------------------------------------------------------------------------------------------------------*/
+
+	protected ToolItem newToolItem(int style, String text, Consumer<SelectionEvent> handler) {
+		if (this.haveToolBar()) {
+			ToolItem toolItem = new ToolItem(this.toolBar, style);
+			toolItem.setText(text);
+			toolItem.addSelectionListener(new ControlSelectionListener(handler));
+			return toolItem;
+		}
+		return null;
+	}
 
 	/** 显示窗口前的操作 */
 	protected void handlerBeforeDisplay() {}
 
 	/** 关闭窗口时的操作 */
-	protected void handlerAfterHidden(ShellEvent ev) {}
+	protected void handlerAfterHidden() {}
 
 	/** 更新窗口(延迟redraw) */
 	protected void updateWindowRedraw(Runnable run) {
@@ -104,6 +133,10 @@ public abstract class WindowBase implements EventListener {
 	@Override
 	public void update(DataType type) {}
 
+	protected boolean haveToolBar() {
+		return false;
+	}
+
 	/** 默认size */
 	public Point getDefaultSize() {
 		return SwtUtils.DPIAwareSize(new Point(400, 200));
@@ -113,5 +146,4 @@ public abstract class WindowBase implements EventListener {
 	public int getShellStyle() {
 		return SWT.CLOSE | SWT.TITLE | SWT.RESIZE | SWT.MIN;
 	}
-
 }

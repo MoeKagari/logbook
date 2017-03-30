@@ -12,12 +12,15 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
 
 import logbook.config.AppConfig;
 import logbook.gui.window.ApplicationMain;
 import logbook.internal.LoggerHolder;
 
+/**
+ * プロキシサーバーです
+ *
+ */
 public final class ProxyServer {
 
 	private static final LoggerHolder LOG = new LoggerHolder(ProxyServer.class);
@@ -35,9 +38,11 @@ public final class ProxyServer {
 			updateSetting();
 			setConnector();
 
+			// httpsをプロキシできるようにConnectHandlerを設定
 			ConnectHandler proxy = new ConnectHandler();
 			server.setHandler(proxy);
 
+			// httpはこっちのハンドラでプロキシ
 			ServletContextHandler context = new ServletContextHandler(proxy, "/", ServletContextHandler.SESSIONS);
 			ServletHolder holder = new ServletHolder(new ReverseProxyServlet());
 			holder.setInitParameter("maxThreads", "256");
@@ -50,21 +55,24 @@ public final class ProxyServer {
 				handleException(e);
 			}
 		} catch (Exception e) {
-			LOG.get().fatal("Proxy 服务器启动失败", e);
+			LOG.get().fatal("Proxyサーバーの起動に失敗しました", e);
 			throw new RuntimeException(e);
 		}
 	}
 
 	public static void restart() {
 		try {
+			if (server == null) {
+				return;
+			}
 			if (updateSetting()) {
 				server.stop();
 				setConnector();
 				server.start();
-				ApplicationMain.main.logPrint("Proxy服务器再启动");
+				ApplicationMain.main.logPrint("代理已再启动");
 			}
 		} catch (Exception e) {
-			LOG.get().fatal("Proxy服务器再启动失败", e);
+			LOG.get().fatal("Proxyサーバーの起動に失敗しました", e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -81,13 +89,16 @@ public final class ProxyServer {
 		}
 	}
 
+	/**
+	 * AppConfigの設定をローカルにコピーします。その際、更新があったか判定します。
+	 * @return 更新があった
+	 */
 	private static boolean updateSetting() {
 		String newHost = null;
-		int newPort = AppConfig.get().getListenPort();
 		if (AppConfig.get().isAllowOnlyFromLocalhost() && AppConfig.get().isCloseOutsidePort()) {
 			newHost = "localhost";
 		}
-
+		int newPort = AppConfig.get().getListenPort();
 		String newProxyHost = null;
 		int newProxyPort = 0;
 		if (AppConfig.get().isUseProxy()) {
@@ -115,19 +126,23 @@ public final class ProxyServer {
 
 	private static void handleException(Exception e) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("代理服务器异常终了");
-		sb.append("\r\n").append("例外 : " + e.getClass().getName());
-		sb.append("\r\n").append("原因 : " + e.getMessage());
-		if (e instanceof BindException) sb.append("\r\n").append("可能是由于其它程序使用同一个端口");
+		sb.append("代理终了").append("\r\n");
+		sb.append("例外 : " + e.getClass().getName()).append("\r\n");
+		sb.append("原因 : " + e.getMessage()).append("\r\n");
+		if (e instanceof BindException) {
+			sb.append("很有可能是由于其他软件使用同一端口导致的").append("\r\n");
+		}
 
-		Display.getDefault().asyncExec(() -> {
-			Shell shell = new Shell(Display.getDefault(), SWT.TOOL);
-			MessageBox mes = new MessageBox(shell, SWT.YES | SWT.ICON_ERROR);
-			mes.setText("");
-			mes.setMessage(sb.toString());
-			mes.open();
-			shell.dispose();
+		final String message = sb.toString();
+
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				MessageBox box = new MessageBox(ApplicationMain.main.getShell(), SWT.YES | SWT.ICON_ERROR);
+				box.setText("代理终了");
+				box.setMessage(message);
+				box.open();
+			}
 		});
 	}
-
 }

@@ -7,6 +7,7 @@ import java.util.function.DoubleToIntFunction;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.IntSupplier;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
@@ -27,17 +28,49 @@ public class ToolUtils {
 		return s;
 	}
 
+	/*----------------------------------------------------------------------------------------------------------*/
+
 	public static void ifHandle(boolean b, Runnable run) {
 		if (b) run.run();
+	}
+
+	public static void ifNotHandle(boolean b, Runnable run) {
+		ifHandle(!b, run);
 	}
 
 	public static int ifHandle(boolean b, IntSupplier sup, int defaultValue) {
 		return b ? sup.getAsInt() : defaultValue;
 	}
 
+	public static int ifNotHandle(boolean b, IntSupplier sup, int defaultValue) {
+		return ifHandle(!b, sup, defaultValue);
+	}
+
 	public static <T> T ifHandle(boolean b, Supplier<T> sup, T defaultValue) {
 		return b ? sup.get() : defaultValue;
 	}
+
+	public static <T> T ifNotHandle(boolean b, Supplier<T> sup, T defaultValue) {
+		return ifHandle(!b, sup, defaultValue);
+	}
+
+	public static void ifHandle(int value, IntPredicate pre, IntConsumer con) {
+		if (pre.test(value)) con.accept(value);
+	}
+
+	public static void ifNotHandle(int value, IntPredicate pre, IntConsumer con) {
+		ifHandle(value, pre.negate(), con);
+	}
+
+	public static <S> void ifHandle(S s, Predicate<S> pre, Consumer<S> con) {
+		if (pre.test(s)) con.accept(s);
+	}
+
+	public static <S> void ifNotHandle(S s, Predicate<S> pre, Consumer<S> con) {
+		ifHandle(s, pre.negate(), con);
+	}
+
+	/*----------------------------------------------------------------------------------------------------------*/
 
 	public static <S> boolean notNullThenHandle(S s, Predicate<S> handler, boolean defaultValue) {
 		return s != null ? handler.test(s) : defaultValue;
@@ -54,6 +87,8 @@ public class ToolUtils {
 	public static <S> void notNullThenHandle(S s, Consumer<S> handler) {
 		ifHandle(s != null, () -> handler.accept(s));
 	}
+
+	/*----------------------------------------------------------------------------------------------------------*/
 
 	public static <S, T> void forEach(S[] ss, T[] ts, BiConsumer<S, T> bc) {
 		if (ss.length != ts.length) return;
@@ -88,6 +123,8 @@ public class ToolUtils {
 			consu.accept(i);
 		}
 	}
+
+	/*----------------------------------------------------------------------------------------------------------*/
 
 	public static int[] arrayCopy(int[] is) {
 		return Arrays.copyOf(is, is.length);

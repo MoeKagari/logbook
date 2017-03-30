@@ -3,10 +3,10 @@ package logbook.gui.window;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Event;
@@ -16,6 +16,7 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.ToolItem;
 
 import logbook.context.update.data.DataType;
 import logbook.gui.listener.ControlSelectionListener;
@@ -26,11 +27,13 @@ public abstract class AbstractTable<T> extends WindowBase {
 	private Table table;
 	private final List<T> datas = new ArrayList<>();
 	private final ArrayList<TableColumnManager> tcms = new ArrayList<>();
+	private final ArrayList<Predicate<T>> filters = new ArrayList<>();
 
 	public AbstractTable(ApplicationMain main, MenuItem menuItem, String title) {
 		super(main, menuItem, title);
 		this.tcms.add(new TableColumnManager("", true, null));//行头
 		this.initTCMS(this.tcms);
+		this.initFilters(this.filters);
 		this.initTable();
 		this.initMenuBar();
 	}
@@ -63,7 +66,9 @@ public abstract class AbstractTable<T> extends WindowBase {
 
 	@Override
 	public void update(DataType type) {
-		ToolUtils.ifHandle(this.getShell().isVisible() && this.needUpdate(type), () -> this.updateWindowRedraw(this::updateTable));
+		if (this.needUpdate(type) && this.getShell().isVisible()) {
+			this.updateWindowRedraw(this::updateTable);
+		}
 	}
 
 	private void updateTable() {
@@ -71,6 +76,7 @@ public abstract class AbstractTable<T> extends WindowBase {
 
 		//更新数据
 		this.updateData(this.datas);
+		this.datas.removeIf(data -> this.filters.size() == 0 ? false : this.filters.stream().noneMatch(p -> p.test(data)));
 		for (int row = 0; row < this.datas.size(); row++) {
 			T data = this.datas.get(row);
 			TableItem tableItem = new TableItem(this.table, SWT.NONE);
@@ -111,6 +117,8 @@ public abstract class AbstractTable<T> extends WindowBase {
 
 	/*------------------------------------------------------------------------------------------------------------------------*/
 
+	protected void initFilters(ArrayList<Predicate<T>> filters) {}
+
 	protected abstract void initTCMS(ArrayList<TableColumnManager> tcms);
 
 	protected abstract void updateData(List<T> datas);
@@ -119,9 +127,13 @@ public abstract class AbstractTable<T> extends WindowBase {
 		return false;
 	}
 
+	protected ToolItem newToolItem(int style, String text) {
+		return this.newToolItem(style, text, ev -> this.updateWindowRedraw(this::updateTable));
+	}
+
 	@Override
 	public Point getDefaultSize() {
-		return SwtUtils.DPIAwareSize(new Point(800, 600));
+		return SwtUtils.DPIAwareSize(new Point(1000, 600));
 	}
 
 	@Override
@@ -130,7 +142,8 @@ public abstract class AbstractTable<T> extends WindowBase {
 	}
 
 	@Override
-	protected void handlerAfterHidden(ShellEvent ev) {
+	protected void handlerAfterHidden() {
+		this.datas.clear();
 		ToolUtils.forEach(this.table.getItems(), TableItem::dispose);
 	}
 
@@ -186,10 +199,13 @@ public abstract class AbstractTable<T> extends WindowBase {
 
 		@Override
 		public void handleEvent(Event ev) {
-			//不对行头排序
-			if (this.index == 0) return;
+			if (this.index == 0) return;//不对行头排序
+
 			//如果不是改变排序列,则改变排序方向
-			ToolUtils.ifHandle(AbstractTable.this.table.getSortColumn() == this.tableColumn, () -> this.direction = !this.direction);
+			if (AbstractTable.this.table.getSortColumn() == this.tableColumn) {
+				this.direction = !this.direction;
+			}
+
 			AbstractTable.this.updateWindowRedraw(() -> AbstractTable.this.sortTable(this));
 			AbstractTable.this.table.setSortColumn(this.tableColumn);
 			AbstractTable.this.table.setSortDirection(this.direction ? SWT.UP : SWT.DOWN);

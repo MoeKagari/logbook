@@ -3,7 +3,6 @@ package logbook.context.dto.battle.info;
 import javax.json.JsonObject;
 
 import logbook.context.dto.battle.AbstractInfoBattle;
-import logbook.context.dto.battle.BattleDto;
 import logbook.context.dto.battle.BattleType;
 import logbook.context.update.data.Data;
 
@@ -41,8 +40,4 @@ public class InfoBattleStartAirBaseDto extends AbstractInfoBattle {
 		return BattleType.INFOBATTLE_START_AIR_BASE;
 	}
 
-	@Override
-	public boolean hasDownArrow(BattleDto pre) {
-		return false;
-	}
 }

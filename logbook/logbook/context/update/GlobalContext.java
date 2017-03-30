@@ -74,10 +74,7 @@ public class GlobalContext {
 
 	/** 是否结成联合舰队 */
 	private static boolean combined = false;
-	/**
-	 * 通过返回母港时第一舰队无疲劳变化来更新此值
-	 * 包括下限,不包括上限
-	 */
+	/** 通过返回母港时第一舰队无疲劳变化来更新此值 */
 	private static PLTime PLTIME = null;
 
 	/** 路基详情 */
@@ -695,30 +692,22 @@ public class GlobalContext {
 
 	public static class BattleList {
 		private ArrayList<BattleDto> battles = new ArrayList<>();
-		private BattleDto lastOne = null;
-		private BattleDto lastTwo = null;
+		private BattleDto last = null;
 
 		public void add(BattleDto battleDto) {
-			this.lastTwo = this.lastOne;
-			this.lastOne = battleDto;
-			this.battles.add(battleDto);
+			this.battles.add(this.last = battleDto);
 		}
 
 		public ArrayList<BattleDto> getBattleList() {
 			return this.battles;
 		}
 
-		public BattleDto getLastTwo() {
-			return this.lastTwo;
-		}
-
-		public BattleDto getLastOne() {
-			return this.lastOne;
+		public BattleDto getLast() {
+			return this.last;
 		}
 
 		public void clearLast() {
-			this.lastOne = null;
-			this.lastTwo = null;
+			this.last = null;
 		}
 	}
 

@@ -6,9 +6,12 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.MenuItem;
 
 import logbook.config.AppConstants;
-import logbook.context.update.data.DataType;
 import logbook.util.SwtUtils;
 
+/**
+ * 舰队面板-单
+ * @author MoeKagari
+ */
 public class FleetWindowOut extends WindowBase {
 	private FleetWindow fleetWindow;
 
@@ -25,8 +28,4 @@ public class FleetWindowOut extends WindowBase {
 	public Point getDefaultSize() {
 		return SwtUtils.DPIAwareSize(new Point(250, 269));
 	}
-
-	@Override
-	public void update(DataType type) {}
-
 }

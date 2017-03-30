@@ -12,6 +12,10 @@ import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
 
+/**
+ * 废弃记录
+ * @author MoeKagari
+ */
 public class DestroyItemTable extends AbstractTable<DestroyItemDto> {
 
 	public DestroyItemTable(ApplicationMain main, MenuItem menuItem, String title) {

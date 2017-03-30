@@ -45,9 +45,10 @@ public class FleetWindow implements EventListener {
 	/** 总等级 */
 	private Label totallvLabel;
 
+	private Composite fleetComposite;
 	private final ShipComposite[] shipComposites = new ShipComposite[MAXCHARA];
 
-	private int id;//1,2,3,4
+	private final int id;//1,2,3,4
 	private final String defaultFleetName;
 	private final Composite composite;
 	private final boolean notifiyAkashitimer;
@@ -68,7 +69,7 @@ public class FleetWindow implements EventListener {
 
 	public void init() {
 		this.initComposite();
-		this.initFleetNameComposite();
+		this.initFleetNameLabel();
 		SwtUtils.insertHSeparator(this.composite);
 		this.initInfoComposite();
 		SwtUtils.insertHSeparator(this.composite);
@@ -82,7 +83,7 @@ public class FleetWindow implements EventListener {
 		this.composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 	}
 
-	private void initFleetNameComposite() {
+	private void initFleetNameLabel() {
 		this.fleetNameLabel = new Label(this.composite, SWT.CENTER);
 		SwtUtils.initLabel(this.fleetNameLabel, this.defaultFleetName, new GridData(GridData.FILL_HORIZONTAL));
 	}
@@ -136,12 +137,12 @@ public class FleetWindow implements EventListener {
 	}
 
 	private void initFleetComposite() {
-		Composite fleetComposite = new Composite(this.composite, SWT.NONE);
-		fleetComposite.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
-		fleetComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		this.fleetComposite = new Composite(this.composite, SWT.NONE);
+		this.fleetComposite.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
+		this.fleetComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		for (int i = 0; i < MAXCHARA; i++) {
-			this.shipComposites[i] = new ShipComposite(fleetComposite);
+			this.shipComposites[i] = new ShipComposite(this.fleetComposite);
 		}
 	}
 
@@ -193,12 +194,12 @@ public class FleetWindow implements EventListener {
 
 	private static void updateShipInformation(ShipComposite shipComposite, ShipDto ship) {
 		SwtUtils.setText(shipComposite.iconlabel, "");
-		SwtUtils.setText(shipComposite.namelabel, ship != null ? ShipDtoTranslator.getName(ship) : "");
-		SwtUtils.setToolTipText(shipComposite.namelabel, ship != null ? ShipDtoTranslator.getName(ship) : "");
-		SwtUtils.setText(shipComposite.hplabel, ship != null ? (ship.getNowHp() + "/" + ship.getMaxHp()) : "");
-		SwtUtils.setText(shipComposite.hpmsglabel, ship != null ? HPMessage.getString(ship.getNowHp() * 1.0 / ship.getMaxHp()) : "");
-		SwtUtils.setText(shipComposite.lvlabel, ship != null ? ("Lv." + ship.getLv()) : "");
-		SwtUtils.setText(shipComposite.condlabel, ship != null ? String.valueOf(ship.getCond()) : "");
+		SwtUtils.setText(shipComposite.namelabel, ToolUtils.notNullThenHandle(ship, ShipDtoTranslator::getName, ""));
+		SwtUtils.setToolTipText(shipComposite.namelabel, ToolUtils.notNullThenHandle(ship, ShipDtoTranslator::getName, ""));
+		SwtUtils.setText(shipComposite.hplabel, ToolUtils.notNullThenHandle(ship, s -> s.getNowHp() + "/" + s.getMaxHp(), ""));
+		SwtUtils.setText(shipComposite.hpmsglabel, ToolUtils.notNullThenHandle(ship, s -> HPMessage.getString(s.getNowHp() * 1.0 / s.getMaxHp()), ""));
+		SwtUtils.setText(shipComposite.lvlabel, ToolUtils.notNullThenHandle(ship, s -> "Lv." + s.getLv(), ""));
+		SwtUtils.setText(shipComposite.condlabel, ToolUtils.notNullThenHandle(ship, s -> String.valueOf(s.getCond()), ""));
 
 		//五个装备
 		Character[] equipTexts = new Character[MAXEQUIP];

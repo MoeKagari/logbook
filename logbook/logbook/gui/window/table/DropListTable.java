@@ -19,6 +19,10 @@ import logbook.context.update.GlobalContext;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
 
+/**
+ * 掉落记录
+ * @author MoeKagari
+ */
 public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 
 	public DropListTable(ApplicationMain main, MenuItem menuItem, String title) {
@@ -75,7 +79,7 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 
 		public SortDrop(AbstractInfoBattleStartNext battleStartNext, boolean haveDamage, AbstractInfoBattleResult battleResult) {
 			this.time = battleResult.getTime();
-			this.map = battleStartNext.getMap();
+			this.map = battleStartNext.getMapString();
 			this.cell = battleStartNext.getNext();
 			this.isBoss = battleStartNext.isBoss();
 			this.rank = (!haveDamage && battleResult.getRank().startsWith("S")) ? "S完全胜利" : battleResult.getRank();

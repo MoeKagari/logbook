@@ -2,6 +2,7 @@ package logbook.internal;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.eclipse.swt.widgets.Label;
 
@@ -18,6 +19,8 @@ import logbook.context.update.GlobalContext;
 import logbook.context.update.GlobalContext.PLTime;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.ApplicationMain;
+import logbook.gui.window.FleetWindow;
+import logbook.gui.window.FleetWindowOut;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
@@ -36,7 +39,7 @@ public class SyncExecApplicationMain extends Thread {
 		try {
 			long nextUpdateTime = 0;
 			while (true) {
-				long currentTime = TimeString.getCurrentTime();
+				final long currentTime = TimeString.getCurrentTime();
 				this.main.getDisplay().asyncExec(() -> {
 					TrayMessageBox box = new TrayMessageBox();
 
@@ -80,6 +83,7 @@ public class SyncExecApplicationMain extends Thread {
 
 		public static void update(ApplicationMain main, long currentTime) {
 			if (timerCounter.needNotify(currentTime)) {
+				//姑且加上一个小时,保证正确
 				main.printNewDay(currentTime + TimeUnit.HOURS.toMillis(1));
 			}
 		}
@@ -89,8 +93,14 @@ public class SyncExecApplicationMain extends Thread {
 	private static class UpdateDeckNdockTask {
 		public static void update(ApplicationMain main, TrayMessageBox box, long currentTime) {
 			if (main.getShell().isDisposed()) return;
+
+			main.getDeckGroup().setRedraw(false);
 			updateDeck(main, box, currentTime);
+			main.getDeckGroup().setRedraw(true);
+
+			main.getNdockGroup().setRedraw(false);
 			updateNdock(main, box, currentTime);
+			main.getNdockGroup().setRedraw(true);
 		}
 
 		private static void updateDeck(ApplicationMain main, TrayMessageBox box, long currentTime) {
@@ -183,9 +193,10 @@ public class SyncExecApplicationMain extends Thread {
 		public static void update(ApplicationMain main, TrayMessageBox box, long currentTime) {
 			if (main.getShell().isDisposed()) return;
 
-			ToolUtils.forEach(main.getFleetWindows(), fw -> fw.getAkashiTimer().update(box, currentTime));
-			ToolUtils.forEach(main.getFleetWindowOuts(), fwo -> fwo.getFleetWindow().getAkashiTimer().update(box, currentTime));
-			ToolUtils.forEach(main.getFleetWindowAll().getFleetWindows(), fw -> fw.getAkashiTimer().update(box, currentTime));
+			Consumer<FleetWindow> updater = fw -> fw.getAkashiTimer().update(box, currentTime);
+			ToolUtils.forEach(main.getFleetWindows(), updater);
+			Arrays.stream(main.getFleetWindowOuts()).map(FleetWindowOut::getFleetWindow).forEach(updater);
+			ToolUtils.forEach(main.getFleetWindowAll().getFleetWindows(), updater);
 		}
 	}
 

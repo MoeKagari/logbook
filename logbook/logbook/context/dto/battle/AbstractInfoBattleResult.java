@@ -1,8 +1,11 @@
 package logbook.context.dto.battle;
 
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
+import javax.json.JsonValue;
 
 import logbook.context.update.data.Data;
+import logbook.util.ToolUtils;
 
 public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
 	private final String rank;
@@ -20,12 +23,7 @@ public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
 		this.deckName = json.getJsonObject("api_enemy_info").getString("api_deck_name");
 		this.getShip = json.containsKey("api_get_ship") ? (new BattleResult_GetShip(json.getJsonObject("api_get_ship"))) : null;
 		this.mvp = json.getInt("api_mvp");
-		this.mvpCombined = json.containsKey("api_mvp_combined") ? json.getInt("api_mvp_combined") : -1;
-	}
-
-	@Override
-	public boolean hasDownArrow(BattleDto pre) {
-		return false;
+		this.mvpCombined = ToolUtils.notNullThenHandle(json.get("api_mvp_combined"), mcv -> ToolUtils.ifHandle(mcv != JsonValue.NULL, () -> ((JsonNumber) mcv).intValue(), -1), -1);
 	}
 
 	public int getMvp() {
@@ -46,10 +44,6 @@ public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
 
 	public String getDeckName() {
 		return this.deckName;
-	}
-
-	public boolean haveNewShip() {
-		return this.getShip != null;
 	}
 
 	public BattleResult_GetShip getNewShip() {

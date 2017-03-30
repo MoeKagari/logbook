@@ -202,5 +202,4 @@ public class ShipDto {
 	public void slotExchange(int[] newSlots) {
 		this.slots = newSlots;
 	}
-
 }

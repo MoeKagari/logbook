@@ -117,6 +117,9 @@ public class MasterDataDto {
 			return this.json.size() <= 6;
 		}
 
+		public int getType() {
+			return this.json.getInt("api_stype");
+		}
 	}
 
 	public class MasterSlotitemDataDto {

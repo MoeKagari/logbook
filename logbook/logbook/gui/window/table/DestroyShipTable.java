@@ -1,6 +1,5 @@
 package logbook.gui.window.table;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.widgets.MenuItem;
@@ -22,7 +21,7 @@ public class DestroyShipTable extends AbstractTable<DestroyShipDto> {
 	}
 
 	@Override
-	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
+	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("日期", rd -> TimeString.timeToStringForTable(rd.getTime())));
 		tcms.add(new TableColumnManager("事件", DestroyShipDto::getEvent));
 		tcms.add(new TableColumnManager("舰娘", DestroyShipDto::getName));

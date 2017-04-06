@@ -2,6 +2,7 @@ package logbook.gui.window;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -18,6 +19,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.ToolItem;
 
+import logbook.context.update.GlobalContext;
 import logbook.context.update.data.DataType;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.util.SwtUtils;
@@ -27,13 +29,13 @@ public abstract class AbstractTable<T> extends WindowBase {
 	private Table table;
 	private final List<T> datas = new ArrayList<>();
 	private final ArrayList<TableColumnManager> tcms = new ArrayList<>();
-	private final ArrayList<Predicate<T>> filters = new ArrayList<>();
+	private final Predicate<T> filter;
 
 	public AbstractTable(ApplicationMain main, MenuItem menuItem, String title) {
 		super(main, menuItem, title);
 		this.tcms.add(new TableColumnManager("", true, null));//行头
 		this.initTCMS(this.tcms);
-		this.initFilters(this.filters);
+		this.filter = this.initFilter().negate();
 		this.initTable();
 		this.initMenuBar();
 	}
@@ -59,10 +61,19 @@ public abstract class AbstractTable<T> extends WindowBase {
 			MenuItem update = new MenuItem(cmdMenu, SWT.PUSH);
 			update.setText("刷新");
 			update.addSelectionListener(new ControlSelectionListener(ev -> this.updateWindowRedraw(this::updateTable)));
+
+			MenuItem autoWidth = new MenuItem(cmdMenu, SWT.PUSH);
+			autoWidth.setText("自适应列宽");
+			autoWidth.addSelectionListener(new ControlSelectionListener(ev -> this.updateWindowRedraw(this::pack)));
 		}
 	}
 
 	/*------------------------------------------------------------------------------------------------------------------------*/
+
+	/** 自适应列宽 */
+	private void pack() {
+		ToolUtils.forEach(this.table.getColumns(), TableColumn::pack);
+	}
 
 	@Override
 	public void update(DataType type) {
@@ -75,13 +86,16 @@ public abstract class AbstractTable<T> extends WindowBase {
 		ToolUtils.forEach(this.table.getItems(), TableItem::dispose);
 
 		//更新数据
+		this.datas.clear();
 		this.updateData(this.datas);
-		this.datas.removeIf(data -> this.filters.size() == 0 ? false : this.filters.stream().noneMatch(p -> p.test(data)));
+		this.datas.removeIf(this.filter);
 		for (int row = 0; row < this.datas.size(); row++) {
 			T data = this.datas.get(row);
 			TableItem tableItem = new TableItem(this.table, SWT.NONE);
 			for (int col = 0; col < this.tcms.size(); col++) {
-				tableItem.setText(col, this.tcms.get(col).getValue(row + 1, data));
+				TableColumnManager tcm = this.tcms.get(col);
+				tableItem.setText(col, tcm.getValue(row + 1, data));
+				ToolUtils.notNullThenHandle(tcm.other, other -> other.accept(tableItem, data));
 			}
 		}
 		this.datas.clear();
@@ -90,7 +104,10 @@ public abstract class AbstractTable<T> extends WindowBase {
 		TableColumn sortColumn = this.table.getSortColumn();
 		this.tcms.stream().filter(tcm -> tcm.stc.tableColumn == sortColumn).forEach(tcm -> this.sortTable(tcm.stc));
 
-		ToolUtils.forEach(this.table.getColumns(), TableColumn::pack);
+		if (ToolUtils.notNullThenHandle(this.table.getData("pack"), d -> ((Boolean) d) == Boolean.TRUE, true)) {
+			ToolUtils.forEach(this.table.getColumns(), TableColumn::pack);
+			this.table.setData("pack", Boolean.FALSE);
+		}
 	}
 
 	/**
@@ -117,12 +134,15 @@ public abstract class AbstractTable<T> extends WindowBase {
 
 	/*------------------------------------------------------------------------------------------------------------------------*/
 
-	protected void initFilters(ArrayList<Predicate<T>> filters) {}
+	protected Predicate<T> initFilter() {
+		return data -> true;
+	}
 
-	protected abstract void initTCMS(ArrayList<TableColumnManager> tcms);
+	protected abstract void initTCMS(List<AbstractTable<T>.TableColumnManager> tcms);
 
 	protected abstract void updateData(List<T> datas);
 
+	/** {@link GlobalContext}接收到类型为type的数据,更新了全局数据后,是否更新此table */
 	protected boolean needUpdate(DataType type) {
 		return false;
 	}
@@ -150,7 +170,7 @@ public abstract class AbstractTable<T> extends WindowBase {
 	/** 显示之前更新 */
 	@Override
 	protected void handlerBeforeDisplay() {
-		this.updateWindowRedraw(this::updateTable);
+		this.updateTable();
 	}
 
 	/**
@@ -161,16 +181,26 @@ public abstract class AbstractTable<T> extends WindowBase {
 		private final boolean isInteger;
 		private final String name;
 		private final Function<T, Object> value;
+		private final BiConsumer<TableItem, T> other;//其它对TableItem的操作,比如颜色,tooltip
 		private SortedTableColumn stc = null;
 
 		public TableColumnManager(String name, boolean isInteger, Function<T, Object> value) {
+			this(name, isInteger, value, null);
+		}
+
+		public TableColumnManager(String name, boolean isInteger, Function<T, Object> value, BiConsumer<TableItem, T> other) {
 			this.name = name;
 			this.isInteger = isInteger;
 			this.value = value;
+			this.other = other;
 		}
 
 		public TableColumnManager(String name, Function<T, Object> value) {
-			this(name, false, value);
+			this(name, false, value, null);
+		}
+
+		public TableColumnManager(String name, Function<T, Object> value, BiConsumer<TableItem, T> other) {
+			this(name, false, value, other);
 		}
 
 		public String getValue(int index, T t) {

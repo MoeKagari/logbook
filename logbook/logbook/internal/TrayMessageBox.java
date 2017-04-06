@@ -21,12 +21,18 @@ public class TrayMessageBox {
 		if (box.title_notice == null) return;
 		if (box.title_notice.size() == 0) return;
 
-		main.getDisplay().asyncExec(() -> {
+		ToolUtils.notNullThenHandle(main.getTrayItem().getToolTip(), ToolTip::dispose);
+		String text = StringUtils.join(box.title_notice.keySet(), "・");
+		String message = StringUtils.join(box.title_notice.values(), "\r\n");
+		{
 			ToolTip tip = new ToolTip(main.getShell(), SWT.BALLOON | SWT.ICON_INFORMATION);
-			tip.setText(StringUtils.join(box.title_notice.keySet(), "・"));
-			tip.setMessage(StringUtils.join(box.title_notice.values(), "\r\n"));
+			tip.setAutoHide(true);
+			tip.setText(text);
+			tip.setMessage(message);
 			main.getTrayItem().setToolTip(tip);
 			tip.setVisible(true);
-		});
+		}
+
+		box.title_notice.clear();
 	}
 }

@@ -1,6 +1,5 @@
 package logbook.gui.window.table;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.widgets.MenuItem;
@@ -24,7 +23,7 @@ public class CreateShipTable extends AbstractTable<CreateshipDto> {
 	}
 
 	@Override
-	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
+	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("日期", rd -> TimeString.timeToStringForTable(rd.getTime())));
 		tcms.add(new TableColumnManager("舰娘", rd -> ShipDtoTranslator.getName(rd.getShipId())));
 		tcms.add(new TableColumnManager("油", true, rd -> Integer.toString(rd.cost()[0])));

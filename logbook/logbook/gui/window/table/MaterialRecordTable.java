@@ -1,6 +1,5 @@
 package logbook.gui.window.table;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.widgets.MenuItem;
@@ -23,7 +22,7 @@ public class MaterialRecordTable extends AbstractTable<MaterialRecordDto> {
 	}
 
 	@Override
-	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
+	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("描述", MaterialRecordDto::getDescription));
 		tcms.add(new TableColumnManager("日期", rd -> TimeString.timeToStringForTable(rd.getTime())));
 		String[] materialStrings = MaterialDto.getMaterialStrings();

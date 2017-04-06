@@ -38,7 +38,7 @@ public class SyncExecApplicationMain extends Thread {
 	public void run() {
 		try {
 			long nextUpdateTime = 0;
-			while (true) {
+			while (this.main.getDisplay().isDisposed() == false) {
 				final long currentTime = TimeString.getCurrentTime();
 				this.main.getDisplay().asyncExec(() -> {
 					TrayMessageBox box = new TrayMessageBox();
@@ -171,11 +171,11 @@ public class SyncExecApplicationMain extends Thread {
 					String name = ShipDtoTranslator.getName(ship);
 					if (ship != null) {
 						long rest = (ndock.getTime() - currentTime) / 1000;
-						if (ndock.getTimerCounter().needNotify(currentTime)) {
-							box.add("入渠", name + "(Lv." + ship.getLv() + ")" + "-入渠已完了");
+						if (AppConfig.get().isNoticeNdock() && ndock.getTimerCounter().needNotify(currentTime)) {
+							box.add("入渠", name + "(Lv." + ship.getLevel() + ")" + "-入渠已完了");
 						}
 
-						nameLabelText = name + "(Lv." + ship.getLv() + ")";
+						nameLabelText = name + "(Lv." + ship.getLevel() + ")";
 						timeLabelText = TimeString.toDateRestString(rest, "入渠已完了");
 						timeLabelTooltipText = AppConstants.DECK_NDOCK_COMPLETE_TIME_FORMAT.format(ndock.getTime());
 					}

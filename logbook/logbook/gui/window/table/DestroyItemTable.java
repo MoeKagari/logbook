@@ -1,6 +1,5 @@
 package logbook.gui.window.table;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -23,7 +22,7 @@ public class DestroyItemTable extends AbstractTable<DestroyItemDto> {
 	}
 
 	@Override
-	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
+	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("日期", rd -> TimeString.timeToStringForTable(rd.getTime())));
 		tcms.add(new TableColumnManager("事件", DestroyItemDto::getEvent));
 		tcms.add(new TableColumnManager("ID", true, DestroyItemDto::getId));

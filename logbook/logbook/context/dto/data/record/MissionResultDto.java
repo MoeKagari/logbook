@@ -15,6 +15,7 @@ import logbook.util.JsonUtils;
  */
 public class MissionResultDto implements RecordDto {
 
+	private final int deckId;
 	private final int state;//0=失败,1=成功,2=大成功
 	private final String area;
 	private final String name;
@@ -22,7 +23,8 @@ public class MissionResultDto implements RecordDto {
 	private final MissionResultItem[] items = new MissionResultItem[] { null, null };
 	private final long time;
 
-	public MissionResultDto(JsonObject json, long time) {
+	public MissionResultDto(int deckId, JsonObject json, long time) {
+		this.deckId = deckId;
 		this.time = time;
 		this.state = json.getInt("api_clear_result");
 		this.area = json.getString("api_maparea_name");
@@ -53,6 +55,10 @@ public class MissionResultDto implements RecordDto {
 					this.items[0] = mri.get(0);
 			}
 		}
+	}
+
+	public int getDeckId() {
+		return this.deckId;
 	}
 
 	public int getState() {

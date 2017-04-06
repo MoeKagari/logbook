@@ -27,5 +27,4 @@ public class PresetDeckDto {
 	public int[] getShips() {
 		return this.ships;
 	}
-
 }

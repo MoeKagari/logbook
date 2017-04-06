@@ -3,9 +3,9 @@ package logbook.config;
 public class AppConfigBean {
 
 	private int listenPort = 8889;
-	private boolean useProxy = false;
+	private boolean useProxy = true;
 	private String proxyHost = "127.0.0.1";
-	private int proxyPort = 8123;
+	private int proxyPort = 8888;
 	private boolean allowOnlyFromLocalhost = true;
 	private boolean closeOutsidePort = true;
 

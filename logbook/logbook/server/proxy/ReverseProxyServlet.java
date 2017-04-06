@@ -17,11 +17,11 @@ import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpVersion;
-import org.eclipse.swt.widgets.Display;
 
 import logbook.config.AppConfig;
 import logbook.context.update.GlobalContextUpdater;
 import logbook.context.update.data.UndefinedData;
+import logbook.gui.window.ApplicationMain;
 
 /**
  * リバースプロキシ
@@ -119,7 +119,7 @@ public final class ReverseProxyServlet extends ProxyServlet {
 		if (stream != null) {
 			UndefinedData rawData = new UndefinedData(fullUrl, url, postField, stream.toByteArray());
 			UndefinedData undefinedData = rawData.decode(contentEncoding);
-			Display.getDefault().asyncExec(() -> GlobalContextUpdater.update(undefinedData, serverName, contentType));
+			ApplicationMain.main.getDisplay().asyncExec(() -> GlobalContextUpdater.update(undefinedData, serverName, contentType));
 		} else {
 			System.out.println("stream == null : " + fullUrl);
 		}

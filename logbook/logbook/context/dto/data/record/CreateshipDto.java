@@ -19,7 +19,7 @@ public class CreateshipDto implements RecordDto {
 	public CreateshipDto(ShipDto secretary, int[] mm, long time) {
 		if (secretary != null) {
 			this.flagship = ShipDtoTranslator.getName(secretary.getShipId());
-			this.flagshipLevel = secretary.getLv();
+			this.flagshipLevel = secretary.getLevel();
 		}
 		this.mm = mm;
 		this.time = time;

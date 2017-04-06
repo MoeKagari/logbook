@@ -1,6 +1,5 @@
 package logbook.gui.window.table;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -30,7 +29,7 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 	}
 
 	@Override
-	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
+	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("日期", rd -> AppConstants.TABLE_TIME_FORMAT.format(new Date(rd.getTime()))));
 		tcms.add(new TableColumnManager("地图", SortDrop::getMap));
 		tcms.add(new TableColumnManager("Cell", SortDrop::getCell));

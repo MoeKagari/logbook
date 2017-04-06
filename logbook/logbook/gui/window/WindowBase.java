@@ -33,6 +33,10 @@ public abstract class WindowBase implements EventListener {
 	private final Menu menuBar;
 	private ToolBar toolBar = null;
 
+	public WindowBase(ApplicationMain main, MenuItem menuItem, String title) {
+		this(main, menuItem, title, false);
+	}
+
 	public WindowBase(ApplicationMain main, MenuItem menuItem, String title, boolean top) {
 		this.main = main;
 
@@ -61,10 +65,6 @@ public abstract class WindowBase implements EventListener {
 		}
 
 		GlobalContextUpdater.addEventListener(this);
-	}
-
-	public WindowBase(ApplicationMain main, MenuItem menuItem, String title) {
-		this(main, menuItem, title, false);
 	}
 
 	/*------------------------------------------------------------------------------------------------------------*/
@@ -107,6 +107,15 @@ public abstract class WindowBase implements EventListener {
 
 	/*------------------------------------------------------------------------------------------------------------*/
 
+	/** 是否有toolbar,默认false */
+	protected boolean haveToolBar() {
+		return false;
+	}
+
+	/**
+	 * 需要将haveToolBar()返回true
+	 * @return 可能返回null(haveToolBar()为false时)
+	 */
 	protected ToolItem newToolItem(int style, String text, Consumer<SelectionEvent> handler) {
 		if (this.haveToolBar()) {
 			ToolItem toolItem = new ToolItem(this.toolBar, style);
@@ -116,6 +125,9 @@ public abstract class WindowBase implements EventListener {
 		}
 		return null;
 	}
+
+	@Override
+	public void update(DataType type) {}
 
 	/** 显示窗口前的操作 */
 	protected void handlerBeforeDisplay() {}
@@ -128,13 +140,6 @@ public abstract class WindowBase implements EventListener {
 		this.shell.setRedraw(false);
 		run.run();
 		this.shell.setRedraw(true);
-	}
-
-	@Override
-	public void update(DataType type) {}
-
-	protected boolean haveToolBar() {
-		return false;
 	}
 
 	/** 默认size */

@@ -37,8 +37,8 @@ public class DeckBuilder {
 		JsonObjectBuilder shipBuilder = Json.createObjectBuilder();
 
 		shipBuilder.add("id", String.valueOf(ship.getShipId()));
-		shipBuilder.add("lv", ship.getLv());
-		shipBuilder.add("luck", ship.getNowLuck());
+		shipBuilder.add("lv", ship.getLevel());
+		shipBuilder.add("luck", ship.getLuck()[0]);
 		{
 			JsonObjectBuilder itemsBuilder = Json.createObjectBuilder();
 			for (int i = 0; i < 4; i++) {

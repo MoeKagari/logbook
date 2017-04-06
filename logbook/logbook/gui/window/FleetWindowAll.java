@@ -3,6 +3,7 @@ package logbook.gui.window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.MenuItem;
 
@@ -22,7 +23,12 @@ public class FleetWindowAll extends WindowBase {
 
 	private void initFleetWindows() {
 		Composite fleetComposite = new Composite(this.getComposite(), SWT.NONE);
-		fleetComposite.setLayout(SwtUtils.makeGridLayout(2, 2, 2, 0, 0));
+		GridLayout fleetCompositeGridLayout = new GridLayout(2, true);
+		fleetCompositeGridLayout.horizontalSpacing = 2;
+		fleetCompositeGridLayout.verticalSpacing = 2;
+		fleetCompositeGridLayout.marginWidth = 0;
+		fleetCompositeGridLayout.marginHeight = 0;
+		fleetComposite.setLayout(fleetCompositeGridLayout);
 		fleetComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		int fleetLength = 4;

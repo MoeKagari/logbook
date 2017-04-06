@@ -206,12 +206,12 @@ public class CalcuExpWindow extends WindowBase {
 		this.shipcombo.removeAll();
 		this.ships.clear();
 		this.ships.addAll(GlobalContext.getShipMap().values());
-		ToolUtils.ifHandle(AppConfig.get().isNotCalcuExpForLevel99Ship(), () -> this.ships.removeIf(ship -> ship.getLv() == 99));
-		Collections.sort(this.ships, (a, b) -> Integer.compare(b.getLv(), a.getLv()));
+		ToolUtils.ifHandle(AppConfig.get().isNotCalcuExpForLevel99Ship(), () -> this.ships.removeIf(ship -> ship.getLevel() == 99));
+		Collections.sort(this.ships, (a, b) -> Integer.compare(b.getLevel(), a.getLevel()));
 
 		for (int i = 0; i < this.ships.size(); i++) {
 			ShipDto ship = this.ships.get(i);
-			this.shipcombo.add(ShipDtoTranslator.getName(ship) + "(" + ship.getLv() + ")");
+			this.shipcombo.add(ShipDtoTranslator.getName(ship) + "(" + ship.getLevel() + ")");
 		}
 
 		if (this.ships.size() != 0) {
@@ -234,7 +234,7 @@ public class CalcuExpWindow extends WindowBase {
 		this.shipcombo.select(slectIndex);
 		ShipDto ship = this.ships.get(slectIndex);
 
-		int beforelv = ship.getLv();
+		int beforelv = ship.getLevel();
 		int afterlv = beforelv == 155 ? 155 : (beforelv + 1);
 		this.beforelv.setSelection(beforelv);
 		this.afterlv.setSelection(afterlv);

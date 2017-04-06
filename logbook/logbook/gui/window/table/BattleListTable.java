@@ -1,6 +1,5 @@
 package logbook.gui.window.table;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,7 +24,7 @@ public class BattleListTable extends AbstractTable<BattleListTable.SortBattle> {
 	}
 
 	@Override
-	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
+	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("时间", rd -> AppConstants.TABLE_TIME_FORMAT.format(new Date(rd.getTime()))));
 		tcms.add(new TableColumnManager("舰队", SortBattle::getFleet));
 		tcms.add(new TableColumnManager("地图", SortBattle::getMap));

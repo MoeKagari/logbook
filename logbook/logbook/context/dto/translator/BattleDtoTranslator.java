@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.DoubleBinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -50,7 +52,7 @@ import logbook.util.ToolUtils;
 
 public class BattleDtoTranslator {
 
-	public static void newBattleComposite(Composite parent, BiConsumer<AbstractBattle, SelectionEvent> handler, boolean hasDownArrow, BattleDto lastOne, BattleDto lastTwo) {
+	public static void newBattleComposite(Composite parent, BiConsumer<AbstractBattle, SelectionEvent> handler, boolean hasDownArrow, BattleDto lastOne) {
 		if (lastOne instanceof InfoBattleStartDto) {
 			BTResult btr = newBattleStart((InfoBattleStartDto) lastOne);
 			if (btr != null) {
@@ -61,12 +63,10 @@ public class BattleDtoTranslator {
 
 		BTResult btr = BattleDtoTranslator.getBattle(lastOne);
 		if (btr != null) {
-			if (lastOne.getBattleType() == BattleType.PRACTICE_DAY) {
+			if (lastOne.getBattleType() == BattleType.PRACTICE_DAY) {//演习
 				SwtUtils.initLabel(new Label(parent, SWT.CENTER), "演习", new GridData(GridData.FILL_HORIZONTAL));
 				SwtUtils.initLabel(new Label(parent, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
-			}
-
-			if (hasDownArrow && lastTwo instanceof InfoBattleShipdeckDto) {
+			} else if (hasDownArrow) {
 				SwtUtils.initLabel(new Label(parent, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
 			}
 
@@ -79,7 +79,9 @@ public class BattleDtoTranslator {
 		base.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
 		base.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
+		//出击信息
 		ToolUtils.notNullThenHandle(btr.deckInformations, di -> newLabels(base, di));
+		//战斗前后状态
 		if (btr.before != null && btr.after != null) {
 			Composite stateComposite = new Composite(base, SWT.NONE);
 			stateComposite.setLayout(SwtUtils.makeGridLayout(3, 4, 0, 0, 0));
@@ -89,7 +91,7 @@ public class BattleDtoTranslator {
 			SwtUtils.initLabel(new Label(stateComposite, SWT.CENTER), "→", new GridData(SWT.CENTER, SWT.FILL, true, true));
 			newStateComposite(stateComposite, btr.after);
 
-			if (lastOne instanceof AbstractBattle) {//右键菜单
+			if (lastOne instanceof AbstractBattle) {//右键菜单,支队battle有效
 				MenuItem show = new MenuItem(new Menu(stateComposite), SWT.NONE);
 				show.setText("战斗流程");
 				if (handler != null) ControlSelectionListener.add(show, ev -> handler.accept((AbstractBattle) lastOne, ev));
@@ -187,7 +189,7 @@ public class BattleDtoTranslator {
 
 		String text = "地图:" + battleNext.getMapString() + ",Cell:" + battleNext.getNext() +//
 				"(" + battleNext.getNextType() +//
-				battleNext.getItems().stream().map(item -> new StringBuilder(",").append(item.toString())).reduce(new StringBuilder(""), StringBuilder::append) +//
+				battleNext.getItems().stream().map(item -> "," + item.toString()).reduce("", StringUtils::join) +//
 				(battleNext.isGoal() ? ",终点" : "") + ")";
 		deckInformations.add(text);
 
@@ -297,7 +299,18 @@ public class BattleDtoTranslator {
 
 	public static void createBattleFlow(Composite parent, AbstractBattle battle) {
 		//本次战斗结束后,所有船的状态
-		SwtUtils.initLabel(new Label(parent, SWT.LEFT), "战斗结束-各船状态", new GridData(GridData.FILL_HORIZONTAL));
+		Function<double[], String> percentToString = per -> {
+			StringBuilder sb = new StringBuilder();
+			sb.append("(");
+			sb.append(String.format("%1.4f", per[1])).append(":").append(String.format("%1.4f", per[0]));
+			if (per[0] != 0 && per[1] != 1 && per[1] != 0) sb.append(String.format("=%1.4f", per[1] / per[0]));
+			sb.append(")");
+			return sb.toString();
+		};
+		SwtUtils.initLabel(new Label(parent, SWT.LEFT),
+				"战斗结束-各船状态" +//只有昼战以及开幕夜战才表示受损率
+						((battle.isMidnight() && ((AbstractBattleMidnight) battle).isMidnightOnly() == false) ? "" : percentToString.apply(getBattleDamagePercent(battle)))//
+				, new GridData(GridData.FILL_HORIZONTAL));
 		addShipState(parent, battle);
 
 		//与战斗相关的一些信息
@@ -309,8 +322,8 @@ public class BattleDtoTranslator {
 		if (battle instanceof AbstractBattleMidnight) {
 			SwtUtils.initLabel(new Label(parent, SWT.CENTER), "夜战", new GridData(GridData.FILL_HORIZONTAL));
 			//夜战只有一个stage,所以只加入详细的攻击流程
-			AbstractBattleMidnight battleMidnight = ((AbstractBattleMidnight) battle);
-			addBattleAttack(parent, battle, battleMidnight.getBattleMidnightStage().getBattleAttacks(), enemyAttack -> Boolean.FALSE);
+			AbstractBattleMidnight midnight = ((AbstractBattleMidnight) battle);
+			addBattleAttack(parent, battle, midnight.getBattleMidnightStage().getBattleAttacks(), enemyAttack -> Boolean.FALSE);
 		}
 		if (battle instanceof AbstractBattleDay) {
 			SwtUtils.initLabel(new Label(parent, SWT.CENTER), "昼战流程", new GridData(GridData.FILL_HORIZONTAL));
@@ -319,8 +332,8 @@ public class BattleDtoTranslator {
 			BattleDeckAttackDamage fbdadco = new BattleDeckAttackDamage();
 			BattleDeckAttackDamage ebdad = new BattleDeckAttackDamage();
 			BattleDeckAttackDamage ebdadco = new BattleDeckAttackDamage();
-			AbstractBattleDay battleDay = ((AbstractBattleDay) battle);
-			battleDay.getBattleDayStage().forEach(stage -> {
+			AbstractBattleDay day = ((AbstractBattleDay) battle);
+			day.getBattleDayStage().forEach(stage -> {
 				//昼战stage的name
 				SwtUtils.initLabel(new Label(parent, SWT.LEFT), stage.getStageName(), new GridData(GridData.FILL_HORIZONTAL));
 
@@ -332,7 +345,7 @@ public class BattleDtoTranslator {
 					addBattleAttack(parent, battle, stage.battleAttacks, ((OpeningTaisen) stage)::getSimulatorObject);
 				} else if (stage.getType() == BattleDayStageType.OPENINGATTACK || stage.getType() == BattleDayStageType.RAIGEKI) {
 					haveAttack = true;
-					addRaigekiAttack(parent, battleDay, (OpeningAttack) stage);
+					addRaigekiAttack(parent, day, (OpeningAttack) stage);
 				}
 
 				//喷气机受损情况
@@ -355,16 +368,16 @@ public class BattleDtoTranslator {
 				Composite deckNowState = new Composite(parent, SWT.NONE);
 				deckNowState.setLayout(new RowLayout());
 				{
-					addOnedeckNowState(deckNowState, battleDay.getfDeck(), fbdad, stage.fAttackDamage, haveAttack);
+					addOnedeckNowState(deckNowState, day.getfDeck(), fbdad, stage.fAttackDamage, haveAttack);
 					fbdad.add(stage.fAttackDamage);
 
-					addOnedeckNowState(deckNowState, battleDay.getfDeckCombine(), fbdadco, stage.fAttackDamageco, haveAttack);
+					addOnedeckNowState(deckNowState, day.getfDeckCombine(), fbdadco, stage.fAttackDamageco, haveAttack);
 					fbdadco.add(stage.fAttackDamageco);
 
-					addOnedeckNowState(deckNowState, battleDay.geteDeck(), ebdad, stage.eAttackDamage, haveAttack);
+					addOnedeckNowState(deckNowState, day.geteDeck(), ebdad, stage.eAttackDamage, haveAttack);
 					ebdad.add(stage.eAttackDamage);
 
-					addOnedeckNowState(deckNowState, battleDay.geteDeckCombine(), ebdadco, stage.eAttackDamageco, haveAttack);
+					addOnedeckNowState(deckNowState, day.geteDeckCombine(), ebdadco, stage.eAttackDamageco, haveAttack);
 					ebdadco.add(stage.eAttackDamageco);
 				}
 			});
@@ -795,6 +808,63 @@ public class BattleDtoTranslator {
 			}
 		}
 		return String.valueOf(attackType);
+	}
+
+	public static double[] getBattleDamagePercent(AbstractBattle battle) {
+		BiFunction<BattleDeck, BattleDeckAttackDamage, int[]> get = (bd, bdad) -> {
+			int tnow = 0, tdmg = 0;
+			if (bd != null && bd.exist()) {
+				int[] nowhps = bd.nowhps;
+				int[] dmgs = bdad.dmgs;
+				for (int i = 0; i < 6; i++) {
+					int now = nowhps[i];
+					int dmg = dmgs[i];
+					if (now < 0) continue;
+
+					tnow += now;
+					tdmg += dmg > now ? now : dmg;
+				}
+			}
+			return new int[] { tnow, tdmg };
+		};
+
+		int fnow = 0, enow = 0;
+		int fdmg = 0, edmg = 0;
+		if (battle instanceof AbstractBattleDay) {
+			AbstractBattleDay day = (AbstractBattleDay) battle;
+
+			for (int[] nd : new int[][] { //
+					get.apply(day.getfDeck(), day.getfDeckAttackDamage()),//
+					get.apply(day.getfDeckCombine(), day.getfDeckCombineAttackDamage()),//
+			}) {
+				fnow += nd[0];
+				fdmg += nd[1];
+			}
+			for (int[] nd : new int[][] { //
+					get.apply(day.geteDeck(), day.geteDeckAttackDamage()),//
+					get.apply(day.geteDeckCombine(), day.geteDeckCombineAttackDamage()),//
+			}) {
+				enow += nd[0];
+				edmg += nd[1];
+			}
+		}
+		if (battle instanceof AbstractBattleMidnight) {
+			AbstractBattleMidnight midnight = (AbstractBattleMidnight) battle;
+
+			BattleDeck[] activeDecks = midnight.getActiveDeck();
+			BattleMidnightStage stage = midnight.getBattleMidnightStage();
+			for (int[] nd : new int[][] { get.apply(activeDecks[0], stage.getfAttackDamage()) }) {
+				fnow += nd[0];
+				fdmg += nd[1];
+			}
+			for (int[] nd : new int[][] { get.apply(activeDecks[1], stage.geteAttackDamage()) }) {
+				enow += nd[0];
+				edmg += nd[1];
+			}
+		}
+
+		DoubleBinaryOperator calcu = (now, dmg) -> dmg == 0 ? 0 : (dmg * 1.0 / now);
+		return new double[] { calcu.applyAsDouble(fnow, fdmg), calcu.applyAsDouble(enow, edmg) };
 	}
 
 }

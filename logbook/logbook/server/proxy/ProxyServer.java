@@ -10,7 +10,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 
 import logbook.config.AppConfig;
@@ -135,7 +134,7 @@ public final class ProxyServer {
 
 		final String message = sb.toString();
 
-		Display.getDefault().asyncExec(new Runnable() {
+		ApplicationMain.main.getDisplay().asyncExec(new Runnable() {
 			@Override
 			public void run() {
 				MessageBox box = new MessageBox(ApplicationMain.main.getShell(), SWT.YES | SWT.ICON_ERROR);

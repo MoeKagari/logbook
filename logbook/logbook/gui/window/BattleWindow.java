@@ -12,6 +12,7 @@ import org.eclipse.swt.widgets.ScrollBar;
 import logbook.config.AppConfig;
 import logbook.context.dto.battle.AbstractBattle;
 import logbook.context.dto.battle.BattleDto;
+import logbook.context.dto.battle.info.InfoBattleShipdeckDto;
 import logbook.context.dto.translator.BattleDtoTranslator;
 import logbook.context.update.GlobalContext;
 import logbook.context.update.data.DataType;
@@ -38,15 +39,22 @@ public class BattleWindow extends WindowBase {
 		if (type == DataType.PORT) {
 			this.sbc.clearWindow();
 			this.bfw.sbc.clearWindow();
+			this.lastInWindow = null;
 			GlobalContext.getBattlelist().clearLast();
 		} else {
 			BattleDto last = GlobalContext.getBattlelist().getLast();
 			if (last != this.lastInWindow && last != null) {
-				ToolUtils.ifHandle(AppConfig.get().isAutoUpdateBattleFlow(), () -> this.bfw.updateBattle(last, null));//自动更新
-				BattleDtoTranslator.newBattleComposite(this.sbc.contentComposite, (battle, ev) -> this.bfw.updateBattle(battle, ev), this.sbc.contentComposite.getChildren().length != 0, last, this.lastInWindow);
+				//自动更新
+				ToolUtils.ifHandle(AppConfig.get().isAutoUpdateBattleFlow(), () -> this.bfw.updateBattle(last, null));
+
+				//面板没有内容时,没有downarrow
+				boolean haveDownArrow = this.sbc.contentComposite.getChildren().length != 0;
+				//battleresult → shipdeck → next ,后两个之间加入downarrow
+				haveDownArrow &= this.lastInWindow instanceof InfoBattleShipdeckDto;
+				BattleDtoTranslator.newBattleComposite(this.sbc.contentComposite, this.bfw::updateBattle, haveDownArrow, last);
 			}
+			this.lastInWindow = last;
 		}
-		this.lastInWindow = GlobalContext.getBattlelist().getLast();
 		this.sbc.layout(true);
 	}
 

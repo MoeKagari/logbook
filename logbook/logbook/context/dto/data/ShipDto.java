@@ -13,34 +13,45 @@ public class ShipDto {
 
 	private final JsonObject json;
 	/**
-	 * 更新(PLTIME)是是否需要此ShipDto
+	 * 更新(PLTIME)时是否需要此ShipDto
 	 */
 	private boolean needForPLUpdate = true;
 	private final long time = TimeString.getCurrentTime();
 
+	private int shipId;
 	private int id;
-	private int lv;
+	private int level;
+
 	private int[] onSlot;
 	private int[] slots;//长度5,最后位不明作用
 	private int slotex;
+
 	private boolean locked;
 	private int cond;
 	private int nowHp;
 	private int maxHp;
+
 	private int fuel;
 	private int bull;
-	private int ndockTime;
+
 	private int soku;
+	private long ndockTime;
 	private int[] ndockCost;
 	private int[] exp;
 	private int[] luck;
-	private int shipId;
+	private int[] sakuteki;
+	private int[] taisen;
+	private int[] kaihi;
+	private int[] soukou;
+	private int[] taiku;
+	private int[] raisou;
+	private int[] karyoku;
 
 	public ShipDto(JsonObject json) {
 		this.json = json;
 
 		this.id = this.json.getInt("api_id");
-		this.lv = this.json.getInt("api_lv");
+		this.level = this.json.getInt("api_lv");
 		this.onSlot = JsonUtils.getIntArray(this.json, "api_onslot");
 		this.slots = JsonUtils.getIntArray(this.json, "api_slot");
 		this.slotex = this.json.getInt("api_slot_ex");
@@ -51,11 +62,19 @@ public class ShipDto {
 		this.fuel = this.json.getInt("api_fuel");
 		this.bull = this.json.getInt("api_bull");
 		this.soku = this.json.getInt("api_soku");
-		this.ndockTime = this.json.getInt("api_ndock_time");
+		this.ndockTime = this.json.getJsonNumber("api_ndock_time").longValue();
 		this.ndockCost = JsonUtils.getIntArray(this.json, "api_ndock_item");
 		this.exp = JsonUtils.getIntArray(json, "api_exp");
 		this.shipId = this.json.getInt("api_ship_id");
+
 		this.luck = JsonUtils.getIntArray(json, "api_lucky");
+		this.sakuteki = JsonUtils.getIntArray(json, "api_sakuteki");
+		this.taisen = JsonUtils.getIntArray(json, "api_taisen");
+		this.kaihi = JsonUtils.getIntArray(json, "api_kaihi");
+		this.soukou = JsonUtils.getIntArray(json, "api_soukou");
+		this.taiku = JsonUtils.getIntArray(json, "api_taiku");
+		this.raisou = JsonUtils.getIntArray(json, "api_raisou");
+		this.karyoku = JsonUtils.getIntArray(json, "api_karyoku");
 	}
 
 	/** 加入镇守府时的编号 */
@@ -67,8 +86,8 @@ public class ShipDto {
 		return this.shipId;
 	}
 
-	public int getLv() {
-		return this.lv;
+	public int getLevel() {
+		return this.level;
 	}
 
 	public int getCurrentExp() {
@@ -111,7 +130,7 @@ public class ShipDto {
 		return this.bull;
 	}
 
-	public int getNdockTime() {
+	public long getNdockTime() {
 		return this.ndockTime;
 	}
 
@@ -121,6 +140,10 @@ public class ShipDto {
 
 	public int getCond() {
 		return this.cond;
+	}
+
+	public boolean isLocked() {
+		return this.locked;
 	}
 
 	public int getSoku() {
@@ -149,16 +172,36 @@ public class ShipDto {
 			39],
 	 */
 
-	public int getNowLuck() {
-		return this.luck[0];
+	public int[] getKaryoku() {
+		return this.karyoku;
 	}
 
-	public int getMaxLuck() {
-		return this.luck[1];
+	public int[] getRaisou() {
+		return this.raisou;
 	}
 
-	public boolean isLocked() {
-		return this.locked;
+	public int[] getTaiku() {
+		return this.taiku;
+	}
+
+	public int[] getSoukou() {
+		return this.soukou;
+	}
+
+	public int[] getKaihi() {
+		return this.kaihi;
+	}
+
+	public int[] getTaisen() {
+		return this.taisen;
+	}
+
+	public int[] getSakuteki() {
+		return this.sakuteki;
+	}
+
+	public int[] getLuck() {
+		return this.luck;
 	}
 
 	/*----------------------------------------------------------------------------------------------------------------------*/

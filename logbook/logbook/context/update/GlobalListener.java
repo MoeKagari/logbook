@@ -18,10 +18,10 @@ import logbook.util.ToolUtils;
  * @author MoeKagari
  */
 public class GlobalListener {
-
 	private static final ApplicationMain main = ApplicationMain.main;
 
 	public static void update(DataType type) {
+		if (main.getShell().isDisposed()) return;
 		UpdateItemCountTask.update();
 		UpdateShipCountTask.update();
 		UpdateTitleTask.update();
@@ -32,8 +32,6 @@ public class GlobalListener {
 	private static class UpdateTitleTask {
 		public static void update() {
 			Shell shell = main.getShell();
-			if (shell.isDisposed()) return;
-
 			String title = AppConstants.MAINWINDOWNAME;
 
 			BasicDto basic = GlobalContext.getBasicInformation();
@@ -53,31 +51,26 @@ public class GlobalListener {
 	//更新主面板的 所有舰娘 按钮
 	private static class UpdateShipCountTask {
 		public static void update() {
-			if (main.getShell().isDisposed()) return;
-
 			BasicDto basic = GlobalContext.getBasicInformation();
 			Button shipList = main.getShipList();
-			String setText = "舰娘(" + GlobalContext.getShipMap().size() + "/" + (basic == null ? 0 : basic.getMaxChara()) + ")";
-			if (StringUtils.equals(shipList.getText(), setText) == false) shipList.setText(setText);
+			String text = "舰娘(" + GlobalContext.getShipMap().size() + "/" + (basic == null ? 0 : basic.getMaxChara()) + ")";
+			if (StringUtils.equals(shipList.getText(), text) == false) shipList.setText(text);
 		}
 	}
 
 	//更新主面板的 所有装备 按钮
 	private static class UpdateItemCountTask {
 		public static void update() {
-			if (main.getShell().isDisposed()) return;
-
 			BasicDto basic = GlobalContext.getBasicInformation();
 			Button itemList = main.getItemList();
-			String setText = "装备(" + (GlobalContext.getItemMap().size() + 0) + "/" + (basic == null ? 0 : basic.getMaxSlotItem()) + ")";
-			if (StringUtils.equals(itemList.getText(), setText) == false) itemList.setText(setText);
+			String text = "装备(" + (GlobalContext.getItemMap().size() + 0) + "/" + (basic == null ? 0 : basic.getMaxSlotItem()) + ")";
+			if (StringUtils.equals(itemList.getText(), text) == false) itemList.setText(text);
 		}
 	}
 
 	//更新主面板的 资源
 	private static class UpdateResourceTask {
 		public static void update() {
-			if (main.getShell().isDisposed()) return;
 			if (GlobalContext.getCurrentMaterial() == null) return;
 
 			Label[] resourceLabels = main.getResourceLabel();

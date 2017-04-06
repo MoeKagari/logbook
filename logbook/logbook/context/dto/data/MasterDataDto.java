@@ -113,6 +113,10 @@ public class MasterDataDto {
 			return this.json.getInt("api_bull_max");
 		}
 
+		public int[] getOnslotMax() {
+			return JsonUtils.getIntArray(this.json, "api_maxeq");
+		}
+
 		public boolean isEnemy() {
 			return this.json.size() <= 6;
 		}

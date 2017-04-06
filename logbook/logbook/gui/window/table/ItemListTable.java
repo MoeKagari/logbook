@@ -31,7 +31,7 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 	}
 
 	@Override
-	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
+	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("装备", SortItem::getName));
 		tcms.add(new TableColumnManager("种类", SortItem::getType));
 		IntFunction<String> levelString = level -> level > 0 ? String.valueOf(level) : "";
@@ -57,7 +57,7 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 				levelResult.stream().collect(Collectors.groupingBy(ItemDto::getAlv)).forEach((alv, alvResult) -> {
 					ArrayList<String> sb = new ArrayList<>();
 					alvResult.stream().map(whichShipWithItem).filter(ToolUtils::isNotNull).collect(Collectors.toMap(ship -> ship, ship -> 1, Integer::sum)).forEach((ship, count) -> {
-						sb.add(String.format("%s(Lv.%d)(%d)", ShipDtoTranslator.getName(ship), ship.getLv(), count.intValue()));
+						sb.add(String.format("%s(Lv.%d)(%d)", ShipDtoTranslator.getName(ship), ship.getLevel(), count.intValue()));
 					});
 					datas.add(new SortItem(alvResult.size(), level, alv, slotitemId, StringUtils.join(sb, ",")));
 				});

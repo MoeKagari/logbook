@@ -1,6 +1,5 @@
 package logbook.gui.window.table;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
 
@@ -23,7 +22,7 @@ public class QuestListTable extends AbstractTable<QuestDto> {
 	}
 
 	@Override
-	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
+	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("No", true, rd -> rd.getInformation().getNo()));
 		tcms.add(new TableColumnManager("状态", rd -> rd.getInformation().getStateString()));
 		tcms.add(new TableColumnManager("进度", rd -> rd.getInformation().getProcess()));

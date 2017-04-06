@@ -12,7 +12,7 @@ public class MissionRoom extends Room {
 
 	public void doMissionResulut(Data data, JsonValue json) {
 		try {
-			GlobalContext.getMissionlist().add(new MissionResultDto((JsonObject) json, TimeString.getCurrentTime()));
+			GlobalContext.getMissionlist().add(new MissionResultDto(Integer.parseInt(data.getField("api_deck_id")), (JsonObject) json, TimeString.getCurrentTime()));
 		} catch (Exception e) {
 			this.getLog().get().warn("doMissionResulut" + "处理错误", e);
 			this.getLog().get().warn(data);

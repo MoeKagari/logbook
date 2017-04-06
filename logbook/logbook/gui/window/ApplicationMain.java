@@ -56,44 +56,48 @@ import logbook.util.ToolUtils;
 public class ApplicationMain {
 
 	public static void main(String[] args) {
-		//多重启动检查
-		if (applicationLockCheck()) return;
-		//启动程序
-		startLogbook();
+		//多重启动检查之后启动
+		ToolUtils.ifHandle(applicationLockCheck(), ApplicationMain::startLogbook);
 	}
 
+	/**
+	 * 没有锁住(false),代表本次启动为多重启动
+	 */
 	private static boolean applicationLockCheck() {
-		if (!applicationLock.isError() && !applicationLock.isLocked()) {
+		if (applicationLock.isError() || applicationLock.isLocked()) return true;
+
+		{
+			Display display = new Display();
+			Shell shell = new Shell(display, SWT.TOOL);
 			{
-				Shell shell = new Shell(Display.getDefault(), SWT.TOOL);
 				MessageBox mes = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK);
-				mes.setText("");
+				mes.setText("多重启动");
 				mes.setMessage("请勿多重启动");
 				mes.open();
-				shell.dispose();
 			}
-			applicationLock.release();
-			return true;
+			shell.dispose();
+			display.dispose();
 		}
+		applicationLock.release();
 		return false;
 	}
 
 	private static void startLogbook() {
 		try {
 			AppConfig.load();
-			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
+			GlobalContext.load();
 			main = new ApplicationMain();
 			new SyncExecApplicationMain(main).start();
-			GlobalContext.load();
 			ProxyServer.start();
 			HPMessage.initColor(main);
+			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
 			main.display();//程序堵塞在这里
 		} catch (Exception | Error e) {
 			LOG.get().fatal("main thread 异常中止", e);
 		} finally {
+			applicationLock.release();
 			main.dispose();
 			HPMessage.dispose();
-			applicationLock.release();
 			ProxyServer.end();
 		}
 	}
@@ -141,8 +145,12 @@ public class ApplicationMain {
 	/** 掉落记录 */
 	private DropListTable dropListTable;
 
-	/** 所有舰娘 */
-	private ShipListTable shipListTable;
+	/** 所有舰娘(信息) */
+	private ShipListTable shipListTable1;
+	/** 所有舰娘(属性) */
+	private ShipListTable shipListTable2;
+	/** 所有舰娘(综合) */
+	private ShipListTable shipListTable3;
 	/** 所有装备 */
 	private ItemListTable itemListTable;
 	/** 所有任务 */
@@ -150,7 +158,7 @@ public class ApplicationMain {
 
 	/*------------------------------------------------------------------------------------------------------*/
 
-	private Display display = Display.getDefault();
+	private Display display = new Display();
 	private Image logo = new Image(this.display, this.getClass().getResourceAsStream(AppConstants.LOGO));
 	private final Shell shell;//主面板shell
 	private final Shell subShell;//辅助shell,不显示,用于其他呼出式窗口
@@ -355,9 +363,32 @@ public class ApplicationMain {
 		cmdMenuItem.setMenu(cmdMenu);
 		{
 			MenuItem ship = new MenuItem(cmdMenu, SWT.CHECK);
-			ship.setText("所有舰娘");
-			this.shipListTable = new ShipListTable(this, ship, ship.getText());
-			this.shipList.addSelectionListener(new ControlSelectionListener(this.shipListTable::displayWindow));
+			ship.setText("所有舰娘(信息)");
+			this.shipListTable1 = new ShipListTable(this, ship, ship.getText()) {
+				@Override
+				protected int getMode() {
+					return 1;
+				}
+			};
+			this.shipList.addSelectionListener(new ControlSelectionListener(this.shipListTable1::displayWindow));
+
+			MenuItem ship2 = new MenuItem(cmdMenu, SWT.CHECK);
+			ship2.setText("所有舰娘(属性)");
+			this.shipListTable2 = new ShipListTable(this, ship2, ship2.getText()) {
+				@Override
+				protected int getMode() {
+					return 2;
+				}
+			};
+
+			MenuItem ship3 = new MenuItem(cmdMenu, SWT.CHECK);
+			ship3.setText("所有舰娘(综合)");
+			this.shipListTable3 = new ShipListTable(this, ship3, ship3.getText()) {
+				@Override
+				protected int getMode() {
+					return 3;
+				}
+			};
 
 			MenuItem item = new MenuItem(cmdMenu, SWT.CHECK);
 			item.setText("所有装备");
@@ -557,11 +588,11 @@ public class ApplicationMain {
 		return this.mapinfoWindow;
 	}
 
-	public AbstractTable<?>[] getRecordTables() {
+	public AbstractTable<?>[] getTableWindows() {
 		return new AbstractTable[] {//
 				this.createItemTable, this.createShipTable, //
 				this.missionResultTable, this.materialRecordTable, //
-				this.questListTable, this.shipListTable, this.itemListTable,//
+				this.shipListTable1, this.shipListTable2, this.shipListTable3, this.itemListTable, this.questListTable, //
 				this.destroyShipTable, this.destroyItemTable,//
 				this.battleListTable, this.dropListTable//
 		};
@@ -592,15 +623,17 @@ public class ApplicationMain {
 		this.logPrint("航海日志启动");
 		this.shell.open();
 		this.shell.forceActive();
+		this.rightComposite.forceFocus();
 		while (this.shell.isDisposed() == false) {
 			ToolUtils.ifNotHandle(this.display.readAndDispatch(), this.display::sleep);
 		}
+		this.display.dispose();
 	}
 
 	private void setVisible(boolean visible) {
 		ToolUtils.ifHandle(visible, () -> this.shell.setMinimized(false));
 		this.shell.setVisible(visible);
-		ToolUtils.ifHandle(visible, () -> this.shell.forceActive());
+		ToolUtils.ifHandle(visible, this.shell::forceActive);
 	}
 
 	private void dispose() {

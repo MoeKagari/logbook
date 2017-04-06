@@ -28,6 +28,17 @@ public class ItemDtoTranslator {
 		return ToolUtils.notNullThenHandle(msd, m -> Arrays.toString(m.getType()), "");
 	}
 
+	public static String getNameWithLevel(int id) {
+		return id == -1 ? "" : getNameWithLevel(GlobalContext.getItemMap().get(id));
+	}
+
+	public static String getNameWithLevel(ItemDto item) {
+		if (item == null) return "";
+		int star = item.getLevel();
+		int alv = item.getAlv();
+		return getName(item) + (alv > 0 ? (" 熟" + alv) : "") + (star > 0 ? (" ★" + star) : "");
+	}
+
 	public static char getOneWordName(ItemDto item) {
 		ItemData itemData = ItemDataMap.get(item.getSlotitemId());
 		return itemData == null ? ' ' : itemData.getOneWordName();
@@ -41,7 +52,7 @@ public class ItemDtoTranslator {
 		int suodi = 0;
 
 		if (item != null) {
-
+			//TODO
 		}
 
 		return suodi;

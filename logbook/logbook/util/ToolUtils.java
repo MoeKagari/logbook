@@ -16,6 +16,10 @@ import java.util.function.ToIntFunction;
 
 public class ToolUtils {
 
+	public static double division(int a, int b) {
+		return a * 1.0 / b;
+	}
+
 	public static boolean isNull(Object obj) {
 		return obj == null;
 	}
@@ -46,11 +50,11 @@ public class ToolUtils {
 		return ifHandle(!b, sup, defaultValue);
 	}
 
-	public static <T> T ifHandle(boolean b, Supplier<T> sup, T defaultValue) {
+	public static <S> S ifHandle(boolean b, Supplier<S> sup, S defaultValue) {
 		return b ? sup.get() : defaultValue;
 	}
 
-	public static <T> T ifNotHandle(boolean b, Supplier<T> sup, T defaultValue) {
+	public static <S> S ifNotHandle(boolean b, Supplier<S> sup, S defaultValue) {
 		return ifHandle(!b, sup, defaultValue);
 	}
 
@@ -68,6 +72,14 @@ public class ToolUtils {
 
 	public static <S> void ifNotHandle(S s, Predicate<S> pre, Consumer<S> con) {
 		ifHandle(s, pre.negate(), con);
+	}
+
+	public static <S, T> T ifHandle(S s, Predicate<S> pre, Function<S, T> fun, T defaultValue) {
+		return pre.test(s) ? fun.apply(s) : defaultValue;
+	}
+
+	public static <S, T> T ifNotHandle(S s, Predicate<S> pre, Function<S, T> fun, T defaultValue) {
+		return ifHandle(s, pre.negate(), fun, defaultValue);
 	}
 
 	/*----------------------------------------------------------------------------------------------------------*/

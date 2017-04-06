@@ -20,7 +20,7 @@ public class DestroyShipDto implements RecordDto {
 		this.event = event;
 		this.id = ship.getId();
 		this.name = ShipDtoTranslator.getName(ship);
-		this.level = ship.getLv();
+		this.level = ship.getLevel();
 	}
 
 	public long getTime() {

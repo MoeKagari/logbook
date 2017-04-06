@@ -74,9 +74,8 @@ public final class SwtUtils {
 	}
 
 	public static void initLabel(Label label, String text, GridData gd, Color background) {
-		label.setText(text);
-		label.setLayoutData(gd);
-		if (background != null) label.setBackground(background);
+		label.setBackground(background);
+		initLabel(label, text, gd);
 	}
 
 	public static void initLabel(Label label, String text, GridData gd, int width) {
@@ -85,10 +84,8 @@ public final class SwtUtils {
 	}
 
 	public static void initLabel(Label label, String text, GridData gd, int width, Color background) {
-		gd.widthHint = SwtUtils.DPIAwareWidth(width);
-		label.setText(text);
-		label.setLayoutData(gd);
-		if (background != null) label.setBackground(background);
+		label.setBackground(background);
+		initLabel(label, text, gd, width);
 	}
 
 	public static void insertBlank(Composite composite, int width) {

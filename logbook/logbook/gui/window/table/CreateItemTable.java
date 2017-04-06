@@ -1,6 +1,5 @@
 package logbook.gui.window.table;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.widgets.MenuItem;
@@ -23,7 +22,7 @@ public class CreateItemTable extends AbstractTable<CreateItemDto> {
 	}
 
 	@Override
-	protected void initTCMS(ArrayList<TableColumnManager> tcms) {
+	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("日期", rd -> TimeString.timeToStringForTable(rd.getTime())));
 		tcms.add(new TableColumnManager("状态", rd -> rd.isSuccess() ? "成功" : "失败"));
 		tcms.add(new TableColumnManager("装备", rd -> rd.isSuccess() ? ItemDtoTranslator.getName(rd.getSlotitemId()) : ""));

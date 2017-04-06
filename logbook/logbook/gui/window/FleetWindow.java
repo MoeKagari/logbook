@@ -132,7 +132,7 @@ public class FleetWindow implements EventListener {
 
 			this.akashiLabel = new Label(infoComposite2, SWT.RIGHT);
 			this.akashiLabel.setToolTipText("泊地修理");
-			SwtUtils.initLabel(this.akashiLabel, "000时00分00秒", new GridData(), 87);
+			SwtUtils.initLabel(this.akashiLabel, "", new GridData(), 87);
 		}
 	}
 
@@ -153,30 +153,49 @@ public class FleetWindow implements EventListener {
 		DeckDto deck = this.getDeck();
 
 		switch (type) {
+			default:
+				return;
 			case UPDATEDECKNAME:
 				ToolUtils.notNullThenHandle(deck, d -> SwtUtils.setText(this.fleetNameLabel, d.getName()));
 				return;
+
 			case PORT:
-				this.akashiTimer.reset();
+				this.akashiTimer.reset(TimeString.getCurrentTime());
 				break;
 			case CHANGE:
-				if (deck != null && DeckDtoTranslator.isAkashiFlagship(deck)) {
-					if (DeckDtoTranslator.isOnlyAkashi(deck) == false) {
-						this.akashiTimer.resetAkashiFlagship();
-					}
-				}
+				this.akashiTimer.resetAkashiFlagship(deck);
 				break;
-			default:
-				break;
+
+			case PRESET_SELECT:
+			case POWERUP:
+			case SLOTSET:
+			case UNSETSLOT_ALL:
+			case OPEN_EXSLOT:
+			case SLOTSET_EX:
+			case SLOT_EXCHANGE:
+			case SLOT_DEPRIVE:
+			case REMODELING:
+			case MARRIAGE:
+			case SHIP3:
+			case SHIP2:
+			case BASIC:
+			case DECK:
+			case NDOCK:
+			case SLOT_ITEM:
+			case NYUKYO_START:
+			case NYUKYO_SPEEDCHANGE:
+			case DESTROYSHIP:
+			case CHARGE:
+			case REQUIRE_INFO:
+			case BATTLE_SHIPDECK:
 		}
 
 		this.composite.setRedraw(false);
-		this.updateDeck(deck);
+		ToolUtils.notNullThenHandle(deck, this::updateDeck);
 		this.composite.setRedraw(true);
 	}
 
 	private void updateDeck(DeckDto deck) {
-		if (deck == null) return;
 		//舰队名
 		SwtUtils.setText(this.fleetNameLabel, deck.getName());
 		//制空,索敌,总等级,舰队速度
@@ -187,41 +206,7 @@ public class FleetWindow implements EventListener {
 		//ship 状态
 		int[] ships = deck.getShips();
 		for (int i = 0; i < ships.length; i++) {
-			ShipDto ship = GlobalContext.getShipMap().get(ships[i]);
-			FleetWindow.updateShipInformation(this.shipComposites[i], ship);
-		}
-	}
-
-	private static void updateShipInformation(ShipComposite shipComposite, ShipDto ship) {
-		SwtUtils.setText(shipComposite.iconlabel, "");
-		SwtUtils.setText(shipComposite.namelabel, ToolUtils.notNullThenHandle(ship, ShipDtoTranslator::getName, ""));
-		SwtUtils.setToolTipText(shipComposite.namelabel, ToolUtils.notNullThenHandle(ship, ShipDtoTranslator::getName, ""));
-		SwtUtils.setText(shipComposite.hplabel, ToolUtils.notNullThenHandle(ship, s -> s.getNowHp() + "/" + s.getMaxHp(), ""));
-		SwtUtils.setText(shipComposite.hpmsglabel, ToolUtils.notNullThenHandle(ship, s -> HPMessage.getString(s.getNowHp() * 1.0 / s.getMaxHp()), ""));
-		SwtUtils.setText(shipComposite.lvlabel, ToolUtils.notNullThenHandle(ship, s -> "Lv." + s.getLv(), ""));
-		SwtUtils.setText(shipComposite.condlabel, ToolUtils.notNullThenHandle(ship, s -> String.valueOf(s.getCond()), ""));
-
-		//五个装备
-		Character[] equipTexts = new Character[MAXEQUIP];
-		ArrayList<String> equipTooltipTexts = new ArrayList<>();
-		if (ship != null) {
-			int[] slots = ArrayUtils.addAll(Arrays.copyOfRange(ship.getSlots(), 0, 4), ship.getSlotex());
-			for (int index = 0; index < MAXEQUIP; index++) {
-				ItemDto item = GlobalContext.getItemMap().get(slots[index]);
-				if (item != null) {
-					int star = item.getLevel();
-					int alv = item.getAlv();
-					equipTexts[index] = ItemDtoTranslator.getOneWordName(item);
-					equipTooltipTexts.add(ItemDtoTranslator.getName(item) + (alv > 0 ? (" 熟" + alv) : "") + (star > 0 ? (" ★" + star) : ""));
-				}
-			}
-		}
-		String tooltip = StringUtils.join(equipTooltipTexts, "\n");
-		for (int index = 0; index < MAXEQUIP; index++) {
-			Label label = shipComposite.equipslabel[index];
-			Character ch = equipTexts[index];
-			SwtUtils.setText(label, ch != null ? ch.toString() : "");
-			label.setToolTipText(ch != null ? tooltip : "");
+			this.shipComposites[i].updateShipInformation(GlobalContext.getShip(ships[i]));
 		}
 	}
 
@@ -239,32 +224,38 @@ public class FleetWindow implements EventListener {
 
 	/** 泊地修理计时器 */
 	public class FleetAkashiTimer {
-		private long time = TimeString.getCurrentTime();
-		private final static int RESET_LIMIT = 20;
-		private final static int ONE_MINUTE = 60;
+		private final static int RESET_LIMIT = 20 * 60;
+		private long time = -1;
 
 		public void update(TrayMessageBox box, long currentTime) {
+			if (this.time == -1) return;
 			long rest = (currentTime - this.time) / 1000;
 			FleetWindow.this.akashiLabel.setText(TimeString.toDateRestString(rest));
 			if (FleetWindow.this.notifiyAkashitimer) {
-				if (rest == RESET_LIMIT * ONE_MINUTE) {
+				if (rest == RESET_LIMIT) {
 					DeckDto deck = FleetWindow.this.getDeck();
-					if (deck != null && DeckDtoTranslator.shouldNotifyAkashiTimer(deck) && DeckDtoTranslator.canAkashiRepair(deck)) {
-						box.add("泊地修理", FleetWindow.this.defaultFleetName + "∶泊地修理已20分钟");
+					if (deck != null) {
+						if (DeckDtoTranslator.shouldNotifyAkashiTimer(deck) && DeckDtoTranslator.canAkashiRepair(deck)) {
+							box.add("泊地修理", FleetWindow.this.defaultFleetName + "∶泊地修理已20分钟");
+						}
 					}
 				}
 			}
 		}
 
-		public void reset() {
-			long currentTime = TimeString.getCurrentTime();
-			if ((currentTime - this.time) / 1000 >= RESET_LIMIT * ONE_MINUTE) {
+		private void reset(long currentTime) {
+			if (this.time == -1) return;
+			if ((currentTime - this.time) / 1000 >= RESET_LIMIT) {
 				this.time = currentTime;
 			}
 		}
 
-		public void resetAkashiFlagship() {
-			this.time = TimeString.getCurrentTime();
+		private void resetAkashiFlagship(DeckDto deck) {
+			if (deck != null && DeckDtoTranslator.isAkashiFlagship(deck)) {
+				if (DeckDtoTranslator.isOnlyAkashi(deck) == false) {
+					this.time = TimeString.getCurrentTime();
+				}
+			}
 		}
 	}
 
@@ -279,7 +270,7 @@ public class FleetWindow implements EventListener {
 			this.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 			this.iconlabel = new Label(this, SWT.CENTER);
-			SwtUtils.initLabel(this.iconlabel, "!", new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 2), 16);
+			SwtUtils.initLabel(this.iconlabel, "!", new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 2), 16);
 
 			this.upsideBase = new Composite(this, SWT.NONE);
 			GridLayout upsideBaseGridLayout = SwtUtils.makeGridLayout(5, 0, 0, 0, 0);
@@ -327,6 +318,38 @@ public class FleetWindow implements EventListener {
 
 				this.condlabel = new Label(this.downsideBase, SWT.RIGHT);
 				SwtUtils.initLabel(this.condlabel, "100", new GridData(), 24);
+			}
+		}
+
+		private void updateShipInformation(ShipDto ship) {
+			SwtUtils.setText(this.iconlabel, ToolUtils.notNullThenHandle(ship, s -> ShipDtoTranslator.terribleState(s) ? "!" : "", ""));
+			this.iconlabel.setBackground(ShipDtoTranslator.dapo(ship) ? HPMessage.getColor(HPMessage.getString(0.1)) : null);
+			SwtUtils.setText(this.namelabel, ToolUtils.notNullThenHandle(ship, ShipDtoTranslator::getName, ""));
+			SwtUtils.setToolTipText(this.namelabel, ToolUtils.notNullThenHandle(ship, ShipDtoTranslator::getName, ""));
+			SwtUtils.setText(this.hplabel, ToolUtils.notNullThenHandle(ship, s -> s.getNowHp() + "/" + s.getMaxHp(), ""));
+			SwtUtils.setText(this.hpmsglabel, ToolUtils.notNullThenHandle(ship, s -> ShipDtoTranslator.getStateString(s, true), ""));
+			SwtUtils.setText(this.lvlabel, ToolUtils.notNullThenHandle(ship, s -> "Lv." + s.getLevel(), ""));
+			SwtUtils.setText(this.condlabel, ToolUtils.notNullThenHandle(ship, s -> String.valueOf(s.getCond()), ""));
+
+			//五个装备
+			Character[] equipTexts = new Character[MAXEQUIP];
+			ArrayList<String> equipTooltipTexts = new ArrayList<>();
+			if (ship != null) {
+				int[] slots = ArrayUtils.addAll(Arrays.copyOfRange(ship.getSlots(), 0, 4), ship.getSlotex());
+				for (int index = 0; index < MAXEQUIP; index++) {
+					ItemDto item = GlobalContext.getItemMap().get(slots[index]);
+					if (item != null) {
+						equipTexts[index] = Character.valueOf(ItemDtoTranslator.getOneWordName(item));
+						equipTooltipTexts.add(ItemDtoTranslator.getNameWithLevel(item));
+					}
+				}
+			}
+			String tooltip = StringUtils.join(equipTooltipTexts, "\n");
+			for (int index = 0; index < MAXEQUIP; index++) {
+				Label label = this.equipslabel[index];
+				Character ch = equipTexts[index];
+				SwtUtils.setText(label, ch != null ? ch.toString() : "");
+				label.setToolTipText(ch != null ? tooltip : "");
 			}
 		}
 	}

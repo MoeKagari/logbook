@@ -254,7 +254,7 @@ public class GlobalContext {
 				destroyShipRoom.doDestroyShip(data, json);
 				break;
 			//end
-			//start missionRoom				
+			//start missionRoom
 			case MISSION:
 			case MISSIONSTART://后接DECK,无需处理
 			case MISSIONRETURN:
@@ -418,15 +418,16 @@ public class GlobalContext {
 	/*----------------------------------------------静态方法------------------------------------------------------------------*/
 
 	public static void updatePLTIME(long oldtime, int[] oldconds, long newtime, int[] newconds) {
-		if (oldtime <= 0 || newtime <= 0) {
-			return;
-		}
+		if (PLTIME != null && PLTIME.getRange() < 2) return;
+		if (oldtime <= 0 || newtime <= 0) return;
 
 		if (PLTime.need(oldtime, oldconds, newtime, newconds)) {
 			if (PLTIME == null) {
 				PLTIME = new PLTime(newtime - 3 * 60 * 1000, oldtime);
 			} else {
+				System.out.println();
 				PLTIME.update(oldtime, oldconds, newtime, newconds);
+				System.out.println();
 			}
 		}
 	}
@@ -470,7 +471,7 @@ public class GlobalContext {
 			destroyShipList.add(new DestroyShipDto(time, event, ship));
 			shipMap.remove(ship.getId());
 		}
-		ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> ToolUtils.notNullThenHandle(dr.getDeck(), deck -> deck.remove(id)));
+		ToolUtils.forEach(deckRoom, dr -> ToolUtils.notNullThenHandle(dr.getDeck(), deck -> deck.remove(id)));
 	}
 
 	public static void destroyItem(long time, String event, int id, int group) {
@@ -481,16 +482,28 @@ public class GlobalContext {
 		}
 	}
 
+	public static ShipDto getShip(int id) {
+		return shipMap.get(id);
+	}
+
 	public static ShipDto addNewShip(JsonObject json) {
 		ShipDto ship = new ShipDto(json);
 		shipMap.put(ship.getId(), ship);
 		return ship;
 	}
 
+	public static ItemDto getItem(int id) {
+		return itemMap.get(id);
+	}
+
 	public static ItemDto addNewItem(JsonObject json) {
 		ItemDto item = new ItemDto(json);
 		itemMap.put(item.getId(), item);
 		return item;
+	}
+
+	public static UseItemDto getUseItem(int id) {
+		return useItemMap.get(id);
 	}
 
 	public static UseItemDto addNewUseItem(JsonObject json) {
@@ -504,7 +517,7 @@ public class GlobalContext {
 	}
 
 	public static ShipDto getSecretaryship() {
-		return ToolUtils.notNullThenHandle(deckRoom[0].getDeck(), deck -> GlobalContext.shipMap.get(deck.getShips()[0]), null);
+		return ToolUtils.notNullThenHandle(deckRoom[0].getDeck(), deck -> shipMap.get(deck.getShips()[0]), null);
 	}
 
 	/*----------------------------------------------getter------------------------------------------------------------------*/
@@ -622,20 +635,20 @@ public class GlobalContext {
 	}
 
 	//start ----------------------------------------------各个设施------------------------------------------------------------------
-	private final static MainRoom mainRoom = new MainRoom();
-	private final static DeckRoom[] deckRoom = { new DeckRoom(1), new DeckRoom(2), new DeckRoom(3), new DeckRoom(4) };
-	private final static HokyoRoom hokyoRoom = new HokyoRoom();
-	private final static KaisouRoom kaisouRoom = new KaisouRoom();
-	private final static NyukyoRoom[] nyukyoRoom = { new NyukyoRoom(1), new NyukyoRoom(2), new NyukyoRoom(3), new NyukyoRoom(4), };
-	private final static CreateShipRoom[] createShipRoom = { new CreateShipRoom(1), new CreateShipRoom(2), new CreateShipRoom(3), new CreateShipRoom(4) };
-	private final static DestroyShipRoom destroyShipRoom = new DestroyShipRoom();
-	private final static CreateItemRoom createItemRoom = new CreateItemRoom();
-	private final static DestroyItemRoom destroyItemRoom = new DestroyItemRoom();
-	private final static MissionRoom missionRoom = new MissionRoom();
-	private static final RemodelRoom remodelRoom = new RemodelRoom();
-	private static final PracticeRoom practiceRoom = new PracticeRoom();
-	private static final QuestRoom questRoom = new QuestRoom();
-	private static final BattleRoom battleRoom = new BattleRoom();
+	public final static MainRoom mainRoom = new MainRoom();
+	public final static DeckRoom[] deckRoom = { new DeckRoom(1), new DeckRoom(2), new DeckRoom(3), new DeckRoom(4) };
+	public final static HokyoRoom hokyoRoom = new HokyoRoom();
+	public final static KaisouRoom kaisouRoom = new KaisouRoom();
+	public final static NyukyoRoom[] nyukyoRoom = { new NyukyoRoom(1), new NyukyoRoom(2), new NyukyoRoom(3), new NyukyoRoom(4), };
+	public final static CreateShipRoom[] createShipRoom = { new CreateShipRoom(1), new CreateShipRoom(2), new CreateShipRoom(3), new CreateShipRoom(4) };
+	public final static DestroyShipRoom destroyShipRoom = new DestroyShipRoom();
+	public final static CreateItemRoom createItemRoom = new CreateItemRoom();
+	public final static DestroyItemRoom destroyItemRoom = new DestroyItemRoom();
+	public final static MissionRoom missionRoom = new MissionRoom();
+	public final static RemodelRoom remodelRoom = new RemodelRoom();
+	public final static PracticeRoom practiceRoom = new PracticeRoom();
+	public final static QuestRoom questRoom = new QuestRoom();
+	public final static BattleRoom battleRoom = new BattleRoom();
 
 	public static BattleRoom getBattleroom() {
 		return battleRoom;

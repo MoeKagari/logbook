@@ -98,8 +98,8 @@ public class BattleRoom extends Room {
 		try {
 			JsonObject jo = (JsonObject) json;
 
-			jo.getJsonArray("api_ship_data").forEach(value -> GlobalContext.addNewShip((JsonObject) value));
-			ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> dr.doDeck(data, jo.get("api_deck_data")));
+			jo.getJsonArray("api_ship_data").forEach(GlobalContext::addNewShip);
+			ToolUtils.forEach(GlobalContext.deckRoom, dr -> dr.doDeck(data, jo.get("api_deck_data")));
 			GlobalContext.getBattlelist().add(new InfoBattleShipdeckDto(data, (JsonObject) json));
 		} catch (Exception e) {
 			this.getLog().get().warn("doBattleShipdeck" + "处理错误", e);

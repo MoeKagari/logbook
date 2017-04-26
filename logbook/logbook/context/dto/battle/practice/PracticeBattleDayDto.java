@@ -23,7 +23,7 @@ public class PracticeBattleDayDto extends AbstractBattleDay {
 	}
 
 	@Override
-	public boolean isPracticeBattle() {
+	public boolean isPractice() {
 		return true;
 	}
 

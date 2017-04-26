@@ -13,6 +13,11 @@ public class PracticeBattleResultDto extends AbstractInfoBattleResult {
 	}
 
 	@Override
+	public boolean isPractice() {
+		return true;
+	}
+
+	@Override
 	public BattleType getBattleType() {
 		return BattleType.PRACTICE_RESULT;
 	}

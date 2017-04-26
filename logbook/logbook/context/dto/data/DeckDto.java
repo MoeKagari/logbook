@@ -10,6 +10,7 @@ import logbook.context.dto.translator.MasterDataDtoTranslator;
 import logbook.gui.logic.TimeString;
 import logbook.internal.TimerCounter;
 import logbook.util.JsonUtils;
+import logbook.util.ToolUtils;
 
 /**
  * 舰队编成
@@ -35,7 +36,7 @@ public class DeckDto {
 			return;
 		}
 
-		int[] shipsTemp = Arrays.copyOf(this.ships, this.ships.length);
+		int[] shipsTemp = ToolUtils.arrayCopy(this.ships);
 		int shipIndex = DeckDtoTranslator.isShipInDeck(this, shipId);
 		if (shipIndex != -1) {//交换两艘船
 			int temp = shipsTemp[index];
@@ -56,11 +57,8 @@ public class DeckDto {
 		}
 	}
 
-	/*-------------------------------------------------------------------------------------------*/
-
 	private void setShips(int[] shipsTemp) {
 		int notnull = 0;//非 -1 提到前面
-
 		for (int i = 0; i < shipsTemp.length; i++) {
 			if (shipsTemp[i] != -1) {
 				shipsTemp[notnull] = shipsTemp[i];
@@ -73,6 +71,8 @@ public class DeckDto {
 
 		this.ships = shipsTemp;
 	}
+
+	/*-------------------------------------------------------------------------------------------*/
 
 	public int[] getShips() {
 		return this.ships;
@@ -98,14 +98,16 @@ public class DeckDto {
 
 	/** 舰队远征信息 */
 	public class DeckMissionDto {
-		private final JsonArray json;
+		private final int state;
+		private final long time;
 		private final String name;
 		private final TimerCounter timerCounter;
 
 		public DeckMissionDto(JsonArray json) {
-			this.json = json;
-			this.name = MasterDataDtoTranslator.getMissionName(this.getId());
-			this.timerCounter = new TimerCounter(this.getTime(), 60, true, 2 * 60);
+			this.state = json.getJsonNumber(0).intValue();
+			this.name = MasterDataDtoTranslator.getMissionName(json.getJsonNumber(1).intValue());
+			this.time = json.getJsonNumber(2).longValue();
+			this.timerCounter = new TimerCounter(this.time, 60, true, 2 * 60);
 		}
 
 		public String getName() {
@@ -114,22 +116,16 @@ public class DeckDto {
 
 		//远征状态0=未出撃, 1=遠征中, 2=遠征帰投, 3=強制帰投中
 		public int getState() {
-			return this.json.getJsonNumber(0).intValue();
-		}
-
-		//远征id
-		public int getId() {
-			return this.json.getJsonNumber(1).intValue();
+			return this.state;
 		}
 
 		//归还时间
 		public long getTime() {
-			return this.json.getJsonNumber(2).longValue();
+			return this.time;
 		}
 
 		public TimerCounter getTimerCounter() {
 			return this.timerCounter;
 		}
 	}
-
 }

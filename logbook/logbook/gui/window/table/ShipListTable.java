@@ -10,6 +10,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ToolItem;
 
+import logbook.config.AppConstants;
 import logbook.context.dto.data.ItemDto;
 import logbook.context.dto.data.MasterDataDto.MasterShipDataDto;
 import logbook.context.dto.data.ShipDto;
@@ -76,11 +77,17 @@ public abstract class ShipListTable extends AbstractTable<ShipDto> {
 	protected abstract int getMode();
 
 	@Override
+	protected String getgetWindowConfigKey() {
+		return ShipListTable.class.getName() + this.getMode();
+	}
+
+	@Override
 	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("ID", true, ShipDto::getId));
 		tcms.add(new TableColumnManager("舰娘", rd -> ShipDtoTranslator.getName(rd)));
 		tcms.add(new TableColumnManager("舰种", rd -> ShipDtoTranslator.getTypeString(rd)));
 		tcms.add(new TableColumnManager("等级", true, ShipDto::getLevel));
+		tcms.add(new TableColumnManager("所处", rd -> ToolUtils.ifHandle(ShipDtoTranslator.whichDeck(rd), wd -> wd != -1, wd -> AppConstants.DEFAULT_FLEET_NAME[wd], "")));
 
 		switch (this.getMode()) {
 			case 1:
@@ -114,8 +121,9 @@ public abstract class ShipListTable extends AbstractTable<ShipDto> {
 		tcms.add(new TableColumnManager("最大耐久", true, ShipDto::getMaxHp));
 		tcms.add(new TableColumnManager("速力", rd -> ShipDtoTranslator.getSokuString(rd, false)));
 		tcms.add(new TableColumnManager("增设", rd -> rd.getSlotex() != 0 ? "有" : ""));
-		tcms.add(new TableColumnManager("Lock", rd -> rd.isLocked() ? "有" : ""));
+		tcms.add(new TableColumnManager("Lock", rd -> rd.isLocked() ? "" : "无"));
 		tcms.add(new TableColumnManager("远征中", rd -> ShipDtoTranslator.isInMission(rd) ? "是" : ""));
+		tcms.add(new TableColumnManager("入渠中", rd -> ShipDtoTranslator.isInNyukyo(rd) ? "是" : ""));
 		tcms.add(new TableColumnManager("油耗", rd -> ToolUtils.notNullThenHandle(MasterDataDtoTranslator.getMasterShipDataDto(rd.getShipId()), MasterShipDataDto::getFuelMax, "")));
 		tcms.add(new TableColumnManager("弹耗", rd -> ToolUtils.notNullThenHandle(MasterDataDtoTranslator.getMasterShipDataDto(rd.getShipId()), MasterShipDataDto::getBullMax, "")));
 		tcms.add(new TableColumnManager("修理时间", rd -> TimeString.toDateRestString(rd.getNdockTime() / 1000, "")));

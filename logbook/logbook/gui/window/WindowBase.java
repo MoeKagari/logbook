@@ -13,6 +13,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 
+import logbook.config.WindowConfig;
 import logbook.context.update.GlobalContextUpdater;
 import logbook.context.update.data.DataType;
 import logbook.context.update.data.EventListener;
@@ -32,6 +33,7 @@ public abstract class WindowBase implements EventListener {
 	private final Composite composite;
 	private final Menu menuBar;
 	private ToolBar toolBar = null;
+	private WindowConfig windowConfig = null;
 
 	public WindowBase(ApplicationMain main, MenuItem menuItem, String title) {
 		this(main, menuItem, title, false);
@@ -46,7 +48,7 @@ public abstract class WindowBase implements EventListener {
 		this.shell.setSize(this.getDefaultSize());
 		this.shell.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
 		this.shell.setLayoutData(new GridData(GridData.FILL_BOTH));
-		this.shell.addShellListener(new NotCloseButHiddenShellListener(this::closeWindow));
+		this.shell.addShellListener(new NotCloseButHiddenShellListener(this::hiddenWindow));
 		this.shell.addShellListener(new NotCloseButHiddenShellListener(this::handlerAfterHidden));
 
 		this.composite = new Composite(this.shell, SWT.NONE);
@@ -69,6 +71,35 @@ public abstract class WindowBase implements EventListener {
 
 	/*------------------------------------------------------------------------------------------------------------*/
 
+	/** 存储当前窗口的配置 */
+	public void storeWindowConfig() {
+		if (this.shell.isDisposed()) return;
+		if (this.shell.getMaximized() == false) {//最大化不记录
+			this.windowConfig.setSize(this.shell.getSize());
+			this.windowConfig.setLocation(this.shell.getLocation());
+		}
+		this.windowConfig.setMinimized(this.shell.getMinimized());
+		this.windowConfig.setVisible(this.shell.isVisible());
+	}
+
+	/** 恢复当前窗口的配置 */
+	public void restoreWindowConfig() {
+		if (this.windowConfig == null) {
+			this.windowConfig = WindowConfig.get().get(this.getgetWindowConfigKey());
+			if (this.windowConfig == null) {
+				this.windowConfig = new WindowConfig();
+				WindowConfig.get().put(this.getgetWindowConfigKey(), this.windowConfig);
+				this.storeWindowConfig();
+				return;
+			}
+		}
+
+		this.shell.setSize(this.windowConfig.getSize());
+		this.shell.setLocation(this.windowConfig.getLocation());
+		this.shell.setMinimized(this.windowConfig.getMinimized());
+		this.setVisible(this.windowConfig.isVisible());
+	}
+
 	public ApplicationMain getMain() {
 		return this.main;
 	}
@@ -85,11 +116,7 @@ public abstract class WindowBase implements EventListener {
 		return this.composite;
 	}
 
-	protected boolean isVisible() {
-		return this.shell.isVisible() && (this.shell.getMinimized() == false);
-	}
-
-	public void closeWindow() {
+	public void hiddenWindow() {
 		this.setVisible(false);
 	}
 
@@ -100,12 +127,15 @@ public abstract class WindowBase implements EventListener {
 	private void setVisible(boolean visible) {
 		ToolUtils.ifHandle(visible, this::handlerBeforeDisplay);
 		ToolUtils.notNullThenHandle(this.menuItem, mi -> mi.setSelection(visible));
-		ToolUtils.ifHandle(visible, () -> this.shell.setMinimized(false));
 		this.shell.setVisible(visible);
 		ToolUtils.ifHandle(visible, this.shell::forceActive);
 	}
 
 	/*------------------------------------------------------------------------------------------------------------*/
+
+	protected String getgetWindowConfigKey() {
+		return this.getClass().getName();
+	}
 
 	/** 是否有toolbar,默认false */
 	protected boolean haveToolBar() {

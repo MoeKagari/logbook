@@ -28,7 +28,7 @@ import logbook.gui.window.ApplicationMain;
  *
  */
 @SuppressWarnings("serial")
-public final class ReverseProxyServlet extends ProxyServlet {
+public class ReverseProxyServlet extends ProxyServlet {
 
 	/** ライブラリバグ対応 (HttpRequest#queryを上書きする) */
 	private static final Field QUERY_FIELD = getDeclaredField(HttpRequest.class, "query");
@@ -91,15 +91,16 @@ public final class ReverseProxyServlet extends ProxyServlet {
 	 */
 	@Override
 	protected void onResponseContent(HttpServletRequest request, HttpServletResponse response, Response proxyResponse, byte[] buffer, int offset, int length) throws IOException {
-
-		// 注意: 1回のリクエストで複数回の応答が帰ってくるので全ての応答をキャプチャする必要がある
-		ByteArrayOutputStream stream = (ByteArrayOutputStream) request.getAttribute(Filter.RESPONSE_BODY);
-		if (stream == null) {
-			stream = new ByteArrayOutputStream();
-			request.setAttribute(Filter.RESPONSE_BODY, stream);
+		if (GlobalContextUpdater.SERVER_LIST.contains(request.getServerName())) {
+			// 注意: 1回のリクエストで複数回の応答が帰ってくるので全ての応答をキャプチャする必要がある
+			ByteArrayOutputStream stream = (ByteArrayOutputStream) request.getAttribute(Filter.RESPONSE_BODY);
+			if (stream == null) {
+				stream = new ByteArrayOutputStream();
+				request.setAttribute(Filter.RESPONSE_BODY, stream);
+			}
+			// ストリームに書き込む
+			stream.write(buffer, offset, length);
 		}
-		// ストリームに書き込む
-		stream.write(buffer, offset, length);
 
 		super.onResponseContent(request, response, proxyResponse, buffer, offset, length);
 	}

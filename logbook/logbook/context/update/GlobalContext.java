@@ -1,8 +1,7 @@
 package logbook.context.update;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -39,6 +38,7 @@ import logbook.context.dto.data.record.DestroyItemDto;
 import logbook.context.dto.data.record.DestroyShipDto;
 import logbook.context.dto.data.record.MaterialRecordDto;
 import logbook.context.dto.data.record.MissionResultDto;
+import logbook.context.dto.translator.DeckDtoTranslator;
 import logbook.context.dto.translator.ShipDtoTranslator;
 import logbook.context.update.data.Data;
 import logbook.context.update.data.DataType;
@@ -54,10 +54,13 @@ import logbook.context.update.room.MainRoom;
 import logbook.context.update.room.MissionRoom;
 import logbook.context.update.room.NyukyoRoom;
 import logbook.context.update.room.PracticeRoom;
+import logbook.context.update.room.PresetDeckRoom;
 import logbook.context.update.room.QuestRoom;
 import logbook.context.update.room.RemodelRoom;
+import logbook.gui.logic.TimeString;
 import logbook.gui.window.ApplicationMain;
 import logbook.internal.LoggerHolder;
+import logbook.internal.TrayMessageBox;
 import logbook.util.ToolUtils;
 
 /**
@@ -67,15 +70,34 @@ import logbook.util.ToolUtils;
 public class GlobalContext {
 	private static final LoggerHolder LOG = new LoggerHolder(GlobalContext.class);
 
+	//start ----------------------------------------------各个设施------------------------------------------------------------------
+	public final static MainRoom mainRoom = new MainRoom();
+	public final static DeckRoom[] deckRoom = { new DeckRoom(1), new DeckRoom(2), new DeckRoom(3), new DeckRoom(4) };
+	public final static HokyoRoom hokyoRoom = new HokyoRoom();
+	public final static KaisouRoom kaisouRoom = new KaisouRoom();
+	public final static NyukyoRoom[] nyukyoRoom = { new NyukyoRoom(1), new NyukyoRoom(2), new NyukyoRoom(3), new NyukyoRoom(4), };
+	public final static CreateShipRoom[] createShipRoom = { new CreateShipRoom(1), new CreateShipRoom(2), new CreateShipRoom(3), new CreateShipRoom(4) };
+	public final static DestroyShipRoom destroyShipRoom = new DestroyShipRoom();
+	public final static CreateItemRoom createItemRoom = new CreateItemRoom();
+	public final static DestroyItemRoom destroyItemRoom = new DestroyItemRoom();
+	public final static MissionRoom missionRoom = new MissionRoom();
+	public final static RemodelRoom remodelRoom = new RemodelRoom();
+	public final static PracticeRoom practiceRoom = new PracticeRoom();
+	public final static QuestRoom questRoom = new QuestRoom();
+	public final static BattleRoom battleRoom = new BattleRoom();
+	public final static PresetDeckRoom presetDeckRoom = new PresetDeckRoom();
+	//end
+
 	/** 服务器ip */
 	private static String serverName = null;
-	/** 司令部等级 玩家名字 最大保有舰娘数 最大保有装备数 */
+	/** 司令部等级 提督名字 最大保有舰娘数 最大保有装备数 */
 	private static BasicDto basicInformation = null;
-
 	/** 是否结成联合舰队 */
 	private static boolean combined = false;
 	/** 通过返回母港时第一舰队无疲劳变化来更新此值 */
 	private static PLTime PLTIME = null;
+	/** 泊地修理 */
+	private static FleetAkashiTimer akashiTimer = null;
 
 	/** 路基详情 */
 	private static AirbaseDto airbase = null;
@@ -85,6 +107,8 @@ public class GlobalContext {
 	private static MaterialDto currentMaterial = null;
 	/** 演习对手 */
 	private static PracticeEnemyDto practiceEnemy = null;
+	/** master data */
+	private static MasterDataDto masterData = null;
 
 	/** 资源记录 */
 	private final static List<MaterialRecordDto> materialList = new ArrayList<>();
@@ -94,6 +118,10 @@ public class GlobalContext {
 	private final static List<CreateItemDto> createItemList = new ArrayList<>();
 	/** 建造记录 */
 	private final static List<CreateshipDto> createShipList = new ArrayList<>();
+	/** 解体记录 */
+	private final static List<DestroyShipDto> destroyShipList = new ArrayList<>();
+	/** 废弃记录 */
+	private final static List<DestroyItemDto> destroyItemList = new ArrayList<>();
 
 	/** 战斗记录 */
 	private final static BattleList battleList = new BattleList();
@@ -107,20 +135,19 @@ public class GlobalContext {
 	/** 所有useitem */
 	private final static Map<Integer, UseItemDto> useItemMap = new HashMap<>();
 
-	/** 解体记录 */
-	private final static List<DestroyShipDto> destroyShipList = new ArrayList<>();
-	/** 废弃记录 */
-	private final static List<DestroyItemDto> destroyItemList = new ArrayList<>();
-
-	/** 编成记录 */
-	private final static List<PresetDeckDto> presetDeckList = new ArrayList<>();
-
-	/** master data */
-	private static MasterDataDto masterData = null;
+	/** 编成记录(游戏中的) */
+	private final static PresetDeckList presetDeckList = new PresetDeckList();
 
 	public static void load() {
 		try {
-			masterData = new MasterDataDto(Json.createReader(new BufferedReader(new InputStreamReader(new FileInputStream(AppConstants.MASTERDATAFILEPATH), Charset.forName("utf-8")))).readObject());
+			InputStream is;
+			if (AppConstants.MASTERDATAFILE.exists() && AppConstants.MASTERDATAFILE.isFile()) {
+				is = new FileInputStream(AppConstants.MASTERDATAFILE);
+			} else {//读取程序内置的备份
+				is = GlobalContext.class.getResourceAsStream(AppConstants.MASTERDATAFILE_BACKUP);
+			}
+			JsonObject json = Json.createReader(new InputStreamReader(is, Charset.forName("utf-8"))).readObject();
+			masterData = new MasterDataDto(json);
 		} catch (Exception e) {
 			ApplicationMain.main.logPrint("MasterData读取失败");
 			LOG.get().warn("masterdata读取失败", e);
@@ -130,7 +157,7 @@ public class GlobalContext {
 	public static void store() {
 		try {
 			if (masterData != null) {
-				FileUtils.write(new File(AppConstants.MASTERDATAFILEPATH), masterData.getJson().toString(), Charset.forName("utf-8"));
+				FileUtils.write(AppConstants.MASTERDATAFILE, masterData.getJson().toString(), Charset.forName("utf-8"));
 			}
 		} catch (Exception e) {
 			LOG.get().warn("masterdata保存失败", e);
@@ -141,43 +168,50 @@ public class GlobalContext {
 	public static void updateContext(DataType type, Data data, String serverName) {
 		GlobalContext.serverName = serverName;
 
-		JsonValue json = data.getJsonObject().get("api_data");
+		JsonObject json = data.getJsonObject();
+		int api_result = json.getInt("api_result");
+		if (api_result != 1) {
+			ApplicationMain.main.logPrint(String.format("猫了,猫娘: %d", api_result));
+			return;
+		}
+
+		JsonValue api_data = json.get("api_data");
 		switch (type) {
 			//start mainRoom
 			case MASTERDATA:
-				mainRoom.doMasterData(data, json);
+				mainRoom.doMasterData(data, api_data);
 				break;
 			case BASIC:
-				mainRoom.doBasic(data, json);
+				mainRoom.doBasic(data, api_data);
 				break;
 			case SLOT_ITEM:
-				mainRoom.doSlotItem(data, json);
+				mainRoom.doSlotItem(data, api_data);
 				break;
 			case SHIP_LOCK:
-				mainRoom.doShipLock(data, json);
+				mainRoom.doShipLock(data, api_data);
 				break;
 			case PORT:
-				mainRoom.doPort(data, json);
+				mainRoom.doPort(data, api_data);
 				break;
 			case REQUIRE_INFO:
-				mainRoom.doRequireInfo(data, json);
+				mainRoom.doRequireInfo(data, api_data);
 				break;
 			case MATERIAL:
-				mainRoom.doMaterial(data, json);
+				mainRoom.doMaterial(data, api_data);
 				break;
 			case MAPINFO:
-				mainRoom.doMapinfo(data, json);
+				mainRoom.doMapinfo(data, api_data);
 				break;
 			case USEITEM:
-				mainRoom.doUseitem(data, json);
+				mainRoom.doUseitem(data, api_data);
 				break;
 			case SHIP2:
-				mainRoom.doShip2(data, json);
+				mainRoom.doShip2(data, api_data);
 				break;
 			//end
 			//start questRoom
 			case QUEST_LIST:
-				questRoom.doQuestList(data, json);
+				questRoom.doQuestList(data, api_data);
 				break;
 			case QUEST_CLEAR://后接各种主要数据的刷新api,无需处理
 				break;
@@ -188,12 +222,12 @@ public class GlobalContext {
 			//end
 			//start createItemRoom
 			case CREATEITEM:
-				createItemRoom.doCreateitem(data, json);
+				createItemRoom.doCreateitem(data, api_data);
 				break;
 			//end
 			//start destroyItemRoom
 			case DESTROYITEM:
-				destroyItemRoom.doDestroyItem(data, json);
+				destroyItemRoom.doDestroyItem(data, api_data);
 				break;
 			//end
 			//start kaisouRoom
@@ -204,54 +238,65 @@ public class GlobalContext {
 			case REMODELING://后接ship3,无需处理
 				break;
 			case SLOT_EXCHANGE:
-				kaisouRoom.doSlotExchange(data, json);
+				kaisouRoom.doSlotExchange(data, api_data);
 				break;
 			case SLOT_DEPRIVE:
-				kaisouRoom.doSlotDeprive(data, json);
+				kaisouRoom.doSlotDeprive(data, api_data);
 				break;
 			case OPEN_EXSLOT:
-				kaisouRoom.doOpenSlotex(data, json);
+				kaisouRoom.doOpenSlotex(data, api_data);
 			case POWERUP:
-				kaisouRoom.doPowerup(data, json);
+				kaisouRoom.doPowerup(data, api_data);
 				break;
 			case SLOT_ITEM_LOCK:
-				kaisouRoom.doSlotItemLock(data, json);
+				kaisouRoom.doSlotItemLock(data, api_data);
 				break;
 			case SHIP3:
-				kaisouRoom.doShip3(data, json);
+				kaisouRoom.doShip3(data, api_data);
 				break;
 			//end
 			//start deckRoom
 			case DECK:
-				ToolUtils.forEach(deckRoom, dr -> dr.doDeck(data, json));
+				ToolUtils.forEach(deckRoom, dr -> dr.doDeck(data, api_data));
 				break;
 			case CHANGE:
-				ToolUtils.forEach(deckRoom, dr -> dr.doChange(data, json));
+				ToolUtils.forEach(deckRoom, dr -> dr.doChange(data, api_data));
 				break;
 			case UPDATEDECKNAME:
-				ToolUtils.forEach(deckRoom, dr -> dr.doUpdatedeckname(data, json));
+				ToolUtils.forEach(deckRoom, dr -> dr.doUpdatedeckname(data, api_data));
 				break;
 			case PRESET_SELECT:
-				ToolUtils.forEach(deckRoom, dr -> dr.doPresetSelect(data, json));
+				ToolUtils.forEach(deckRoom, dr -> dr.doPresetSelect(data, api_data));
+				break;
+			//end
+			//start presetdeckroom
+			case PRESET_DECK:
+				presetDeckRoom.doPresetDeck(data, api_data);
+				break;
+			case PRESET_REGISTER:
+				presetDeckRoom.doPresetRegister(data, api_data);
+				break;
+			case PRESET_DELETE:
+				presetDeckRoom.doPresetDelete(data, api_data);
 				break;
 			//end
 			//start createShipRoom
 			case KDOCK:
-				ToolUtils.forEach(createShipRoom, csr -> csr.doKdock(data, json));
+				ToolUtils.forEach(createShipRoom, csr -> csr.doKdock(data, api_data));
 				break;
 			case CREATESHIP:
-				ToolUtils.forEach(createShipRoom, csr -> csr.doCreateship(data, json));
+				ToolUtils.forEach(createShipRoom, csr -> csr.doCreateship(data, api_data));
 				break;
 			case CREATESHIP_SPEEDCHANGE:
-				ToolUtils.forEach(createShipRoom, csr -> csr.doCreateshipSpeedchange(data, json));
+				ToolUtils.forEach(createShipRoom, csr -> csr.doCreateshipSpeedchange(data, api_data));
 				break;
 			case CREATESHIP_GETSHIP:
-				ToolUtils.forEach(createShipRoom, csr -> csr.doGetShip(data, json));
+				ToolUtils.forEach(createShipRoom, csr -> csr.doGetShip(data, api_data));
 				break;
 			//end
 			//start destroyShipRoom
 			case DESTROYSHIP:
-				destroyShipRoom.doDestroyShip(data, json);
+				destroyShipRoom.doDestroyShip(data, api_data);
 				break;
 			//end
 			//start missionRoom
@@ -260,23 +305,23 @@ public class GlobalContext {
 			case MISSIONRETURN:
 				break;
 			case MISSIONRESULT://后接PORT,所以只需记录远征信息
-				missionRoom.doMissionResulut(data, json);
+				missionRoom.doMissionResulut(data, api_data);
 				break;
 			//end
 			//start hokyoRoom
 			case CHARGE:
-				hokyoRoom.doCharge(data, json);
+				hokyoRoom.doCharge(data, api_data);
 				break;
 			//end
 			//start nyukyoRoom
 			case NDOCK:
-				ToolUtils.forEach(nyukyoRoom, nr -> nr.doNdock(data, json));
+				ToolUtils.forEach(nyukyoRoom, nr -> nr.doNdock(data, api_data));
 				break;
 			case NYUKYO_START:
-				ToolUtils.forEach(nyukyoRoom, nr -> nr.doNyukyoStart(data, json));
+				ToolUtils.forEach(nyukyoRoom, nr -> nr.doNyukyoStart(data, api_data));
 				break;
 			case NYUKYO_SPEEDCHANGE:
-				ToolUtils.forEach(nyukyoRoom, nr -> nr.doNyukyoSpeedchange(data, json));
+				ToolUtils.forEach(nyukyoRoom, nr -> nr.doNyukyoSpeedchange(data, api_data));
 				break;
 			//end
 			//start remodelRoom
@@ -284,109 +329,104 @@ public class GlobalContext {
 			case REMODEL_SLOTLIST_DETAIL:
 				break;
 			case REMODEL_SLOT:
-				remodelRoom.doRemodelSlot(data, json);
+				remodelRoom.doRemodelSlot(data, api_data);
 				break;
 			//end
 			//start battleRoom
 			case BATTLE_START:
-				battleRoom.doBattleStart(data, json);
+				battleRoom.doBattleStart(data, api_data);
 				break;
 			case BATTLE_NEXT:
-				battleRoom.doBattleNext(data, json);
+				battleRoom.doBattleNext(data, api_data);
 				break;
 
 			case BATTLE_AIRBATTLE:
-				battleRoom.doBattleAirbattle(data, json);
+				battleRoom.doBattleAirbattle(data, api_data);
 				break;
 			case BATTLE_AIRBATTLE_LD:
-				battleRoom.doBattleAirbattleLD(data, json);
+				battleRoom.doBattleAirbattleLD(data, api_data);
 				break;
 			case BATTLE_DAY:
-				battleRoom.doBattleDay(data, json);
+				battleRoom.doBattleDay(data, api_data);
 				break;
 			case BATTLE_MIDNIGHT:
-				battleRoom.doBattleMidnight(data, json);
+				battleRoom.doBattleMidnight(data, api_data);
 				break;
 			case BATTLE_MIDNIGHT_SP:
-				battleRoom.doBattleMidnightSP(data, json);
+				battleRoom.doBattleMidnightSP(data, api_data);
 				break;
 			case BATTLE_RESULT:
-				battleRoom.doBattleResult(data, json);
+				battleRoom.doBattleResult(data, api_data);
 				break;
 
 			case BATTLE_SHIPDECK:
-				battleRoom.doBattleShipdeck(data, json);
+				battleRoom.doBattleShipdeck(data, api_data);
 				break;
 			/*------------------------------------------------------------------------*/
 			case COMBINEBATTLE_AIRBATTLE:
-				battleRoom.doCombinebattleAirbattle(data, json);
+				battleRoom.doCombinebattleAirbattle(data, api_data);
 				break;
 			case COMBINEBATTLE_AIRBATTLE_LD:
-				battleRoom.doCombinebattleAirbattleLD(data, json);
+				battleRoom.doCombinebattleAirbattleLD(data, api_data);
 				break;
 			//12vs6
 			case COMBINEBATTLE_DAY:
-				battleRoom.doCombinebattleDay(data, json);
+				battleRoom.doCombinebattleDay(data, api_data);
 				break;
 			case COMBINEBATTLE_DAY_WATER:
-				battleRoom.doCombinebattleDayWater(data, json);
+				battleRoom.doCombinebattleDayWater(data, api_data);
 				break;
 			case COMBINEBATTLE_MIDNIGHT:
-				battleRoom.doCombinebattleMidnight(data, json);
+				battleRoom.doCombinebattleMidnight(data, api_data);
 				break;
 			//6vs12
 			case COMBINEBATTLE_EC_DAY:
-				battleRoom.doCombinebattleECDay(data, json);
+				battleRoom.doCombinebattleECDay(data, api_data);
 				break;
 			case COMBINEBATTLE_EACH_DAY:
-				battleRoom.doCombinebattleEachDay(data, json);
+				battleRoom.doCombinebattleEachDay(data, api_data);
 				break;
 			case COMBINEBATTLE_EACH_DAY_WATER:
-				battleRoom.doCombinebattleEachDayWater(data, json);
+				battleRoom.doCombinebattleEachDayWater(data, api_data);
 				break;
 			case COMBINEBATTLE_EC_MIDNIGHT:
-				battleRoom.doCombinebattleECMidnight(data, json);
+				battleRoom.doCombinebattleECMidnight(data, api_data);
 				break;
 			//开幕夜战-联合舰队
 			case COMBINEBATTLE_MIDNIGHT_SP:
-				battleRoom.doCombinebattleMidnightSP(data, json);
+				battleRoom.doCombinebattleMidnightSP(data, api_data);
 				break;
 			//战斗结果-联合舰队
 			case COMBINEBATTLE_RESULT:
-				battleRoom.doCombinebattleResult(data, json);
+				battleRoom.doCombinebattleResult(data, api_data);
 				break;
 			case GOBACK_PORT:
-				battleRoom.doCombinebattleGobackPort(data, json);
+				battleRoom.doCombinebattleGobackPort(data, api_data);
 				break;
 			case BATTLE_START_AIR_BASE:
-				battleRoom.doBattleStartAirBase(data, json);
+				battleRoom.doBattleStartAirBase(data, api_data);
 				break;
 			//end
 			//start practiceRoom
 			case PRACTICE_LIST:
 				break;
 			case PRACTICE_ENEMYINFO:
-				practiceRoom.doPracticeEnemyInfo(data, json);
+				practiceRoom.doPracticeEnemyInfo(data, api_data);
 				break;
 			case BATTLE_PRACTICE_DAY:
-				practiceRoom.doPracticeBattleDay(data, json);
+				practiceRoom.doPracticeBattleDay(data, api_data);
 				break;
 			case BATTLE_PRACTICE_MIDNIGHT:
-				practiceRoom.doPracticeBattleMidnight(data, json);
+				practiceRoom.doPracticeBattleMidnight(data, api_data);
 				break;
 			case BATTLE_PRACTICE_RESULT:
-				practiceRoom.doPracticeBattleResult(data, json);
+				practiceRoom.doPracticeBattleResult(data, api_data);
 				break;
 			//end
-
-			/*-------------------------------------------------------------------------------------*/
 			//start 现无任何可供显示的信息
 			case PRACTICE_CHANGE_MATCHING_KIND:
 			case EVENTMAP_RANK_SELECT:
 			case UNSETSLOT:
-			case PRESET_DECK:
-			case PRESET_REGISTER:
-			case PRESET_DELETE:
 			case GET_INCENTIVE:
 			case PAYITEM:
 			case RECORD:
@@ -425,9 +465,7 @@ public class GlobalContext {
 			if (PLTIME == null) {
 				PLTIME = new PLTime(newtime - 3 * 60 * 1000, oldtime);
 			} else {
-				System.out.println();
 				PLTIME.update(oldtime, oldconds, newtime, newconds);
-				System.out.println();
 			}
 		}
 	}
@@ -486,9 +524,12 @@ public class GlobalContext {
 		return shipMap.get(id);
 	}
 
-	public static ShipDto addNewShip(JsonObject json) {
-		ShipDto ship = new ShipDto(json);
-		shipMap.put(ship.getId(), ship);
+	public static ShipDto addNewShip(JsonValue value) {
+		ShipDto ship = null;
+		if (value instanceof JsonObject) {
+			ship = new ShipDto((JsonObject) value);
+			shipMap.put(ship.getId(), ship);
+		}
 		return ship;
 	}
 
@@ -496,9 +537,12 @@ public class GlobalContext {
 		return itemMap.get(id);
 	}
 
-	public static ItemDto addNewItem(JsonObject json) {
-		ItemDto item = new ItemDto(json);
-		itemMap.put(item.getId(), item);
+	public static ItemDto addNewItem(JsonValue value) {
+		ItemDto item = null;
+		if (value instanceof JsonObject) {
+			item = new ItemDto((JsonObject) value);
+			itemMap.put(item.getId(), item);
+		}
 		return item;
 	}
 
@@ -506,9 +550,12 @@ public class GlobalContext {
 		return useItemMap.get(id);
 	}
 
-	public static UseItemDto addNewUseItem(JsonObject json) {
-		UseItemDto useItem = new UseItemDto(json);
-		useItemMap.put(useItem.getId(), useItem);
+	public static UseItemDto addNewUseItem(JsonValue value) {
+		UseItemDto useItem = null;
+		if (value instanceof JsonObject) {
+			useItem = new UseItemDto((JsonObject) value);
+			useItemMap.put(useItem.getId(), useItem);
+		}
 		return useItem;
 	}
 
@@ -517,13 +564,21 @@ public class GlobalContext {
 	}
 
 	public static ShipDto getSecretaryship() {
-		return ToolUtils.notNullThenHandle(deckRoom[0].getDeck(), deck -> shipMap.get(deck.getShips()[0]), null);
+		return ToolUtils.notNullThenHandle(deckRoom[0].getDeck(), deck -> getShip(deck.getShips()[0]), null);
+	}
+
+	public static void setAkashiTimer() {
+		GlobalContext.akashiTimer = new FleetAkashiTimer();
 	}
 
 	/*----------------------------------------------getter------------------------------------------------------------------*/
 
 	public static PLTime getPLTIME() {
 		return PLTIME;
+	}
+
+	public static FleetAkashiTimer getAkashiTimer() {
+		return akashiTimer;
 	}
 
 	public static boolean isCombined() {
@@ -538,7 +593,7 @@ public class GlobalContext {
 		return serverName;
 	}
 
-	public static Map<Integer, UseItemDto> getUseitemmap() {
+	public static Map<Integer, UseItemDto> getUseitemMap() {
 		return useItemMap;
 	}
 
@@ -586,7 +641,7 @@ public class GlobalContext {
 		return basicInformation;
 	}
 
-	public static List<PresetDeckDto> getPresetdecklist() {
+	public static PresetDeckList getPresetdecklist() {
 		return presetDeckList;
 	}
 
@@ -634,93 +689,29 @@ public class GlobalContext {
 		GlobalContext.airbase = airbase;
 	}
 
-	//start ----------------------------------------------各个设施------------------------------------------------------------------
-	public final static MainRoom mainRoom = new MainRoom();
-	public final static DeckRoom[] deckRoom = { new DeckRoom(1), new DeckRoom(2), new DeckRoom(3), new DeckRoom(4) };
-	public final static HokyoRoom hokyoRoom = new HokyoRoom();
-	public final static KaisouRoom kaisouRoom = new KaisouRoom();
-	public final static NyukyoRoom[] nyukyoRoom = { new NyukyoRoom(1), new NyukyoRoom(2), new NyukyoRoom(3), new NyukyoRoom(4), };
-	public final static CreateShipRoom[] createShipRoom = { new CreateShipRoom(1), new CreateShipRoom(2), new CreateShipRoom(3), new CreateShipRoom(4) };
-	public final static DestroyShipRoom destroyShipRoom = new DestroyShipRoom();
-	public final static CreateItemRoom createItemRoom = new CreateItemRoom();
-	public final static DestroyItemRoom destroyItemRoom = new DestroyItemRoom();
-	public final static MissionRoom missionRoom = new MissionRoom();
-	public final static RemodelRoom remodelRoom = new RemodelRoom();
-	public final static PracticeRoom practiceRoom = new PracticeRoom();
-	public final static QuestRoom questRoom = new QuestRoom();
-	public final static BattleRoom battleRoom = new BattleRoom();
-
-	public static BattleRoom getBattleroom() {
-		return battleRoom;
-	}
-
-	public static QuestRoom getQuestroom() {
-		return questRoom;
-	}
-
-	public static RemodelRoom getRemodelroom() {
-		return remodelRoom;
-	}
-
-	public static MainRoom getMainRoom() {
-		return mainRoom;
-	}
-
-	public static DeckRoom[] getDeckRoom() {
-		return deckRoom;
-	}
-
-	public static HokyoRoom getHokyoRoom() {
-		return hokyoRoom;
-	}
-
-	public static KaisouRoom getKaisouRoom() {
-		return kaisouRoom;
-	}
-
-	public static NyukyoRoom[] getNyukyoRoom() {
-		return nyukyoRoom;
-	}
-
-	public static CreateShipRoom[] getCreateShipRoom() {
-		return createShipRoom;
-	}
-
-	public static DestroyShipRoom getDestroyShipRoom() {
-		return destroyShipRoom;
-	}
-
-	public static CreateItemRoom getCreateItemRoom() {
-		return createItemRoom;
-	}
-
-	public static DestroyItemRoom getDestroyItemRoom() {
-		return destroyItemRoom;
-	}
-
-	public static PracticeRoom getPracticeroom() {
-		return practiceRoom;
-	}
-	//end
+	/*----------------------------------------------------------------------------------------------------------------*/
 
 	public static class BattleList {
 		private ArrayList<BattleDto> battles = new ArrayList<>();
 		private BattleDto last = null;
+		private boolean haveNew = false;
+
+		public boolean haveNew() {
+			return this.haveNew;
+		}
 
 		public void add(BattleDto battleDto) {
+			this.haveNew = true;
 			this.battles.add(this.last = battleDto);
+		}
+
+		public BattleDto getLast() {
+			this.haveNew = false;
+			return this.last;
 		}
 
 		public ArrayList<BattleDto> getBattleList() {
 			return this.battles;
-		}
-
-		public BattleDto getLast() {
-			return this.last;
-		}
-
-		public void clearLast() {
-			this.last = null;
 		}
 	}
 
@@ -744,28 +735,24 @@ public class GlobalContext {
 		public void update(long oldtime, int[] oldconds, long newtime, int[] newconds) {
 			long time1 = oldtime;
 			long time2 = newtime;
-			System.out.println("刷新:" + "time1=" + time1 + ",time2=" + time2);
 
+			//循环到预测时间段
 			while (time1 >= this.ceil && time2 >= this.ceil) {
 				time1 -= 3 * 60 * 1000;
 				time2 -= 3 * 60 * 1000;
 			}
 
 			if (time2 <= this.floor) {
-				System.out.println("不需要:" + "time1=" + time1 + ",time2=" + time2);
 				//如果不在预测时间段内,不需要
 			} else {//有交集
 				this.notuse.add(new long[] { time1, time2 });
 				this.update();
 			}
-
 		}
 
 		private void update() {
 			TreeSet<long[]> temps = new TreeSet<>((a, b) -> Long.compare(a[0], b[0]));
 			temps.addAll(this.notuse);
-			System.out.println("notuse:");
-			this.notuse.forEach(one -> System.out.println(Arrays.toString(one)));
 			this.notuse.clear();
 
 			//整合
@@ -787,36 +774,24 @@ public class GlobalContext {
 			if (time1 != -1 && time2 != -1) {
 				this.update(time1, time2);
 			}
-
-			System.out.println("notuse:");
-			this.notuse.forEach(one -> System.out.println(Arrays.toString(one)));
 		}
 
 		private void update(long time1, long time2) {
-			System.out.println("start:\n" + "time1=" + time1 + ",time2=" + time2);
-			System.out.println("" + "floor=" + this.floor + ",ceil=" + this.ceil);
-
 			if (time1 >= this.floor && time2 <= this.ceil) {
 				if (time1 == this.floor && time2 < this.ceil) {
 					this.floor = time2;
 				} else if (time1 > this.floor && time2 == this.ceil) {
 					this.ceil = time1;
-				} else {
-					//时间段是预测时间段的子集,需收集之后整合
+				} else {//时间段是预测时间段的子集,需收集之后整合					
 					this.notuse.add(new long[] { time1, time2 });
-					System.out.println("add");
 				}
-			} else {
-				//只有交集
+			} else {//只有交集				
 				if (time1 >= this.floor) {
 					this.ceil = time1;
 				} else if (time2 <= this.ceil) {
 					this.floor = time2;
 				}
 			}
-
-			System.out.println("" + "floor=" + this.floor + ",ceil=" + this.ceil);
-			System.out.println("end");
 		}
 
 		public static boolean need(long oldtime, int[] oldconds, long newtime, int[] newconds) {
@@ -837,6 +812,61 @@ public class GlobalContext {
 			return false;
 		}
 
+	}
+
+	public static class FleetAkashiTimer {
+		private final static int RESET_LIMIT = 20 * 60;
+		private long time = -1;
+
+		public void update(TrayMessageBox box, long currentTime) {
+			if (this.time == -1) return;
+			long rest = (currentTime - this.time) / 1000;
+			ApplicationMain.main.getAkashiTimerLabel().setText(TimeString.toDateRestString(rest));
+			if (rest == RESET_LIMIT) {
+				if (Arrays.stream(deckRoom).map(DeckRoom::getDeck).filter(ToolUtils::isNotNull).anyMatch(DeckDtoTranslator::shouldNotifyAkashiTimer)) {
+					box.add("泊地修理", "泊地修理已20分钟");
+				}
+			}
+		}
+
+		public void resetWhenPort() {
+			if (this.time == -1) return;
+			long currentTime = TimeString.getCurrentTime();
+			if ((currentTime - this.time) / 1000 >= RESET_LIMIT) {
+				this.time = currentTime;
+			}
+		}
+
+		public void resetAkashiFlagshipWhenChange() {
+			this.time = TimeString.getCurrentTime();
+		}
+	}
+
+	public static class PresetDeckList {
+		private int max = -1;
+		public final PresetDeckDto[] decks = new PresetDeckDto[10];
+
+		public PresetDeckDto add(PresetDeckDto deck) {
+			this.decks[deck.getNo() - 1] = deck;
+			return deck;
+		}
+
+		public void remove(int no) {
+			this.decks[no - 1] = null;
+		}
+
+		public void init(JsonObject json) {
+			Arrays.fill(this.decks, null);
+			json.forEach((no, value) -> this.add(new PresetDeckDto(Integer.parseInt(no), (JsonObject) value)));
+		}
+
+		public int getMax() {
+			return this.max;
+		}
+
+		public void setMax(int max) {
+			this.max = max;
+		}
 	}
 
 }

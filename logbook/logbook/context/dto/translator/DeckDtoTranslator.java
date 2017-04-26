@@ -1,6 +1,7 @@
 package logbook.context.dto.translator;
 
 import java.util.Arrays;
+import java.util.function.Predicate;
 
 import logbook.config.AppConstants;
 import logbook.context.dto.data.DeckDto;
@@ -9,6 +10,21 @@ import logbook.context.update.GlobalContext;
 import logbook.util.ToolUtils;
 
 public class DeckDtoTranslator {
+
+	/**
+	 * 1,2,3,4
+	 */
+	public static String[] getShipNames(int id) {
+		return getShipNames(GlobalContext.deckRoom[id - 1].getDeck());
+	}
+
+	public static String[] getShipNames(DeckDto deck) {
+		if (deck != null) {
+			return ToolUtils.toStringArray(deck.getShips(), id -> ToolUtils.notNullThenHandle(GlobalContext.getShip(id), ShipDtoTranslator::getName, ""));
+		} else {
+			return AppConstants.EMPTY_NAMES;
+		}
+	}
 
 	public static int getZhikong(DeckDto deck) {
 		return deck == null ? 0 : Arrays.stream(deck.getShips()).map(ShipDtoTranslator::getZhikong).sum();
@@ -26,38 +42,11 @@ public class DeckDtoTranslator {
 		return deck == null ? true : Arrays.stream(deck.getShips()).mapToObj(GlobalContext::getShip).filter(ToolUtils::isNotNull).allMatch(ShipDtoTranslator::highspeed);
 	}
 
-	/**
-	 * 1,2,3,4
-	 */
-	public static String[] getShipNames(int id) {
-		return getShipNames(GlobalContext.getDeckRoom()[id - 1].getDeck());
-	}
-
-	public static String[] getShipNames(DeckDto deck) {
-		if (deck != null) {
-			return ToolUtils.toStringArray(deck.getShips(), id -> ToolUtils.notNullThenHandle(GlobalContext.getShip(id), ShipDtoTranslator::getName, ""));
-		} else {
-			return AppConstants.EMPTY_NAMES;
-		}
-	}
-
-	public static boolean canAkashiRepair(DeckDto deck) {
-		return deck == null ? false : Arrays.stream(deck.getShips()).anyMatch(ShipDtoTranslator::canAkashiRepair);
-	}
-
-	public static boolean isOnlyAkashi(DeckDto deck) {
-		if (deck == null) return false;
-		return isAkashiFlagship(deck) && Arrays.stream(deck.getShips()).filter(i -> i > 0).count() == 1;
-	}
-
-	public static boolean isAkashiFlagship(DeckDto deck) {
-		return deck == null ? false : ShipDtoTranslator.isAkashi(deck.getShips()[0]);
-	}
-
 	public static int isShipInDeck(DeckDto deck, int id) {
 		if (deck != null) {
 			for (int index = 0; index < 6; index++) {
-				if (deck.getShips()[index] != -1 && deck.getShips()[index] == id) {
+				int ship = deck.getShips()[index];
+				if (ship != -1 && ship == id) {
 					return index;
 				}
 			}
@@ -65,17 +54,29 @@ public class DeckDtoTranslator {
 		return -1;
 	}
 
+	public static boolean isAkashiFlagship(DeckDto deck) {
+		return deck == null ? false : ShipDtoTranslator.isAkashi(deck.getShips()[0]);
+	}
+
+	/** 泊地修理到点时,是否应该提醒 */
 	public static boolean shouldNotifyAkashiTimer(DeckDto deck) {
 		if (deck == null) return false;
-		return (isInMission(deck) == false) && isAkashiFlagship(deck);
+		if (isInMission(deck)) return false;//远征中
+		if (isAkashiFlagship(deck) == false) return false;//非明石旗舰
+
+		//中破大破入渠中,不能修理
+		Predicate<ShipDto> cannot = ship -> ship == null || ShipDtoTranslator.isInNyukyo(ship) || ShipDtoTranslator.terribleState(ship);
+
+		ShipDto flagship = GlobalContext.getShip(deck.getShips()[0]);
+		if (cannot.test(flagship)) return false;//明石中破大破入渠中,不能修理其它舰娘
+
+		//修理数(2+修理设施)
+		int equipCount = 2 + (int) Arrays.stream(flagship.getSlots()).filter(ItemDtoTranslator::isRepairItem).count();
+		return Arrays.stream(deck.getShips()).limit(equipCount).mapToObj(GlobalContext::getShip).anyMatch(cannot.negate());
 	}
 
 	public static boolean isInMission(DeckDto deck) {
 		return deck == null ? false : deck.getDeckMission().getState() != 0;
-	}
-
-	public static int needNotifyPL(DeckDto deck) {
-		return deck == null ? -1 : Arrays.stream(deck.getShips()).map(ShipDtoTranslator::needNotifyPL).max().orElse(-1);
 	}
 
 	public static boolean hasDapo(DeckDto deck) {

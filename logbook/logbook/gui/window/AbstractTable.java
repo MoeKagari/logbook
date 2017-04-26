@@ -83,6 +83,7 @@ public abstract class AbstractTable<T> extends WindowBase {
 	}
 
 	private void updateTable() {
+		int top = this.table.getTopIndex();
 		ToolUtils.forEach(this.table.getItems(), TableItem::dispose);
 
 		//更新数据
@@ -104,10 +105,11 @@ public abstract class AbstractTable<T> extends WindowBase {
 		TableColumn sortColumn = this.table.getSortColumn();
 		this.tcms.stream().filter(tcm -> tcm.stc.tableColumn == sortColumn).forEach(tcm -> this.sortTable(tcm.stc));
 
-		if (ToolUtils.notNullThenHandle(this.table.getData("pack"), d -> ((Boolean) d) == Boolean.TRUE, true)) {
-			ToolUtils.forEach(this.table.getColumns(), TableColumn::pack);
-			this.table.setData("pack", Boolean.FALSE);
+		if (this.table.getData("packed") == null) {//只自动pack一次
+			this.pack();
+			this.table.setData("packed", "");
 		}
+		this.table.setTopIndex(top);
 	}
 
 	/**
@@ -245,16 +247,9 @@ public abstract class AbstractTable<T> extends WindowBase {
 			int result = this.direction ? -1 : 1;
 
 			if (this.isInteger) {
-				if (StringUtils.isBlank(value) && StringUtils.isBlank(othervalue)) {
-					return 0;
-				}
-				if (StringUtils.isBlank(value)) {
-					return -1;
-				}
-				if (StringUtils.isBlank(othervalue)) {
-					return 1;
-				}
-				return result * Integer.compare(Integer.parseInt(value), Integer.parseInt(othervalue));
+				int a = StringUtils.isBlank(value) ? 0 : Integer.parseInt(value);
+				int b = StringUtils.isBlank(othervalue) ? 0 : Integer.parseInt(othervalue);
+				return result * Integer.compare(a, b);
 			} else {
 				return result * value.compareTo(othervalue);
 			}

@@ -30,32 +30,39 @@ public class BattleWindow extends WindowBase {
 
 	public BattleWindow(ApplicationMain main, MenuItem menuItem, String title) {
 		super(main, menuItem, title, true);
-		this.sbc = new ScrolledBattleComposite(this.getComposite());
+		this.sbc = new ScrolledBattleComposite(this.getComposite(), 0);
 		this.bfw = new BattleFlowWindow(main);
 	}
 
 	@Override
 	public void update(DataType type) {
-		if (type == DataType.PORT) {
-			this.sbc.clearWindow();
-			this.bfw.sbc.clearWindow();
-			this.lastInWindow = null;
-			GlobalContext.getBattlelist().clearLast();
-		} else {
+		if (GlobalContext.getBattlelist().haveNew()) {
 			BattleDto last = GlobalContext.getBattlelist().getLast();
-			if (last != this.lastInWindow && last != null) {
-				//自动更新
-				ToolUtils.ifHandle(AppConfig.get().isAutoUpdateBattleFlow(), () -> this.bfw.updateBattle(last, null));
-
-				//面板没有内容时,没有downarrow
-				boolean haveDownArrow = this.sbc.contentComposite.getChildren().length != 0;
-				//battleresult → shipdeck → next ,后两个之间加入downarrow
-				haveDownArrow &= this.lastInWindow instanceof InfoBattleShipdeckDto;
-				BattleDtoTranslator.newBattleComposite(this.sbc.contentComposite, this.bfw::updateBattle, haveDownArrow, last);
+			//自动更新
+			if (AppConfig.get().isAutoUpdateBattleFlow()) {
+				this.bfw.updateBattle(last, null);
 			}
+
+			//面板没有内容时,没有downarrow
+			boolean haveDownArrow = this.sbc.contentComposite.getChildren().length != 0;
+			//battleresult → shipdeck → next ,后两个之间加入downarrow
+			haveDownArrow &= this.lastInWindow instanceof InfoBattleShipdeckDto;
+			BattleDtoTranslator.newBattleComposite(this.sbc.contentComposite, this.bfw::updateBattle, haveDownArrow, last);
+
 			this.lastInWindow = last;
+		} else {
+			if (type == DataType.PORT) {
+				this.sbc.clearWindow();
+				this.bfw.sbc.clearWindow();
+				this.lastInWindow = null;
+			}
 		}
+
 		this.sbc.layout(true);
+	}
+
+	public BattleFlowWindow getBattleFlowWindow() {
+		return this.bfw;
 	}
 
 	private class BattleFlowWindow extends WindowBase {
@@ -63,7 +70,7 @@ public class BattleWindow extends WindowBase {
 
 		public BattleFlowWindow(ApplicationMain main) {
 			super(main, null, "战斗流程", true);
-			this.sbc = new ScrolledBattleComposite(this.getComposite());
+			this.sbc = new ScrolledBattleComposite(this.getComposite(), 5);
 		}
 
 		@Override
@@ -93,7 +100,7 @@ public class BattleWindow extends WindowBase {
 		private final ScrolledComposite sc;
 		private final Composite contentComposite;
 
-		public ScrolledBattleComposite(Composite composite) {
+		public ScrolledBattleComposite(Composite composite, int space) {
 			this.sc = new ScrolledComposite(composite, SWT.V_SCROLL);
 			this.sc.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
 			this.sc.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -102,7 +109,7 @@ public class BattleWindow extends WindowBase {
 			this.sc.setAlwaysShowScrollBars(true);
 
 			this.contentComposite = new Composite(this.sc, SWT.NONE);
-			this.contentComposite.setLayout(SwtUtils.makeGridLayout(1, 0, 5, 0, 0, 5, 5));
+			this.contentComposite.setLayout(SwtUtils.makeGridLayout(1, 0, space, 0, 0, 5, 5));
 			this.contentComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 			this.sc.setContent(this.contentComposite);

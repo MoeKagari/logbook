@@ -34,7 +34,7 @@ public class FleetWindowAll extends WindowBase {
 		int fleetLength = 4;
 		this.fleetWindows = new FleetWindow[fleetLength];
 		for (int i = 0; i < fleetLength; i++) {
-			this.fleetWindows[i] = new FleetWindow(new Composite(fleetComposite, SWT.BORDER), i + 1, false);
+			this.fleetWindows[i] = new FleetWindow(new Composite(fleetComposite, SWT.BORDER), i + 1);
 		}
 	}
 

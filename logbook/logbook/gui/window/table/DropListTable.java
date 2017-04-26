@@ -13,6 +13,7 @@ import logbook.context.dto.battle.AbstractInfoBattleResult;
 import logbook.context.dto.battle.AbstractInfoBattleResult.BattleResult_GetShip;
 import logbook.context.dto.battle.AbstractInfoBattleStartNext;
 import logbook.context.dto.battle.BattleDto;
+import logbook.context.dto.battle.info.InfoBattleStartAirBaseDto;
 import logbook.context.dto.translator.BattleDtoTranslator;
 import logbook.context.update.GlobalContext;
 import logbook.gui.window.AbstractTable;
@@ -54,6 +55,9 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 			AbstractInfoBattleStartNext battleStartNext = (AbstractInfoBattleStartNext) battle;
 
 			battle = next.get();
+			if (battle instanceof InfoBattleStartAirBaseDto) {
+				battle = next.get();
+			}
 			if (battle instanceof AbstractBattle == false) continue;
 			boolean haveDamage = BattleDtoTranslator.haveDamage((AbstractBattle) battle);
 

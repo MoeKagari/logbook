@@ -29,7 +29,7 @@ public class ItemDtoTranslator {
 	}
 
 	public static String getNameWithLevel(int id) {
-		return id == -1 ? "" : getNameWithLevel(GlobalContext.getItemMap().get(id));
+		return id == -1 ? "" : getNameWithLevel(GlobalContext.getItem(id));
 	}
 
 	public static String getNameWithLevel(ItemDto item) {
@@ -39,13 +39,17 @@ public class ItemDtoTranslator {
 		return getName(item) + (alv > 0 ? (" 熟" + alv) : "") + (star > 0 ? (" ★" + star) : "");
 	}
 
+	public static char getOneWordName(int id) {
+		return id == -1 ? ' ' : getOneWordName(GlobalContext.getItem(id));
+	}
+
 	public static char getOneWordName(ItemDto item) {
-		ItemData itemData = ItemDataMap.get(item.getSlotitemId());
+		ItemData itemData = item == null ? null : ItemDataMap.get(item.getSlotitemId());
 		return itemData == null ? ' ' : itemData.getOneWordName();
 	}
 
 	public static int getSuodi(int id) {
-		return id == -1 ? 0 : getSuodi(GlobalContext.getItemMap().get(id));
+		return id == -1 ? 0 : getSuodi(GlobalContext.getItem(id));
 	}
 
 	public static int getSuodi(ItemDto item) {
@@ -59,7 +63,7 @@ public class ItemDtoTranslator {
 	}
 
 	public static int getZhikong(int id, int count) {
-		return id == -1 ? 0 : getZhikong(GlobalContext.getItemMap().get(id), count);
+		return id == -1 ? 0 : getZhikong(GlobalContext.getItem(id), count);
 	}
 
 	public static int getZhikong(ItemDto item, int count) {
@@ -83,7 +87,7 @@ public class ItemDtoTranslator {
 					}
 				}
 				if ((type[0] == 3 && type[1] == 5 && type[2] == 8 && type[3] == 8) ||//舰攻
-						(type[0] == 5 && type[1] == 36 && type[2] == 45 && type[3] == 10) ||//水战
+						(type[0] == 5 && type[1] == 36 && type[2] == 45 && type[3] == 43) ||//水战
 						(type[0] == 5 && type[1] == 7 && type[2] == 11 && type[3] == 10) ||//水爆
 						(type[0] == 3 && type[1] == 40) //喷气机
 				) {
@@ -114,6 +118,14 @@ public class ItemDtoTranslator {
 		}
 
 		return zhikong;
+	}
+
+	public static boolean isRepairItem(int id) {
+		return id == -1 ? false : isRepairItem(GlobalContext.getItem(id));
+	}
+
+	public static boolean isRepairItem(ItemDto item) {
+		return ToolUtils.notNullThenHandle(item, it -> it.getSlotitemId() == 86, false);
 	}
 
 }

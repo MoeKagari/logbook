@@ -194,7 +194,7 @@ public abstract class BattleDto {
 
 	public abstract BattleType getBattleType();
 
-	public boolean isPracticeBattle() {
+	public boolean isPractice() {
 		return false;
 	}
 

@@ -59,6 +59,19 @@ public final class SwtUtils {
 		return gl;
 	}
 
+	public static GridLayout makeGridLayout(int numColumns, int horizontalSpacing, int verticalSpacing, int marginWidth, int marginHeight, int marginTop, int marginBottom, int marginLeft, int marginRight) {
+		GridLayout gl = new GridLayout(numColumns, false);
+		gl.horizontalSpacing = horizontalSpacing;
+		gl.verticalSpacing = verticalSpacing;
+		gl.marginWidth = marginWidth;
+		gl.marginHeight = marginHeight;
+		gl.marginTop = marginTop;
+		gl.marginBottom = marginBottom;
+		gl.marginLeft = marginLeft;
+		gl.marginRight = marginRight;
+		return gl;
+	}
+
 	public static void layoutCompositeRecursively(Composite composite) {
 		for (org.eclipse.swt.widgets.Control control : composite.getChildren()) {
 			if (control instanceof Composite) {

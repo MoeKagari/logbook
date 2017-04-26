@@ -1,8 +1,12 @@
 package logbook.context.dto.battle;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonValue;
 
 import logbook.context.update.data.Data;
 
@@ -13,7 +17,7 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 	private final int nextEventId;
 	private final int nextEventKind;
 	private final int nextCount;
-	private final ArrayList<BattleStartNext_GetItem> items = new ArrayList<>();
+	private List<BattleStartNext_GetItem> items = null;
 
 	public AbstractInfoBattleStartNext(Data data, JsonObject json) {
 		this.mapareaId = json.getInt("api_maparea_id");
@@ -22,12 +26,20 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 		this.nextEventId = json.getInt("api_event_id");
 		this.nextEventKind = json.getInt("api_event_kind");
 		this.nextCount = json.getInt("api_next");
+
+		//获得的道具
 		if (json.containsKey("api_itemget")) {
-			json.getJsonArray("api_itemget").forEach(value -> this.items.add(new BattleStartNext_GetItem((JsonObject) value)));
+			JsonValue api_itemget = json.get("api_itemget");
+			if (api_itemget instanceof JsonArray) {//资源点
+				this.items = ((JsonArray) api_itemget).stream().map(BattleStartNext_GetItem::new).collect(Collectors.toList());
+			} else if (api_itemget instanceof JsonObject) {//航空侦察点
+				this.items = new ArrayList<>();
+				this.items.add(new BattleStartNext_GetItem(api_itemget));
+			}
 		}
 	}
 
-	public ArrayList<BattleStartNext_GetItem> getItems() {
+	public List<BattleStartNext_GetItem> getItems() {
 		return this.items;
 	}
 
@@ -72,6 +84,10 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 			this.count = json.getInt("api_getcount");
 		}
 
+		public BattleStartNext_GetItem(JsonValue value) {
+			this((JsonObject) value);
+		}
+
 		@Override
 		public String toString() {
 			return this.getItemString() + "-" + this.count;
@@ -80,7 +96,7 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 		private String getItemString() {
 			switch (this.id) {
 				case 1:
-					return "燃";
+					return "油";
 				case 2:
 					return "弹";
 				case 3:
@@ -89,6 +105,10 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 					return "铝";
 				case 5:
 					return "高速建造材";
+				case 6:
+					return "高速修复材";
+				case 7:
+					return "开发资材";
 				case 11:
 					return "家具箱(中)";
 				case 12:

@@ -5,7 +5,6 @@ import javax.json.JsonObject;
 import logbook.util.JsonUtils;
 
 public class PresetDeckDto {
-
 	private final int no;
 	private final String name;
 	private final int[] ships;

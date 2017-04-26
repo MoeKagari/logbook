@@ -25,7 +25,6 @@ import logbook.util.ToolUtils;
  * @author MoeKagari
  */
 public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
-
 	public ItemListTable(ApplicationMain main, MenuItem menuItem, String title) {
 		super(main, menuItem, title);
 	}

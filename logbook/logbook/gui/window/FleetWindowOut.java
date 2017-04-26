@@ -17,11 +17,16 @@ public class FleetWindowOut extends WindowBase {
 
 	public FleetWindowOut(ApplicationMain main, MenuItem menuItem, int id) {
 		super(main, menuItem, AppConstants.DEFAULT_FLEET_NAME[id - 1]);
-		this.fleetWindow = new FleetWindow(new Composite(this.getComposite(), SWT.BORDER), id, false);
+		this.fleetWindow = new FleetWindow(new Composite(this.getComposite(), SWT.BORDER), id);
 	}
 
 	public FleetWindow getFleetWindow() {
 		return this.fleetWindow;
+	}
+
+	@Override
+	protected String getgetWindowConfigKey() {
+		return super.getgetWindowConfigKey() + this.fleetWindow.getId();
 	}
 
 	@Override

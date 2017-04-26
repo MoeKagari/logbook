@@ -57,6 +57,7 @@ public class CalcuExpWindow extends WindowBase {
 		select.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		{
 			this.shipcombo = new Combo(select, SWT.READ_ONLY);
+			SwtUtils.initControl(this.shipcombo, new GridData(), 100);
 
 			this.secretary = new Button(select, SWT.NONE);
 			this.secretary.setText("秘书舰");
@@ -75,7 +76,7 @@ public class CalcuExpWindow extends WindowBase {
 				this.beforelv.setMaximum(ShipExpMap.getMaxLevel());
 				this.beforelv.setMinimum(1);
 			}
-			SwtUtils.initLabel(new Label(plan, SWT.NONE), "", new GridData(), 10);
+			SwtUtils.insertBlank(plan, 10);
 			{
 				this.beforexp = new Label(plan, SWT.BORDER);
 				SwtUtils.initLabel(this.beforexp, "0", new GridData(), 60);
@@ -90,7 +91,7 @@ public class CalcuExpWindow extends WindowBase {
 				this.afterlv.setMaximum(ShipExpMap.getMaxLevel());
 				this.afterlv.setMinimum(1);
 			}
-			SwtUtils.initLabel(new Label(plan, SWT.NONE), "", new GridData(), 10);
+			SwtUtils.insertBlank(plan, 10);
 			{
 				this.afterexp = new Label(plan, SWT.BORDER);
 				SwtUtils.initLabel(this.afterexp, "0", new GridData(), 60);
@@ -253,7 +254,7 @@ public class CalcuExpWindow extends WindowBase {
 	}
 
 	private int getSecretaryShipIndex() {
-		DeckDto deck = GlobalContext.getDeckRoom()[0].getDeck();
+		DeckDto deck = GlobalContext.deckRoom[0].getDeck();
 		int secretaryShip = deck != null ? deck.getShips()[0] : -1;
 		for (int i = 0; i < this.ships.size(); i++) {
 			if (this.ships.get(i).getId() == secretaryShip) {

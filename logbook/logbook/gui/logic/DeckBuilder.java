@@ -15,7 +15,7 @@ public class DeckBuilder {
 
 		builder.add("version", 4);
 		for (int i = 0; i < 4; i++) {
-			DeckDto deck = GlobalContext.getDeckRoom()[i].getDeck();
+			DeckDto deck = GlobalContext.deckRoom[i].getDeck();
 			if (deck != null) builder.add("f" + (i + 1), getFleetBuilder(deck));
 		}
 
@@ -26,7 +26,7 @@ public class DeckBuilder {
 		JsonObjectBuilder fleetBuilder = Json.createObjectBuilder();
 
 		for (int i = 0; i < 6; i++) {
-			ShipDto ship = GlobalContext.getShipMap().get(deck.getShips()[i]);
+			ShipDto ship = GlobalContext.getShip(deck.getShips()[i]);
 			if (ship != null) fleetBuilder.add("s" + (i + 1), getShipBuilder(ship));
 		}
 
@@ -42,13 +42,13 @@ public class DeckBuilder {
 		{
 			JsonObjectBuilder itemsBuilder = Json.createObjectBuilder();
 			for (int i = 0; i < 4; i++) {
-				ItemDto item = GlobalContext.getItemMap().get(ship.getSlots()[i]);
+				ItemDto item = GlobalContext.getItem(ship.getSlots()[i]);
 				if (item != null) {
 					itemsBuilder.add("i" + (i + 1), getItemBuilder(item));
 				}
 			}
 			{
-				ItemDto item = GlobalContext.getItemMap().get(ship.getSlotex());
+				ItemDto item = GlobalContext.getItem(ship.getSlotex());
 				if (item != null) {
 					itemsBuilder.add("ix", getItemBuilder(item));
 				}

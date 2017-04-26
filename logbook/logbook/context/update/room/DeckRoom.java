@@ -5,7 +5,10 @@ import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import logbook.context.dto.data.DeckDto;
+import logbook.context.dto.translator.DeckDtoTranslator;
+import logbook.context.update.GlobalContext;
 import logbook.context.update.data.Data;
+import logbook.util.ToolUtils;
 
 public class DeckRoom extends Room {
 	private final int id;
@@ -40,6 +43,11 @@ public class DeckRoom extends Room {
 			int index = Integer.parseInt(data.getField("api_ship_idx"));//变更位置,0开始
 			int shipId = Integer.parseInt(data.getField("api_ship_id"));
 			this.deck.change(index, shipId);
+
+			if (DeckDtoTranslator.isAkashiFlagship(this.deck) && index != -1) {//变更之后明石旗舰,并且不是[随伴舰一括解除]
+				ToolUtils.ifHandle(GlobalContext.getAkashiTimer(), ToolUtils::isNull, GlobalContext::setAkashiTimer);
+				GlobalContext.getAkashiTimer().resetAkashiFlagshipWhenChange();
+			}
 		} catch (Exception e) {
 			this.getLog().get().warn("doChange" + this.id + "处理错误", e);
 			this.getLog().get().warn(data);

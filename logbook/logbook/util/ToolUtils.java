@@ -66,6 +66,22 @@ public class ToolUtils {
 		ifHandle(value, pre.negate(), con);
 	}
 
+	public static <S> S ifHandle(int value, IntPredicate pre, IntFunction<S> fun, S defaultValue) {
+		return pre.test(value) ? fun.apply(value) : defaultValue;
+	}
+
+	public static <S> S ifNotHandle(int value, IntPredicate pre, IntFunction<S> fun, S defaultValue) {
+		return ifHandle(value, pre.negate(), fun, defaultValue);
+	}
+
+	public static <S> void ifHandle(S s, Predicate<S> pre, Runnable run) {
+		if (pre.test(s)) run.run();
+	}
+
+	public static <S> void ifNotHandle(S s, Predicate<S> pre, Runnable run) {
+		ifHandle(s, pre.negate(), run);
+	}
+
 	public static <S> void ifHandle(S s, Predicate<S> pre, Consumer<S> con) {
 		if (pre.test(s)) con.accept(s);
 	}
@@ -84,20 +100,20 @@ public class ToolUtils {
 
 	/*----------------------------------------------------------------------------------------------------------*/
 
-	public static <S> boolean notNullThenHandle(S s, Predicate<S> handler, boolean defaultValue) {
-		return s != null ? handler.test(s) : defaultValue;
+	public static <S> boolean notNullThenHandle(S s, Predicate<S> pre, boolean defaultValue) {
+		return s != null ? pre.test(s) : defaultValue;
 	}
 
 	public static <S> int notNullThenHandle(S s, ToIntFunction<S> handler, int defaultValue) {
-		return ifHandle(s != null, () -> handler.applyAsInt(s), defaultValue);
+		return s != null ? handler.applyAsInt(s) : defaultValue;
 	}
 
 	public static <S, T> T notNullThenHandle(S s, Function<S, T> handler, T defaultValue) {
-		return ifHandle(s != null, () -> handler.apply(s), defaultValue);
+		return s != null ? handler.apply(s) : defaultValue;
 	}
 
 	public static <S> void notNullThenHandle(S s, Consumer<S> handler) {
-		ifHandle(s != null, () -> handler.accept(s));
+		if (s != null) handler.accept(s);
 	}
 
 	/*----------------------------------------------------------------------------------------------------------*/
@@ -166,11 +182,11 @@ public class ToolUtils {
 
 	public static String[] toStringArray(int[] is, IntFunction<String> fun) {
 		int len = is.length;
-		String[] ss = new String[len];
+		String[] stringArray = new String[len];
 		for (int i = 0; i < len; i++) {
-			ss[i] = fun.apply(is[i]);
+			stringArray[i] = fun.apply(is[i]);
 		}
-		return ss;
+		return stringArray;
 	}
 
 	public static <S> String[] toStringArray(S[] ss, Function<S, String> fun) {

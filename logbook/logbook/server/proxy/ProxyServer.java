@@ -43,7 +43,7 @@ public final class ProxyServer {
 
 			// httpはこっちのハンドラでプロキシ
 			ServletContextHandler context = new ServletContextHandler(proxy, "/", ServletContextHandler.SESSIONS);
-			ServletHolder holder = new ServletHolder(new ReverseProxyServlet());
+			ServletHolder holder = new ServletHolder(new CacheReverseProxyServlet());
 			holder.setInitParameter("maxThreads", "256");
 			holder.setInitParameter("timeout", "600000");
 			context.addServlet(holder, "/*");
@@ -132,14 +132,12 @@ public final class ProxyServer {
 			sb.append("很有可能是由于其他软件使用同一端口导致的").append("\r\n");
 		}
 
-		final String message = sb.toString();
-
 		ApplicationMain.main.getDisplay().asyncExec(new Runnable() {
 			@Override
 			public void run() {
 				MessageBox box = new MessageBox(ApplicationMain.main.getShell(), SWT.YES | SWT.ICON_ERROR);
 				box.setText("代理终了");
-				box.setMessage(message);
+				box.setMessage(sb.toString());
 				box.open();
 			}
 		});

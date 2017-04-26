@@ -18,12 +18,11 @@ public class KaisouRoom extends Room {
 			JsonObject jo = (JsonObject) json;
 			long time = TimeString.getCurrentTime();
 			//boolean success = jo.getInt("api_powerup_flag") == 1;
-			//ShipDto oldship = GlobalContext.getShipMap().get(Integer.parseInt(data.getField("api_id")));
-			ShipDto newship = new ShipDto(jo.getJsonObject("api_ship"));
+			//ShipDto oldship = GlobalContext.getShip(Integer.parseInt(data.getField("api_id")));
 
 			ToolUtils.forEach(ids, id -> GlobalContext.destroyShip(time, "近代化改修", Integer.parseInt(id)));//remove 舰娘和其身上的装备
-			GlobalContext.getShipMap().put(newship.getId(), newship);// add 舰娘,oldship和newship的getId()相同(理论上来说)
-			ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> dr.doDeck(data, jo.get("api_deck")));//更新deck
+			GlobalContext.addNewShip(jo.getJsonObject("api_ship"));
+			ToolUtils.forEach(GlobalContext.deckRoom, dr -> dr.doDeck(data, jo.get("api_deck")));//更新deck
 		} catch (Exception e) {
 			this.getLog().get().warn("doPowerup" + "处理错误", e);
 			this.getLog().get().warn(data);
@@ -33,7 +32,7 @@ public class KaisouRoom extends Room {
 	public void doSlotItemLock(Data data, JsonValue json) {
 		try {
 			int id = Integer.parseInt(data.getField("api_slotitem_id"));
-			ToolUtils.notNullThenHandle(GlobalContext.getItemMap().get(id), item -> item.slotItemLock(((JsonObject) json).getInt("api_locked") == 1));
+			ToolUtils.notNullThenHandle(GlobalContext.getItem(id), item -> item.slotItemLock(((JsonObject) json).getInt("api_locked") == 1));
 		} catch (Exception e) {
 			this.getLog().get().warn("doSlotItemLock" + "处理错误", e);
 			this.getLog().get().warn(data);
@@ -44,8 +43,8 @@ public class KaisouRoom extends Room {
 		try {
 			JsonObject jo = (JsonObject) json;
 
-			jo.getJsonArray("api_ship_data").forEach(value -> GlobalContext.addNewShip((JsonObject) value));
-			ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> dr.doDeck(data, jo.get("api_deck_data")));
+			jo.getJsonArray("api_ship_data").forEach(GlobalContext::addNewShip);
+			ToolUtils.forEach(GlobalContext.deckRoom, dr -> dr.doDeck(data, jo.get("api_deck_data")));
 		} catch (Exception e) {
 			this.getLog().get().warn("doShip3" + "处理错误", e);
 			this.getLog().get().warn(data);
@@ -63,7 +62,9 @@ public class KaisouRoom extends Room {
 
 	public void doSlotExchange(Data data, JsonValue json) {
 		try {
-			GlobalContext.updateShip(Integer.parseInt(data.getField("api_id")), ship -> ship.slotExchange(JsonUtils.getIntArray(((JsonObject) json), "api_slot")));
+			int id = Integer.parseInt(data.getField("api_id"));
+			int[] newSlots = JsonUtils.getIntArray(((JsonObject) json), "api_slot");
+			GlobalContext.updateShip(id, ship -> ship.slotExchange(newSlots));
 		} catch (Exception e) {
 			this.getLog().get().warn("doSlotExchange" + "处理错误", e);
 			this.getLog().get().warn(data);

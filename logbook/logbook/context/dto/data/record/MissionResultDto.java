@@ -1,7 +1,5 @@
 package logbook.context.dto.data.record;
 
-import java.util.ArrayList;
-
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
@@ -20,7 +18,7 @@ public class MissionResultDto implements RecordDto {
 	private final String area;
 	private final String name;
 	private final int[] material;
-	private final MissionResultItem[] items = new MissionResultItem[] { null, null };
+	private final MissionResultItem[] items = { null, null };
 	private final long time;
 
 	public MissionResultDto(int deckId, JsonObject json, long time) {
@@ -34,26 +32,14 @@ public class MissionResultDto implements RecordDto {
 		if (value instanceof JsonArray) {
 			this.material = JsonUtils.getIntArray((JsonArray) value);
 		} else {
-			this.material = new int[] { 0, 0, 0, 0 };
+			this.material = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
 		}
 
-		value = json.get("api_useitem_flag");
-		if (value instanceof JsonArray) {
-			int[] flags = JsonUtils.getIntArray((JsonArray) value);
-			ArrayList<MissionResultItem> mri = new ArrayList<>();
-			for (int i = 0; i < flags.length; i++) {
-				String key = "api_get_item" + (i + 1);
-				if (json.containsKey(key)) {
-					mri.add(new MissionResultItem(flags[i], (JsonObject) json.get(key)));
-				}
-			}
-			switch (mri.size()) {
-				case 3:
-				case 2:
-					this.items[1] = mri.get(1);
-				case 1:
-					this.items[0] = mri.get(0);
-			}
+		if (json.containsKey("api_get_item1")) {
+			this.items[0] = new MissionResultItem(json.getJsonObject("api_get_item1"));
+		}
+		if (json.containsKey("api_get_item2")) {
+			this.items[0] = new MissionResultItem(json.getJsonObject("api_get_item2"));
 		}
 	}
 
@@ -99,14 +85,11 @@ public class MissionResultDto implements RecordDto {
 	}
 
 	public static class MissionResultItem {
-		private final int flag;//0=なし, 1=高速修復材, 2=高速建造材, 3=開発資材, 4=アイテム, 5=家具コイン
-
 		private final int id;
 		private final String name;
 		private final int count;
 
-		public MissionResultItem(int flag, JsonObject json) {
-			this.flag = flag;
+		public MissionResultItem(JsonObject json) {
 			this.id = json.getInt("api_useitem_id");
 			this.name = json.getString("api_useitem_name", "");
 			this.count = json.getInt("api_useitem_count");
@@ -117,7 +100,7 @@ public class MissionResultDto implements RecordDto {
 		}
 
 		public String getName() {
-			switch (this.flag) {
+			switch (this.id) {
 				case 0:
 					return "";
 				case 1:

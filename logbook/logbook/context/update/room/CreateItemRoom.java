@@ -9,16 +9,12 @@ import logbook.context.update.data.Data;
 import logbook.gui.logic.TimeString;
 
 public class CreateItemRoom extends Room {
-
 	public void doCreateitem(Data data, JsonValue json) {
 		try {
 			JsonObject jo = (JsonObject) json;
 
 			boolean success = jo.getInt("api_create_flag") == 1;
-			int slotitemId = -1;
-			if (success) {
-				slotitemId = GlobalContext.addNewItem(jo.getJsonObject("api_slot_item")).getSlotitemId();
-			}
+			int slotitemId = success ? GlobalContext.addNewItem(jo.getJsonObject("api_slot_item")).getSlotitemId() : -1;
 
 			int[] mm = { //
 					Integer.parseInt(data.getField("api_item1")),//
@@ -35,5 +31,4 @@ public class CreateItemRoom extends Room {
 			this.getLog().get().warn(data);
 		}
 	}
-
 }

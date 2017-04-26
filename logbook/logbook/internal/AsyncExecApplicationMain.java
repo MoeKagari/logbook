@@ -2,7 +2,6 @@ package logbook.internal;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import org.eclipse.swt.widgets.Label;
 
@@ -19,16 +18,15 @@ import logbook.context.update.GlobalContext;
 import logbook.context.update.GlobalContext.PLTime;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.ApplicationMain;
-import logbook.gui.window.FleetWindow;
-import logbook.gui.window.FleetWindowOut;
+import logbook.gui.window.WindowBase;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
-public class SyncExecApplicationMain extends Thread {
-	private static final LoggerHolder LOG = new LoggerHolder(SyncExecApplicationMain.class);
+public class AsyncExecApplicationMain extends Thread {
+	private static final LoggerHolder LOG = new LoggerHolder(AsyncExecApplicationMain.class);
 	private final ApplicationMain main;
 
-	public SyncExecApplicationMain(ApplicationMain main) {
+	public AsyncExecApplicationMain(ApplicationMain main) {
 		this.main = main;
 		this.setDaemon(true);
 		this.setName("Thread_AsyncExecApplicationMain");
@@ -38,15 +36,16 @@ public class SyncExecApplicationMain extends Thread {
 	public void run() {
 		try {
 			long nextUpdateTime = 0;
-			while (this.main.getDisplay().isDisposed() == false) {
+			while (true) {
 				final long currentTime = TimeString.getCurrentTime();
-				this.main.getDisplay().asyncExec(() -> {
+				if (this.main.getDisplay().isDisposed() == false) this.main.getDisplay().asyncExec(() -> {
 					TrayMessageBox box = new TrayMessageBox();
 
 					UpdateMaterialRecord.update(this.main, currentTime);
 					UpdateNewDayConsole.update(this.main, currentTime);
 					UpdateDeckNdockTask.update(this.main, box, currentTime);
-					UpdateFleetTask.update(this.main, box, currentTime);
+					ToolUtils.notNullThenHandle(GlobalContext.getAkashiTimer(), akashiTimer -> akashiTimer.update(box, currentTime));
+					ToolUtils.forEach(this.main.getWindows(), WindowBase::storeWindowConfig);
 
 					TrayMessageBox.show(this.main, box);
 				});
@@ -75,7 +74,7 @@ public class SyncExecApplicationMain extends Thread {
 		}
 	}
 
-	//new day时,在console输出
+	/** 新的一天时,在console输出 */
 	private static class UpdateNewDayConsole {
 		//2017-2-21 0:00:00
 		//1487606400000
@@ -83,8 +82,7 @@ public class SyncExecApplicationMain extends Thread {
 
 		public static void update(ApplicationMain main, long currentTime) {
 			if (timerCounter.needNotify(currentTime)) {
-				//姑且加上一个小时,保证正确
-				main.printNewDay(currentTime + TimeUnit.HOURS.toMillis(1));
+				main.printNewDay(currentTime + TimeUnit.HOURS.toMillis(1));//姑且加上一个小时
 			}
 		}
 	}
@@ -108,11 +106,11 @@ public class SyncExecApplicationMain extends Thread {
 			Label[] timeLabels = main.getDeckTimeLabel();
 
 			for (int i = 0; i < 4; i++) {
-				DeckDto deck = GlobalContext.getDeckRoom()[i].getDeck();
+				DeckDto deck = GlobalContext.deckRoom[i].getDeck();
 				if (deck == null) continue;
 
-				DeckMissionDto dmd = deck.getDeckMission();
 				String nameLabelText = "", timeLabelText = "", timeLabelTooltipText = "";
+				DeckMissionDto dmd = deck.getDeckMission();
 				if (dmd.getState() != 0) {
 					long rest = (dmd.getTime() - currentTime) / 1000;
 					if (dmd.getTimerCounter().needNotify(currentTime) && (//
@@ -130,7 +128,7 @@ public class SyncExecApplicationMain extends Thread {
 						timeLabelTooltipText = AppConstants.DECK_NDOCK_COMPLETE_TIME_FORMAT.format(dmd.getTime());
 					}
 				} else {//疲劳回复时间
-					int pl = Arrays.stream(deck.getShips()).mapToObj(id -> GlobalContext.getShipMap().get(id)).filter(ToolUtils::isNotNull).mapToInt(ShipDto::getCond).min().orElse(100);
+					int pl = Arrays.stream(deck.getShips()).mapToObj(GlobalContext::getShip).filter(ToolUtils::isNotNull).mapToInt(ShipDto::getCond).min().orElse(Integer.MAX_VALUE);
 					if (pl < AppConfig.get().getNoticeCondWhen()) {
 						PLTime PLTIME = GlobalContext.getPLTIME();
 						if (PLTIME != null) {
@@ -162,20 +160,20 @@ public class SyncExecApplicationMain extends Thread {
 			Label[] timeLabels = main.getNdockTimeLabel();
 
 			for (int i = 0; i < 4; i++) {
-				NdockDto ndock = GlobalContext.getNyukyoRoom()[i].getNdock();
+				NdockDto ndock = GlobalContext.nyukyoRoom[i].getNdock();
 				if (ndock == null) continue;
 
 				String nameLabelText = "", timeLabelText = "", timeLabelTooltipText = "";
 				if (ndock.getState() == 1) {
-					ShipDto ship = GlobalContext.getShipMap().get(ndock.getShipId());
-					String name = ShipDtoTranslator.getName(ship);
+					ShipDto ship = GlobalContext.getShip(ndock.getShipId());
 					if (ship != null) {
+						String name = ShipDtoTranslator.getName(ship);
 						long rest = (ndock.getTime() - currentTime) / 1000;
 						if (AppConfig.get().isNoticeNdock() && ndock.getTimerCounter().needNotify(currentTime)) {
 							box.add("入渠", name + "(Lv." + ship.getLevel() + ")" + "-入渠已完了");
 						}
 
-						nameLabelText = name + "(Lv." + ship.getLevel() + ")";
+						nameLabelText = String.format("%s(Lv.%d)", name, ship.getLevel());
 						timeLabelText = TimeString.toDateRestString(rest, "入渠已完了");
 						timeLabelTooltipText = AppConstants.DECK_NDOCK_COMPLETE_TIME_FORMAT.format(ndock.getTime());
 					}
@@ -185,18 +183,6 @@ public class SyncExecApplicationMain extends Thread {
 				SwtUtils.setText(timeLabels[i], timeLabelText);
 				SwtUtils.setToolTipText(timeLabels[i], timeLabelTooltipText);
 			}
-		}
-	}
-
-	//更新 FleetWindow 的 akashiTimer
-	private static class UpdateFleetTask {
-		public static void update(ApplicationMain main, TrayMessageBox box, long currentTime) {
-			if (main.getShell().isDisposed()) return;
-
-			Consumer<FleetWindow> updater = fw -> fw.getAkashiTimer().update(box, currentTime);
-			ToolUtils.forEach(main.getFleetWindows(), updater);
-			Arrays.stream(main.getFleetWindowOuts()).map(FleetWindowOut::getFleetWindow).forEach(updater);
-			ToolUtils.forEach(main.getFleetWindowAll().getFleetWindows(), updater);
 		}
 	}
 

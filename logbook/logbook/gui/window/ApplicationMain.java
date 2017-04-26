@@ -28,6 +28,7 @@ import org.eclipse.swt.widgets.TrayItem;
 
 import logbook.config.AppConfig;
 import logbook.config.AppConstants;
+import logbook.config.WindowConfig;
 import logbook.context.update.GlobalContext;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.TrayItemMenuListener;
@@ -46,9 +47,9 @@ import logbook.gui.window.table.MissionResultTable;
 import logbook.gui.window.table.QuestListTable;
 import logbook.gui.window.table.ShipListTable;
 import logbook.internal.ApplicationLock;
+import logbook.internal.AsyncExecApplicationMain;
 import logbook.internal.LoggerHolder;
 import logbook.internal.ShutdownHookThread;
-import logbook.internal.SyncExecApplicationMain;
 import logbook.server.proxy.ProxyServer;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
@@ -85,9 +86,10 @@ public class ApplicationMain {
 	private static void startLogbook() {
 		try {
 			AppConfig.load();
+			WindowConfig.load();
 			GlobalContext.load();
 			main = new ApplicationMain();
-			new SyncExecApplicationMain(main).start();
+			new AsyncExecApplicationMain(main).start();
 			ProxyServer.start();
 			HPMessage.initColor(main);
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
@@ -99,6 +101,10 @@ public class ApplicationMain {
 			main.dispose();
 			HPMessage.dispose();
 			ProxyServer.end();
+
+			AppConfig.store();
+			WindowConfig.store();
+			GlobalContext.store();
 		}
 	}
 
@@ -156,6 +162,7 @@ public class ApplicationMain {
 	/** 所有任务 */
 	private QuestListTable questListTable;
 
+	private final WindowBase[] windows;
 	/*------------------------------------------------------------------------------------------------------*/
 
 	private Display display = new Display();
@@ -170,18 +177,18 @@ public class ApplicationMain {
 	private Button shipList;
 	private Group resourceGroup;
 	private Label[] resourceLabels;
-	private String[] resourceStrings = { "油", "钢", "高速修复材", "开发资材", "弹", "铝", "螺丝", "高速建造材" };
 	private Group notifySettingGroup;
 	private Button deckNotice;
 	private Button ndockNotice;
 	private Button akashiNotice;
 	private Button condNotice;
 	private Group deckGroup;
-	private Label[] decknameLabels;
-	private Label[] decktimeLabels;
+	private Label[] deckNameLabels;
+	private Label[] deckTimeLabels;
 	private Group ndockGroup;
-	private Label[] ndocknameLabels;
-	private Label[] ndocktimeLabels;
+	private Label[] ndockNameLabels;
+	private Label[] ndockTimeLabels;
+	private Label akashiTimerLabel;
 	private org.eclipse.swt.widgets.List console;
 
 	private Composite rightComposite;//右面板
@@ -194,12 +201,23 @@ public class ApplicationMain {
 		this.subShell = new Shell(this.display, SWT.TOOL);
 		this.initLeftComposite();
 		this.initRightComposite();
+		this.initTrayItem();
 
 		this.menubar = new Menu(this.shell, SWT.BAR);
 		this.initMenuBar();
 		this.shell.setMenuBar(this.menubar);
 
-		this.initTrayItem();
+		this.windows = new WindowBase[] {//{//
+				this.fleetWindowAll, this.fleetWindowOuts[0], this.fleetWindowOuts[1], this.fleetWindowOuts[2], this.fleetWindowOuts[3],//
+				this.calcuExpWindow, this.calcuPracticeExpWindow,//
+				this.battleWindow, this.battleWindow.getBattleFlowWindow(), this.mapinfoWindow,//
+				this.createItemTable, this.createShipTable, this.missionResultTable, this.materialRecordTable,//
+				this.destroyItemTable, this.destroyShipTable,//
+				this.battleListTable, this.dropListTable,//
+				this.shipListTable1, this.shipListTable2, this.shipListTable3,//
+				this.itemListTable, this.questListTable//
+		};
+		ToolUtils.forEach(this.windows, WindowBase::restoreWindowConfig);
 	}
 
 	private void initShell() {
@@ -252,12 +270,13 @@ public class ApplicationMain {
 			this.resourceGroup.setLayout(SwtUtils.makeGridLayout(4, 0, 0, 0, 0));
 			this.resourceGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-			int len = this.resourceStrings.length;
+			String[] resourceStrings = { "油", "钢", "高速修复材", "开发资材", "弹", "铝", "螺丝", "高速建造材" };
+			int len = resourceStrings.length;
 			this.resourceLabels = new Label[len];
 			for (int i = 0; i < len; i++) {
-				this.resourceLabels[i] = new Label(this.resourceGroup, SWT.RIGHT);
-				this.resourceLabels[i].setToolTipText(this.resourceStrings[i]);
-				SwtUtils.initLabel(this.resourceLabels[i], "0", new GridData(GridData.FILL_HORIZONTAL));
+				Label resourceLabel = this.resourceLabels[i] = new Label(this.resourceGroup, SWT.RIGHT);
+				SwtUtils.setToolTipText(resourceLabel, resourceStrings[i]);
+				SwtUtils.initLabel(resourceLabel, "0", new GridData(GridData.FILL_HORIZONTAL));
 			}
 		}
 		{
@@ -294,14 +313,14 @@ public class ApplicationMain {
 			this.deckGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 			int len = 4;
-			this.decknameLabels = new Label[len];
-			this.decktimeLabels = new Label[len];
+			this.deckNameLabels = new Label[len];
+			this.deckTimeLabels = new Label[len];
 			for (int i = 0; i < len; i++) {
-				this.decknameLabels[i] = new Label(this.deckGroup, SWT.NONE);
-				SwtUtils.initLabel(this.decknameLabels[i], AppConstants.DEFAULT_FLEET_NAME[i] + "远征", new GridData(GridData.FILL_HORIZONTAL));
+				this.deckNameLabels[i] = new Label(this.deckGroup, SWT.NONE);
+				SwtUtils.initLabel(this.deckNameLabels[i], AppConstants.DEFAULT_FLEET_NAME[i] + "远征", new GridData(GridData.FILL_HORIZONTAL));
 
-				this.decktimeLabels[i] = new Label(this.deckGroup, SWT.RIGHT);
-				SwtUtils.initLabel(this.decktimeLabels[i], "00时00分00秒", new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1), 78);
+				this.deckTimeLabels[i] = new Label(this.deckGroup, SWT.RIGHT);
+				SwtUtils.initLabel(this.deckTimeLabels[i], "00时00分00秒", new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1), 78);
 			}
 		}
 		{
@@ -311,14 +330,24 @@ public class ApplicationMain {
 			this.ndockGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 			int len = 4;
-			this.ndocknameLabels = new Label[len];
-			this.ndocktimeLabels = new Label[len];
+			this.ndockNameLabels = new Label[len];
+			this.ndockTimeLabels = new Label[len];
 			for (int i = 0; i < len; i++) {
-				this.ndocknameLabels[i] = new Label(this.ndockGroup, SWT.NONE);
-				SwtUtils.initLabel(this.ndocknameLabels[i], "渠" + (i + 1), new GridData(GridData.FILL_HORIZONTAL));
+				this.ndockNameLabels[i] = new Label(this.ndockGroup, SWT.NONE);
+				SwtUtils.initLabel(this.ndockNameLabels[i], "渠" + (i + 1), new GridData(GridData.FILL_HORIZONTAL));
 
-				this.ndocktimeLabels[i] = new Label(this.ndockGroup, SWT.RIGHT);
-				SwtUtils.initLabel(this.ndocktimeLabels[i], "00时00分00秒", new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1), 78);
+				this.ndockTimeLabels[i] = new Label(this.ndockGroup, SWT.RIGHT);
+				SwtUtils.initLabel(this.ndockTimeLabels[i], "00时00分00秒", new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1), 78);
+			}
+		}
+		{
+			Composite akashiTimerComposite = new Composite(this.leftComposite, SWT.NONE);
+			akashiTimerComposite.setLayout(SwtUtils.makeGridLayout(2, 0, 0, 0, 0, 0, 0, 3, 3));
+			akashiTimerComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			{
+				SwtUtils.initLabel(new Label(akashiTimerComposite, SWT.LEFT), "泊地修理", new GridData(), 48);
+				this.akashiTimerLabel = new Label(akashiTimerComposite, SWT.RIGHT);
+				SwtUtils.initLabel(this.akashiTimerLabel, "??秒", new GridData(GridData.FILL_HORIZONTAL));
 			}
 		}
 		{
@@ -543,19 +572,23 @@ public class ApplicationMain {
 	}
 
 	public Label[] getDeckNameLabel() {
-		return this.decknameLabels;
+		return this.deckNameLabels;
 	}
 
 	public Label[] getDeckTimeLabel() {
-		return this.decktimeLabels;
+		return this.deckTimeLabels;
 	}
 
 	public Label[] getNdockNameLabel() {
-		return this.ndocknameLabels;
+		return this.ndockNameLabels;
 	}
 
 	public Label[] getNdockTimeLabel() {
-		return this.ndocktimeLabels;
+		return this.ndockTimeLabels;
+	}
+
+	public Label getAkashiTimerLabel() {
+		return this.akashiTimerLabel;
 	}
 
 	public FleetWindow[] getFleetWindows() {
@@ -564,38 +597,8 @@ public class ApplicationMain {
 
 	/*----------------------------------------------------------------------------------------------------------------*/
 
-	public FleetWindowAll getFleetWindowAll() {
-		return this.fleetWindowAll;
-	}
-
-	public FleetWindowOut[] getFleetWindowOuts() {
-		return this.fleetWindowOuts;
-	}
-
-	public CalcuExpWindow getCalcuExpWindow() {
-		return this.calcuExpWindow;
-	}
-
-	public CalcuPracticeExpWindow getCalcuPracticeExpWindow() {
-		return this.calcuPracticeExpWindow;
-	}
-
-	public BattleWindow getBattleWindow() {
-		return this.battleWindow;
-	}
-
-	public MapinfoWindow getMapinfoWindow() {
-		return this.mapinfoWindow;
-	}
-
-	public AbstractTable<?>[] getTableWindows() {
-		return new AbstractTable[] {//
-				this.createItemTable, this.createShipTable, //
-				this.missionResultTable, this.materialRecordTable, //
-				this.shipListTable1, this.shipListTable2, this.shipListTable3, this.itemListTable, this.questListTable, //
-				this.destroyShipTable, this.destroyItemTable,//
-				this.battleListTable, this.dropListTable//
-		};
+	public WindowBase[] getWindows() {
+		return this.windows;
 	}
 
 	/*----------------------------------------------------------------------------------------------------------------*/

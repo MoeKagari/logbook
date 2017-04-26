@@ -36,7 +36,7 @@ public class CreateShipRoom extends Room {
 			if (this.kdock != null && this.createshipDto != null) {//记录
 				this.createshipDto.setEmptyCount(//空渠数为总渠减去正在建造
 						GlobalContext.getBasicInformation().getKdockLength()
-								- (int) Arrays.stream(GlobalContext.getCreateShipRoom()).map(csr -> csr.kdock).filter(kd -> kd != null && kd.getTime() > TimeString.getCurrentTime()).count());
+								- (int) Arrays.stream(GlobalContext.createShipRoom).map(csr -> csr.kdock).filter(kd -> kd != null && kd.getTime() > TimeString.getCurrentTime()).count());
 				this.createshipDto.setShipId(this.kdock.getShipId());
 				GlobalContext.getCreateshiplist().add(this.createshipDto);
 			}
@@ -98,10 +98,10 @@ public class CreateShipRoom extends Room {
 			//加入新船的装备到itemmap,有可能为JsonValue.NULL
 			JsonValue items_value = jo.get("api_slotitem");
 			if (items_value != null && items_value != JsonValue.NULL && (items_value instanceof JsonArray)) {
-				((JsonArray) items_value).forEach(value -> GlobalContext.addNewItem((JsonObject) value));
+				((JsonArray) items_value).forEach(GlobalContext::addNewItem);
 			}
 			//刷新kdock状态
-			ToolUtils.forEach(GlobalContext.getCreateShipRoom(), csr -> csr.doKdock(data, jo.get("api_kdock")));
+			ToolUtils.forEach(GlobalContext.createShipRoom, csr -> csr.doKdock(data, jo.get("api_kdock")));
 		} catch (Exception e) {
 			this.getLog().get().warn("doGetShip" + this.id + "处理错误", e);
 			this.getLog().get().warn(data);

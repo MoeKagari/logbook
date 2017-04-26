@@ -20,7 +20,7 @@ public class RemodelRoom extends Room {
 			//boolean certain = Integer.parseInt(data.getField("api_certain_flag")) == 1;
 			boolean success = jo.getInt("api_remodel_flag") == 1;
 			int slotId = Integer.parseInt(data.getField("api_slot_id"));
-			ItemDto item = GlobalContext.getItemMap().get(slotId);
+			ItemDto item = GlobalContext.getItem(slotId);
 			if (success && item != null) {
 				//item.remodelSlot();
 				//由api_after_slot刷新

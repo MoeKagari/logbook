@@ -14,13 +14,9 @@ public class TrayItemMenuListener implements MenuDetectListener {
 	public TrayItemMenuListener(ApplicationMain main) {
 		this.menu = new Menu(main.getShell());
 
-		MenuItem config = new MenuItem(this.menu, SWT.NONE);
-		config.setText("设置");
-		config.addSelectionListener(new ControlSelectionListener(ev -> {}));
-
 		final MenuItem dispose = new MenuItem(this.menu, SWT.NONE);
 		dispose.setText("退出");
-		dispose.addSelectionListener(new ControlSelectionListener(ev -> main.getShell().close()));
+		dispose.addSelectionListener(new ControlSelectionListener(main.getShell()::close));
 	}
 
 	@Override

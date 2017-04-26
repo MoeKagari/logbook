@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
+import logbook.config.AppConstants;
+
 public class ApplicationLock {
-	private static final File LOCK_FILE = new File("config/LOCK");
+	private static final File LOCK_FILE = new File(AppConstants.LOCKFILEPATH);
 	private static final LoggerHolder LOG = new LoggerHolder(ApplicationLock.class);
 
 	private FileOutputStream fos;

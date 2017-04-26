@@ -53,23 +53,29 @@ import logbook.util.ToolUtils;
 public class BattleDtoTranslator {
 
 	public static void newBattleComposite(Composite parent, BiConsumer<AbstractBattle, SelectionEvent> handler, boolean hasDownArrow, BattleDto lastOne) {
+		Runnable insertDownArrow = () -> {
+			Composite composite = new Composite(parent, SWT.CENTER);
+			composite.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0, 4, 4));
+			composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			SwtUtils.initLabel(new Label(composite, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
+		};
+
 		if (lastOne instanceof InfoBattleStartDto) {
 			BTResult btr = newBattleStart((InfoBattleStartDto) lastOne);
 			if (btr != null) {
 				newOneBattleComposite(parent, btr, null, null);
-				SwtUtils.initLabel(new Label(parent, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
+				insertDownArrow.run();
 			}
 		}
 
 		BTResult btr = BattleDtoTranslator.getBattle(lastOne);
 		if (btr != null) {
-			if (lastOne.getBattleType() == BattleType.PRACTICE_DAY) {//演习
+			if (lastOne.getBattleType() == BattleType.PRACTICE_DAY) {//演习开始
 				SwtUtils.initLabel(new Label(parent, SWT.CENTER), "演习", new GridData(GridData.FILL_HORIZONTAL));
-				SwtUtils.initLabel(new Label(parent, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
-			} else if (hasDownArrow) {
-				SwtUtils.initLabel(new Label(parent, SWT.CENTER), "↓", new GridData(GridData.FILL_HORIZONTAL));
+				insertDownArrow.run();
+			} else if ((lastOne.getBattleType() == BattleType.PRACTICE_RESULT) | hasDownArrow) {//演习结束也加下箭头
+				insertDownArrow.run();
 			}
-
 			newOneBattleComposite(parent, btr, handler, lastOne);
 		}
 	}
@@ -79,19 +85,30 @@ public class BattleDtoTranslator {
 		base.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
 		base.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		//出击信息
+		//行进信息
 		ToolUtils.notNullThenHandle(btr.deckInformations, di -> newLabels(base, di));
 		//战斗前后状态
 		if (btr.before != null && btr.after != null) {
 			Composite stateComposite = new Composite(base, SWT.NONE);
-			stateComposite.setLayout(SwtUtils.makeGridLayout(3, 4, 0, 0, 0));
+			stateComposite.setLayout(SwtUtils.makeGridLayout(3, 4, 0, 0, 0, 1, 1));
 			stateComposite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
 
 			newStateComposite(stateComposite, btr.before);
-			SwtUtils.initLabel(new Label(stateComposite, SWT.CENTER), "→", new GridData(SWT.CENTER, SWT.FILL, true, true));
+			{
+				Composite centerComposite = new Composite(stateComposite, SWT.NONE);
+				centerComposite.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
+				centerComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+				if (lastOne instanceof AbstractBattle) {
+					if (haveDamage((AbstractBattle) lastOne) == false) {
+						SwtUtils.initLabel(new Label(centerComposite, SWT.CENTER), "无伤", new GridData(SWT.CENTER, SWT.CENTER, true, true));
+					}
+				}
+				SwtUtils.initLabel(new Label(centerComposite, SWT.CENTER), "→", new GridData(SWT.CENTER, SWT.CENTER, true, true));
+			}
 			newStateComposite(stateComposite, btr.after);
 
-			if (lastOne instanceof AbstractBattle) {//右键菜单,支队battle有效
+			if (lastOne instanceof AbstractBattle) {//右键菜单,只对battle有效
 				MenuItem show = new MenuItem(new Menu(stateComposite), SWT.NONE);
 				show.setText("战斗流程");
 				if (handler != null) ControlSelectionListener.add(show, ev -> handler.accept((AbstractBattle) lastOne, ev));
@@ -169,9 +186,9 @@ public class BattleDtoTranslator {
 		DeckDto[] decks;//出击的deck
 		int deckId = battleStart.getDeckId();
 		if (battleStart.isCombined() && deckId == 1) {
-			decks = new DeckDto[] { GlobalContext.getDeckRoom()[0].getDeck(), GlobalContext.getDeckRoom()[1].getDeck() };
+			decks = new DeckDto[] { GlobalContext.deckRoom[0].getDeck(), GlobalContext.deckRoom[1].getDeck() };
 		} else {
-			decks = new DeckDto[] { GlobalContext.getDeckRoom()[deckId - 1].getDeck() };
+			decks = new DeckDto[] { GlobalContext.deckRoom[deckId - 1].getDeck() };
 		}
 		if (Arrays.stream(decks).anyMatch(ToolUtils::isNull)) {
 			deckInformations.add("出击舰队状态未知,请注意");
@@ -189,7 +206,7 @@ public class BattleDtoTranslator {
 
 		String text = "地图:" + battleNext.getMapString() + ",Cell:" + battleNext.getNext() +//
 				"(" + battleNext.getNextType() +//
-				battleNext.getItems().stream().map(item -> "," + item.toString()).reduce("", StringUtils::join) +//
+				ToolUtils.notNullThenHandle(battleNext.getItems(), items -> items.stream().map(item -> "," + item.toString()).reduce("", StringUtils::join), "") +//
 				(battleNext.isGoal() ? ",终点" : "") + ")";
 		deckInformations.add(text);
 
@@ -326,7 +343,7 @@ public class BattleDtoTranslator {
 			addBattleAttack(parent, battle, midnight.getBattleMidnightStage().getBattleAttacks(), enemyAttack -> Boolean.FALSE);
 		}
 		if (battle instanceof AbstractBattleDay) {
-			SwtUtils.initLabel(new Label(parent, SWT.CENTER), "昼战流程", new GridData(GridData.FILL_HORIZONTAL));
+			SwtUtils.initLabel(new Label(parent, SWT.CENTER), "昼战", new GridData(GridData.FILL_HORIZONTAL));
 
 			BattleDeckAttackDamage fbdad = new BattleDeckAttackDamage();
 			BattleDeckAttackDamage fbdadco = new BattleDeckAttackDamage();
@@ -772,7 +789,7 @@ public class BattleDtoTranslator {
 			AbstractBattleMidnight midnight = (AbstractBattleMidnight) battle;
 			return haveDamage.test(midnight.getBattleMidnightStage().getfAttackDamage());
 		}
-		return false;
+		return true;
 	}
 
 	public static String getBattleAttackType(boolean isMidnight, int attackType) {

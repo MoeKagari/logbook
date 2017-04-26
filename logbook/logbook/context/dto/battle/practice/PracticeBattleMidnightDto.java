@@ -18,7 +18,7 @@ public class PracticeBattleMidnightDto extends AbstractBattleMidnight {
 	}
 
 	@Override
-	public boolean isPracticeBattle() {
+	public boolean isPractice() {
 		return true;
 	}
 

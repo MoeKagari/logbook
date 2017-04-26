@@ -1,6 +1,5 @@
 package logbook.context.update.room;
 
-import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import javax.json.JsonArray;
@@ -15,28 +14,27 @@ import logbook.context.dto.data.MasterDataDto;
 import logbook.context.dto.data.MaterialDto;
 import logbook.context.dto.data.ShipDto;
 import logbook.context.update.GlobalContext;
+import logbook.context.update.GlobalContext.FleetAkashiTimer;
 import logbook.context.update.data.Data;
+import logbook.gui.logic.TimeString;
 import logbook.util.ToolUtils;
 
 public class MainRoom extends Room {
+	/** 最后一次返回母港 */
+	private long lastUpdateTime = -1;
 
 	private Supplier<int[]> getConds = () -> {
-		DeckDto deck = GlobalContext.getDeckRoom()[0].getDeck();
+		DeckDto deck = GlobalContext.deckRoom[0].getDeck();
 		if (deck != null) {
 			int[] conds = new int[6];
 			int[] ships = deck.getShips();
 			for (int i = 0; i < 6; i++) {
-				ShipDto ship = GlobalContext.getShipMap().get(ships[i]);
+				ShipDto ship = GlobalContext.getShip(ships[i]);
 				conds[i] = (ship != null && ship.isNeedForPLUpdate()) ? ship.getCond() : -1;
 			}
 			return conds;
 		}
 		return null;
-	};
-
-	private LongSupplier getTime = () -> {
-		DeckDto deck = GlobalContext.getDeckRoom()[0].getDeck();
-		return deck != null ? deck.getTime() : -1;
 	};
 
 	public void doPort(Data data, JsonValue json) {
@@ -47,16 +45,19 @@ public class MainRoom extends Room {
 			if (apidata.containsKey("api_combined_flag")) GlobalContext.setCombined(apidata.getInt("api_combined_flag") > 0);
 
 			int[] oldconds = this.getConds.get();//第一舰队的疲劳(旧)
-			long oldtime = this.getTime.getAsLong();
+			long oldtime = this.lastUpdateTime;
 			{
+				this.lastUpdateTime = TimeString.getCurrentTime();
 				GlobalContext.getShipMap().clear();
-				apidata.getJsonArray("api_ship").forEach(value -> GlobalContext.addNewShip((JsonObject) value));
-				ToolUtils.forEach(GlobalContext.getNyukyoRoom(), nr -> nr.doNdock(data, apidata.get("api_ndock")));
-				ToolUtils.forEach(GlobalContext.getDeckRoom(), dr -> dr.doDeck(data, apidata.get("api_deck_port")));
+				apidata.getJsonArray("api_ship").forEach(GlobalContext::addNewShip);
+				ToolUtils.forEach(GlobalContext.nyukyoRoom, nr -> nr.doNdock(data, apidata.get("api_ndock")));
+				ToolUtils.forEach(GlobalContext.deckRoom, dr -> dr.doDeck(data, apidata.get("api_deck_port")));
 			}
 			int[] newconds = this.getConds.get();//第一舰队的疲劳(新)
-			long newtime = this.getTime.getAsLong();
+			long newtime = this.lastUpdateTime;
 			GlobalContext.updatePLTIME(oldtime, oldconds, newtime, newconds);
+
+			ToolUtils.notNullThenHandle(GlobalContext.getAkashiTimer(), FleetAkashiTimer::resetWhenPort);
 		} catch (Exception e) {
 			this.getLog().get().warn("doPort" + "处理错误", e);
 			this.getLog().get().warn(data);
@@ -67,7 +68,7 @@ public class MainRoom extends Room {
 		try {
 			JsonObject apidata = (JsonObject) json;
 			this.doSlotItem(data, apidata.get("api_slot_item"));
-			ToolUtils.forEach(GlobalContext.getCreateShipRoom(), csr -> csr.doKdock(data, apidata.get("api_kdock")));
+			ToolUtils.forEach(GlobalContext.createShipRoom, csr -> csr.doKdock(data, apidata.get("api_kdock")));
 			this.doUseitem(data, apidata.get("api_useitem"));
 			//  api_unsetslot
 		} catch (Exception e) {
@@ -102,7 +103,7 @@ public class MainRoom extends Room {
 	public void doSlotItem(Data data, JsonValue json) {
 		try {
 			GlobalContext.getItemMap().clear();
-			((JsonArray) json).forEach(value -> GlobalContext.addNewItem((JsonObject) value));
+			((JsonArray) json).forEach(GlobalContext::addNewItem);
 		} catch (Exception e) {
 			this.getLog().get().warn("doSlotItem" + "处理错误", e);
 			this.getLog().get().warn(data);
@@ -111,8 +112,8 @@ public class MainRoom extends Room {
 
 	public void doUseitem(Data data, JsonValue json) {
 		try {
-			GlobalContext.getUseitemmap().clear();
-			((JsonArray) json).forEach(value -> GlobalContext.addNewUseItem((JsonObject) value));
+			GlobalContext.getUseitemMap().clear();
+			((JsonArray) json).forEach(GlobalContext::addNewUseItem);
 		} catch (Exception e) {
 			this.getLog().get().warn("doUseitem" + "处理错误", e);
 			this.getLog().get().warn(data);
@@ -141,7 +142,9 @@ public class MainRoom extends Room {
 
 	public void doShipLock(Data data, JsonValue json) {
 		try {
-			GlobalContext.updateShip(Integer.parseInt(data.getField("api_ship_id")), ship -> ship.setLocked(((JsonObject) json).getInt("api_locked") == 1));
+			int id = Integer.parseInt(data.getField("api_ship_id"));
+			int lock_value = ((JsonObject) json).getInt("api_locked");
+			GlobalContext.updateShip(id, ship -> ship.setLocked(lock_value == 1));
 		} catch (Exception e) {
 			this.getLog().get().warn("doShipLock" + "处理错误", e);
 			this.getLog().get().warn(data);

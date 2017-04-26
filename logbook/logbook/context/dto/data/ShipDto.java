@@ -218,6 +218,7 @@ public class ShipDto {
 		this.nowHp = this.maxHp;
 		this.cond = this.cond < 40 ? 40 : this.cond;
 		this.ndockCost = new int[2];
+		this.ndockTime = 0;
 		this.needForPLUpdate = false;//入渠完毕,非自然恢复,更新(PLTIME)是,不需要此ship
 	}
 
@@ -237,8 +238,7 @@ public class ShipDto {
 
 	/** 开放ex装备槽 */
 	public void openSlotex() {
-		//原先为0=未开放
-		this.slotex = -1;
+		this.slotex = -1;//原先为0=未开放
 	}
 
 	/** 交换装备 */

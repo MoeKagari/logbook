@@ -44,7 +44,7 @@ public class NyukyoRoom extends Room {
 
 			int shipId = Integer.parseInt(data.getField("api_ship_id"));
 			boolean highspeed = Integer.parseInt(data.getField("api_highspeed")) == 1;
-			ShipDto ship = GlobalContext.getShipMap().get(shipId);
+			ShipDto ship = GlobalContext.getShip(shipId);
 
 			if (ship != null) GlobalContext.reduceMaterial(ship.getNyukyoCost());
 			if (highspeed) {//使用高速修复,后无ndock

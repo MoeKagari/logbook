@@ -23,8 +23,6 @@ import logbook.context.update.GlobalContextUpdater;
 import logbook.context.update.data.DataType;
 import logbook.context.update.data.EventListener;
 import logbook.gui.logic.HPMessage;
-import logbook.gui.logic.TimeString;
-import logbook.internal.TrayMessageBox;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
@@ -36,8 +34,6 @@ public class FleetWindow implements EventListener {
 	private Label fleetNameLabel;
 	/** 舰队速度 */
 	private Label sokuLabel;
-	/** 泊地修理timer */
-	private Label akashiLabel;
 	/** 制空 */
 	private Label zhikongLabel;
 	/** 索敌 */
@@ -51,18 +47,11 @@ public class FleetWindow implements EventListener {
 	private final int id;//1,2,3,4
 	private final String defaultFleetName;
 	private final Composite composite;
-	private final boolean notifiyAkashitimer;
-	private final FleetAkashiTimer akashiTimer = new FleetAkashiTimer();
 
 	public FleetWindow(Composite composite, int id) {
-		this(composite, id, true);
-	}
-
-	public FleetWindow(Composite composite, int id, boolean notifiyAkashitimer) {
 		this.id = id;
 		this.defaultFleetName = AppConstants.DEFAULT_FLEET_NAME[id - 1];
 		this.composite = composite;
-		this.notifiyAkashitimer = notifiyAkashitimer;
 		this.init();
 		GlobalContextUpdater.addEventListener(this);
 	}
@@ -119,7 +108,7 @@ public class FleetWindow implements EventListener {
 
 	private void initInfoComposite2() {
 		Composite infoComposite2 = new Composite(this.composite, SWT.NONE);
-		GridLayout infoComposite2GridLayout = SwtUtils.makeGridLayout(3, 0, 0, 0, 0);
+		GridLayout infoComposite2GridLayout = SwtUtils.makeGridLayout(2, 0, 0, 0, 0);
 		infoComposite2GridLayout.marginTop = -3;
 		infoComposite2GridLayout.marginBottom = -2;
 		infoComposite2.setLayout(infoComposite2GridLayout);
@@ -129,10 +118,6 @@ public class FleetWindow implements EventListener {
 			SwtUtils.initLabel(this.sokuLabel, "高速", new GridData());
 
 			SwtUtils.insertBlank(infoComposite2);
-
-			this.akashiLabel = new Label(infoComposite2, SWT.RIGHT);
-			this.akashiLabel.setToolTipText("泊地修理");
-			SwtUtils.initLabel(this.akashiLabel, "", new GridData(), 87);
 		}
 	}
 
@@ -150,22 +135,15 @@ public class FleetWindow implements EventListener {
 
 	@Override
 	public void update(DataType type) {
-		DeckDto deck = this.getDeck();
-
 		switch (type) {
 			default:
 				return;
 			case UPDATEDECKNAME:
-				ToolUtils.notNullThenHandle(deck, d -> SwtUtils.setText(this.fleetNameLabel, d.getName()));
+				ToolUtils.notNullThenHandle(this.getDeck(), d -> SwtUtils.setText(this.fleetNameLabel, d.getName()));
 				return;
 
 			case PORT:
-				this.akashiTimer.reset(TimeString.getCurrentTime());
-				break;
 			case CHANGE:
-				this.akashiTimer.resetAkashiFlagship(deck);
-				break;
-
 			case PRESET_SELECT:
 			case POWERUP:
 			case SLOTSET:
@@ -191,7 +169,7 @@ public class FleetWindow implements EventListener {
 		}
 
 		this.composite.setRedraw(false);
-		ToolUtils.notNullThenHandle(deck, this::updateDeck);
+		ToolUtils.notNullThenHandle(this.getDeck(), this::updateDeck);
 		this.composite.setRedraw(true);
 	}
 
@@ -206,58 +184,27 @@ public class FleetWindow implements EventListener {
 		//ship 状态
 		int[] ships = deck.getShips();
 		for (int i = 0; i < ships.length; i++) {
-			this.shipComposites[i].updateShipInformation(GlobalContext.getShip(ships[i]));
+			ShipComposite sc = this.shipComposites[i];
+			ShipDto ship = GlobalContext.getShip(ships[i]);
+			if (ship == null) {
+				sc.clear();
+			} else {
+				sc.updateShipInformation(ship);
+			}
 		}
 	}
 
 	/*------------------------------------------------------------------------------------------------------------------------------------*/
 
 	private DeckDto getDeck() {
-		return GlobalContext.getDeckRoom()[this.id - 1].getDeck();
+		return GlobalContext.deckRoom[this.id - 1].getDeck();
 	}
 
-	public FleetAkashiTimer getAkashiTimer() {
-		return this.akashiTimer;
+	public int getId() {
+		return this.id;
 	}
 
 	/*------------------------------------------------------------------------------------------------------------------------------------*/
-
-	/** 泊地修理计时器 */
-	public class FleetAkashiTimer {
-		private final static int RESET_LIMIT = 20 * 60;
-		private long time = -1;
-
-		public void update(TrayMessageBox box, long currentTime) {
-			if (this.time == -1) return;
-			long rest = (currentTime - this.time) / 1000;
-			FleetWindow.this.akashiLabel.setText(TimeString.toDateRestString(rest));
-			if (FleetWindow.this.notifiyAkashitimer) {
-				if (rest == RESET_LIMIT) {
-					DeckDto deck = FleetWindow.this.getDeck();
-					if (deck != null) {
-						if (DeckDtoTranslator.shouldNotifyAkashiTimer(deck) && DeckDtoTranslator.canAkashiRepair(deck)) {
-							box.add("泊地修理", FleetWindow.this.defaultFleetName + "∶泊地修理已20分钟");
-						}
-					}
-				}
-			}
-		}
-
-		private void reset(long currentTime) {
-			if (this.time == -1) return;
-			if ((currentTime - this.time) / 1000 >= RESET_LIMIT) {
-				this.time = currentTime;
-			}
-		}
-
-		private void resetAkashiFlagship(DeckDto deck) {
-			if (deck != null && DeckDtoTranslator.isAkashiFlagship(deck)) {
-				if (DeckDtoTranslator.isOnlyAkashi(deck) == false) {
-					this.time = TimeString.getCurrentTime();
-				}
-			}
-		}
-	}
 
 	private class ShipComposite extends Composite {
 		Label iconlabel, namelabel, lvlabel, hplabel, hpmsglabel, condlabel;
@@ -322,22 +269,23 @@ public class FleetWindow implements EventListener {
 		}
 
 		private void updateShipInformation(ShipDto ship) {
-			SwtUtils.setText(this.iconlabel, ToolUtils.notNullThenHandle(ship, s -> ShipDtoTranslator.terribleState(s) ? "!" : "", ""));
+			SwtUtils.setText(this.iconlabel, (ShipDtoTranslator.terribleState(ship) || ShipDtoTranslator.needHokyo(ship)) ? "!" : "");
 			this.iconlabel.setBackground(ShipDtoTranslator.dapo(ship) ? HPMessage.getColor(HPMessage.getString(0.1)) : null);
-			SwtUtils.setText(this.namelabel, ToolUtils.notNullThenHandle(ship, ShipDtoTranslator::getName, ""));
-			SwtUtils.setToolTipText(this.namelabel, ToolUtils.notNullThenHandle(ship, ShipDtoTranslator::getName, ""));
-			SwtUtils.setText(this.hplabel, ToolUtils.notNullThenHandle(ship, s -> s.getNowHp() + "/" + s.getMaxHp(), ""));
-			SwtUtils.setText(this.hpmsglabel, ToolUtils.notNullThenHandle(ship, s -> ShipDtoTranslator.getStateString(s, true), ""));
-			SwtUtils.setText(this.lvlabel, ToolUtils.notNullThenHandle(ship, s -> "Lv." + s.getLevel(), ""));
-			SwtUtils.setText(this.condlabel, ToolUtils.notNullThenHandle(ship, s -> String.valueOf(s.getCond()), ""));
+
+			SwtUtils.setText(this.namelabel, ShipDtoTranslator.getName(ship));
+			SwtUtils.setToolTipText(this.namelabel, ShipDtoTranslator.getDetail(ship));
+			SwtUtils.setText(this.hplabel, ship.getNowHp() + "/" + ship.getMaxHp());
+			SwtUtils.setText(this.hpmsglabel, ShipDtoTranslator.getStateString(ship, true));
+			SwtUtils.setText(this.lvlabel, "Lv." + ship.getLevel());
+			SwtUtils.setText(this.condlabel, String.valueOf(ship.getCond()));
 
 			//五个装备
 			Character[] equipTexts = new Character[MAXEQUIP];
 			ArrayList<String> equipTooltipTexts = new ArrayList<>();
-			if (ship != null) {
+			{
 				int[] slots = ArrayUtils.addAll(Arrays.copyOfRange(ship.getSlots(), 0, 4), ship.getSlotex());
 				for (int index = 0; index < MAXEQUIP; index++) {
-					ItemDto item = GlobalContext.getItemMap().get(slots[index]);
+					ItemDto item = GlobalContext.getItem(slots[index]);
 					if (item != null) {
 						equipTexts[index] = Character.valueOf(ItemDtoTranslator.getOneWordName(item));
 						equipTooltipTexts.add(ItemDtoTranslator.getNameWithLevel(item));
@@ -352,6 +300,20 @@ public class FleetWindow implements EventListener {
 				label.setToolTipText(ch != null ? tooltip : "");
 			}
 		}
-	}
 
+		private void clear() {
+			SwtUtils.setText(this.iconlabel, "");
+			this.iconlabel.setBackground(null);
+
+			SwtUtils.setText(this.namelabel, "");
+			SwtUtils.setToolTipText(this.namelabel, "");
+			SwtUtils.setText(this.hplabel, "");
+			SwtUtils.setText(this.hpmsglabel, "");
+			SwtUtils.setText(this.lvlabel, "");
+			SwtUtils.setText(this.condlabel, "");
+
+			ToolUtils.forEach(this.equipslabel, label -> SwtUtils.setText(label, ""));
+			ToolUtils.forEach(this.equipslabel, label -> SwtUtils.setToolTipText(label, ""));
+		}
+	}
 }

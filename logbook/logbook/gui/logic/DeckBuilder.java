@@ -3,10 +3,10 @@ package logbook.gui.logic;
 import javax.json.Json;
 import javax.json.JsonObjectBuilder;
 
-import logbook.context.dto.data.DeckDto;
-import logbook.context.dto.data.ItemDto;
-import logbook.context.dto.data.ShipDto;
-import logbook.context.update.GlobalContext;
+import logbook.dto.word.DeckDto;
+import logbook.dto.word.ItemDto;
+import logbook.dto.word.ShipDto;
+import logbook.update.GlobalContext;
 
 public class DeckBuilder {
 

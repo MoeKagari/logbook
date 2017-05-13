@@ -1,0 +1,300 @@
+package logbook.dto.memory.battle;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+
+import logbook.config.AppConstants;
+import logbook.dto.translator.DeckDtoTranslator;
+import logbook.dto.translator.ShipDtoTranslator;
+import logbook.util.JsonUtils;
+import logbook.util.ToolUtils;
+
+public abstract class AbstractBattle extends BattleDto {
+	private BattleDeck fDeck = null;
+	private BattleDeck fDeckCombine = null;
+	private BattleDeck eDeck = null;
+	private BattleDeck eDeckCombine = null;
+
+	private final int[] formation;
+	private final int[] search;
+
+	public AbstractBattle(JsonObject json) {
+		//BattleDeck的初始化
+		{
+			int[] nowhps = JsonUtils.getIntArray(json, "api_nowhps");
+			int[] maxhps = JsonUtils.getIntArray(json, "api_maxhps");
+			this.fDeck = new BattleDeck(false, false, Arrays.copyOfRange(nowhps, 1, 7), Arrays.copyOfRange(maxhps, 1, 7));
+			this.eDeck = new BattleDeck(false, true, Arrays.copyOfRange(nowhps, 7, 13), Arrays.copyOfRange(maxhps, 7, 13));
+		}
+		if (json.containsKey("api_nowhps_combined") && json.containsKey("api_maxhps_combined")) {
+			int[] nowhps_combined = JsonUtils.getIntArray(json, "api_nowhps_combined");
+			int[] maxhps_combined = JsonUtils.getIntArray(json, "api_maxhps_combined");
+			switch (nowhps_combined.length) {
+				case 1 + 12:
+					this.eDeckCombine = new BattleDeck(true, true, Arrays.copyOfRange(nowhps_combined, 7, 13), Arrays.copyOfRange(maxhps_combined, 7, 13));
+				case 1 + 6:
+					this.fDeckCombine = new BattleDeck(true, false, Arrays.copyOfRange(nowhps_combined, 1, 7), Arrays.copyOfRange(maxhps_combined, 1, 7));
+			}
+		}
+
+		//BattleDeck的舰娘名
+		if (this.fDeckCombine != null && this.fDeckCombine.exist()) {//我方为联合舰队
+			this.fDeck.setNames(DeckDtoTranslator.getShipNames(1));
+			this.fDeckCombine.setNames(DeckDtoTranslator.getShipNames(2));
+		} else {
+			String[] names;
+			if (json.containsKey("api_deck_id")) {
+				names = DeckDtoTranslator.getShipNames(dissociateInt(json.get("api_deck_id"), 1));
+			} else if (json.containsKey("api_dock_id")) {
+				names = DeckDtoTranslator.getShipNames(dissociateInt(json.get("api_dock_id"), 1));
+			} else {
+				names = AppConstants.EMPTY_NAMES;
+			}
+			this.fDeck.setNames(names);
+		}
+		{//敌方
+			int[] ids = dissociateIntarray(json, "api_ship_ke");
+			this.eDeck.setNames(ToolUtils.toStringArray(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
+		}
+		if (json.containsKey("api_ship_ke_combined")) {
+			int[] ids = dissociateIntarray(json, "api_ship_ke_combined");
+			this.eDeckCombine.setNames(ToolUtils.toStringArray(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
+		}
+
+		//索敌
+		this.search = dissociateIntarray(json, "api_search");
+		//阵型和航向,[自-阵型,敌-阵型,航向]
+		this.formation = dissociateIntarray(json, "api_formation");
+
+		//退避
+		if (json.containsKey("api_escape_idx")) {
+			ToolUtils.forEach(JsonUtils.getIntArray(json, "api_escape_idx"), index -> this.fDeck.escapes.add(index - 1));
+		}
+		if (json.containsKey("api_escape_idx_combined")) {
+			ToolUtils.forEach(JsonUtils.getIntArray(json, "api_escape_idx_combined"), index -> this.fDeckCombine.escapes.add(index - 1));
+		}
+	}
+
+	public boolean isMidnight() {
+		return false;
+	}
+
+	public String[] getZhenxin() {
+		return this.formation == null ? null
+				: new String[] {//
+						BattleDto.getZhenxin(this.formation[0]),//
+						BattleDto.getZhenxin(this.formation[1])//
+				};
+	}
+
+	public String getHangxiang() {
+		return this.formation == null ? null : BattleDto.getHangxiang(this.formation[2]);
+	}
+
+	public String[] getSearch() {
+		return this.search == null ? null
+				: new String[] {//
+						BattleDto.getSearch(this.search[0]),//
+						BattleDto.getSearch(this.search[1])//
+				};
+	}
+
+	public BattleDeck getfDeck() {
+		return this.fDeck;
+	}
+
+	public BattleDeck getfDeckCombine() {
+		return this.fDeckCombine;
+	}
+
+	public BattleDeck geteDeck() {
+		return this.eDeck;
+	}
+
+	public BattleDeck geteDeckCombine() {
+		return this.eDeckCombine;
+	}
+
+	protected static int[] dissociateIntarray(JsonObject json, String key) {
+		int[] intArray = null;
+		if (json.containsKey(key)) {
+			JsonArray array = json.getJsonArray(key);
+			intArray = new int[array.size()];
+			for (int i = 0; i < array.size(); i++) {
+				intArray[i] = dissociateInt(array.get(i), 0);
+			}
+		}
+		return intArray;
+	}
+
+	private static int dissociateInt(JsonValue value, int defaultValue) {
+		switch (value.getValueType()) {
+			case STRING:
+				return Integer.parseInt(((JsonString) value).getString());
+			case NUMBER:
+				return ((JsonNumber) value).intValue();
+			default:
+				return defaultValue;
+		}
+	}
+
+	/**
+	 * 战斗时的舰队的信息
+	 * @author MoeKagari
+	 */
+	public static class BattleDeck {
+		public final ArrayList<Integer> escapes = new ArrayList<>();
+		public final boolean isCombine;
+		public final boolean isEnemy;
+		public final int[] nowhps;
+		public final int[] maxhps;
+		public String[] names = AppConstants.EMPTY_NAMES;
+
+		public BattleDeck(boolean isCombine, boolean isEnemy, int[] nowhps, int[] maxhps) {
+			this.isCombine = isCombine;
+			this.isEnemy = isEnemy;
+			this.nowhps = nowhps;
+			this.maxhps = maxhps;
+		}
+
+		public boolean exist() {
+			return Arrays.stream(this.nowhps).anyMatch(nowhp -> nowhp != -1);
+		}
+
+		public int getDeckLength() {
+			int count = 0;
+			for (int i = 0; i < 6; i++) {
+				if (this.nowhps[i] != -1) {
+					count++;
+				}
+			}
+			return count;
+		}
+
+		public void setNames(String[] names) {
+			this.names = names;
+		}
+	}
+
+	/**
+	 * 昼战开幕反潜,三次炮击战,夜战
+	 * @author MoeKagari
+	 */
+	public static class BattleOneAttack {
+		/** 敌联合舰队时存在(因为有混战)  */
+		public final Boolean enemyAttack;
+		public final int attackIndex;//攻击方位置(1-12),enemyAttack所代表的两只舰队,非联合舰队时,自方舰队在前,联合舰队时,第一舰队在前
+		public final int[] defenseIndexs;//attackIndex的对方
+		public final int[] dmgs;//此次造成的伤害,与defenseIndexs长度相同
+		public final int attackType;//攻击类型,昼夜战不同
+		public final boolean isMidnight;
+
+		/**
+		 * 夜战用
+		 */
+		public BattleOneAttack(int attackIndex, int[] defenseIndexs, int[] dmgs, int attackType) {
+			this(null, true, attackIndex, defenseIndexs, dmgs, attackType);
+		}
+
+		/**
+		 * 昼战用
+		 */
+		public BattleOneAttack(Boolean enemyAttack, boolean isMidnight, int attackIndex, int[] defenseIndexs, int[] dmgs, int attackType) {
+			this.enemyAttack = enemyAttack;
+			this.attackIndex = attackIndex;
+			this.defenseIndexs = defenseIndexs;
+			this.dmgs = dmgs;
+			this.attackType = attackType;
+			this.isMidnight = isMidnight;
+		}
+	}
+
+	/**
+	 * 接收{@link BattleOneAttack}进行模拟
+	 * @author MoeKagari
+	 */
+	public static class BattleOneAttackSimulator {
+		public final int[] fdmg = new int[6];
+		public final int[] fatt = new int[6];
+		public final int[] edmg = new int[6];
+		public final int[] eatt = new int[6];
+		public final int[] fdmgco = new int[6];
+		public final int[] fattco = new int[6];
+		public final int[] edmgco = new int[6];
+		public final int[] eattco = new int[6];
+
+		/**
+		 * @param fcombine 自方参战deck是否是联合舰队
+		 */
+		public void accept(BattleOneAttack boa, Boolean fcombine) {
+			Boolean enemyAttack = boa.enemyAttack;
+			int attackIndex = boa.attackIndex;
+			int[] defenseIndexs = boa.defenseIndexs;
+			int[] damages = boa.dmgs;
+
+			int[][] atter = null, dmger = null;
+			if (enemyAttack == null && fcombine != null) {//敌方非联合舰队
+				atter = new int[][] { fcombine == Boolean.TRUE ? this.fattco : this.fatt, this.eatt };
+				dmger = new int[][] { fcombine == Boolean.TRUE ? this.fdmgco : this.fdmg, this.edmg };
+			} else if (enemyAttack == Boolean.FALSE) {//敌联合舰队,我方攻击
+				atter = new int[][] { this.fatt, this.fattco };
+				dmger = new int[][] { this.edmg, this.edmgco };
+			} else if (enemyAttack == Boolean.TRUE) {//敌联合舰队,敌方攻击
+				atter = new int[][] { this.eatt, this.eattco };
+				dmger = new int[][] { this.fdmg, this.fdmgco };
+			} else {
+				System.out.println("enemyAttack == null && fcombine == null");
+			}
+
+			for (int i = 0; i < damages.length; i++) {
+				if (defenseIndexs[i] == -1) continue;//三炮CI -> [index,-1,-1]
+
+				if (atter != null) atter[(attackIndex - 1) / 6][(attackIndex - 1) % 6] += damages[i];
+				if (dmger != null) dmger[(defenseIndexs[i] - 1) / 6][(defenseIndexs[i] - 1) % 6] += damages[i];
+			}
+		}
+	}
+
+	/**
+	 * BattleDeck 的attack和damage<br>
+	 * 供每个 BattleStage 用
+	 * @author MoeKagari
+	 */
+	public static class BattleDeckAttackDamage {
+		public final int[] dmgs = new int[6];
+		public final int[] attack = new int[6];
+
+		/**
+		 * 受到伤害
+		 */
+		public void getDamage(int[] gd) {
+			for (int i = 0; i < 6; i++) {
+				this.dmgs[i] += gd[i];
+			}
+		}
+
+		/**
+		 * 攻击输出
+		 */
+		public void setAttack(int[] sa) {
+			for (int i = 0; i < 6; i++) {
+				this.attack[i] += sa[i];
+			}
+		}
+
+		public BattleDeckAttackDamage add(BattleDeckAttackDamage next) {
+			for (int i = 0; i < 6; i++) {
+				this.dmgs[i] = this.dmgs[i] + next.dmgs[i];
+				this.attack[i] = this.attack[i] + next.attack[i];
+			}
+			return this;
+		}
+	}
+
+}

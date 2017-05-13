@@ -5,11 +5,11 @@ import java.util.function.Function;
 
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.context.dto.data.record.DestroyItemDto;
-import logbook.context.update.GlobalContext;
+import logbook.dto.memory.DestroyItemDto;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 
 /**
  * 废弃记录
@@ -35,6 +35,10 @@ public class DestroyItemTable extends AbstractTable<DestroyItemDto> {
 
 	@Override
 	protected void updateData(List<DestroyItemDto> datas) {
-		datas.addAll(GlobalContext.getDestroyitemlist());
+		GlobalContext.getMemorylist().memorys.forEach(memory -> {
+			if (memory instanceof DestroyItemDto) {
+				datas.add((DestroyItemDto) memory);
+			}
+		});
 	}
 }

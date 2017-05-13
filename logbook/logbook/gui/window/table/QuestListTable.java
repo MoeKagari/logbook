@@ -5,11 +5,11 @@ import java.util.function.IntFunction;
 
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.context.dto.data.QuestDto;
-import logbook.context.update.GlobalContext;
-import logbook.context.update.data.DataType;
+import logbook.dto.word.QuestDto;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
+import logbook.update.data.DataType;
 
 /**
  * 所有任务

@@ -19,9 +19,9 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpVersion;
 
 import logbook.config.AppConfig;
-import logbook.context.update.GlobalContextUpdater;
-import logbook.context.update.data.UndefinedData;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContextUpdater;
+import logbook.update.data.UndefinedData;
 
 /**
  * リバースプロキシ

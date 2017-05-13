@@ -6,12 +6,12 @@ import java.util.function.IntFunction;
 import org.eclipse.swt.widgets.MenuItem;
 
 import logbook.config.AppConstants;
-import logbook.context.dto.data.record.MissionResultDto;
-import logbook.context.dto.data.record.MissionResultDto.MissionResultItem;
-import logbook.context.update.GlobalContext;
+import logbook.dto.memory.MissionResultDto;
+import logbook.dto.memory.MissionResultDto.MissionResultItem;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 import logbook.util.ToolUtils;
 
 /**
@@ -43,6 +43,10 @@ public class MissionResultTable extends AbstractTable<MissionResultDto> {
 
 	@Override
 	protected void updateData(List<MissionResultDto> datas) {
-		datas.addAll(GlobalContext.getMissionlist());
+		GlobalContext.getMemorylist().memorys.forEach(memory -> {
+			if (memory instanceof MissionResultDto) {
+				datas.add((MissionResultDto) memory);
+			}
+		});
 	}
 }

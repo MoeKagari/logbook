@@ -29,7 +29,6 @@ import org.eclipse.swt.widgets.TrayItem;
 import logbook.config.AppConfig;
 import logbook.config.AppConstants;
 import logbook.config.WindowConfig;
-import logbook.context.update.GlobalContext;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.TrayItemMenuListener;
 import logbook.gui.logic.DeckBuilder;
@@ -51,6 +50,7 @@ import logbook.internal.AsyncExecApplicationMain;
 import logbook.internal.LoggerHolder;
 import logbook.internal.ShutdownHookThread;
 import logbook.server.proxy.ProxyServer;
+import logbook.update.GlobalContext;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
@@ -165,8 +165,8 @@ public class ApplicationMain {
 	private final WindowBase[] windows;
 	/*------------------------------------------------------------------------------------------------------*/
 
-	private Display display = new Display();
-	private Image logo = new Image(this.display, this.getClass().getResourceAsStream(AppConstants.LOGO));
+	private final Display display;
+	private final Image logo;
 	private final Shell shell;//主面板shell
 	private final Shell subShell;//辅助shell,不显示,用于其他呼出式窗口
 	private final Menu menubar;//菜单栏
@@ -196,6 +196,8 @@ public class ApplicationMain {
 	private FleetWindow[] fleetWindows;//舰队面板
 
 	private ApplicationMain() {
+		this.display = new Display();
+		this.logo = new Image(this.display, this.getClass().getResourceAsStream(AppConstants.LOGO));
 		this.shell = new Shell(this.display, SWT.CLOSE | SWT.TITLE | SWT.MIN | SWT.RESIZE);
 		this.initShell();
 		this.subShell = new Shell(this.display, SWT.TOOL);
@@ -479,7 +481,7 @@ public class ApplicationMain {
 			new MenuItem(recordMenu, SWT.SEPARATOR);
 
 			MenuItem battle = new MenuItem(recordMenu, SWT.CHECK);
-			battle.setText("战斗记录");
+			battle.setText("出击记录");
 			this.battleListTable = new BattleListTable(this, battle, battle.getText());
 
 			MenuItem drop = new MenuItem(recordMenu, SWT.CHECK);
@@ -603,9 +605,13 @@ public class ApplicationMain {
 
 	/*----------------------------------------------------------------------------------------------------------------*/
 
-	public void logPrint(String mes) {
-		this.display.asyncExec(() -> this.printMessage(AppConstants.CONSOLE_TIME_FORMAT.format(new Date()) + "  " + mes));
-		userLogger.get().info(mes);
+	public void printMessage(String mes, boolean printToLog) {
+		String message = mes;
+		if (printToLog) {
+			userLogger.get().info(mes);
+			message = AppConstants.CONSOLE_TIME_FORMAT.format(new Date()) + "  " + message;
+		}
+		this.display.asyncExec(ToolUtils.getRunnable(message, this::printMessage));
 	}
 
 	public void printNewDay(long time) {
@@ -623,7 +629,7 @@ public class ApplicationMain {
 
 	private void display() {
 		this.printNewDay(TimeString.getCurrentTime());
-		this.logPrint("航海日志启动");
+		this.printMessage("航海日志启动", true);
 		this.shell.open();
 		this.shell.forceActive();
 		this.rightComposite.forceFocus();

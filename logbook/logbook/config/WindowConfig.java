@@ -17,7 +17,7 @@ public class WindowConfig implements Serializable {
 	private static final LoggerHolder LOG = new LoggerHolder(WindowConfig.class);
 	private static final long serialVersionUID = 1L;
 	private static Map<String, WindowConfig> ALLWINDOWCONFIGS = new HashMap<>();
-	private static final File file = new File(AppConstants.WINDOWCONFIGSFILEPATH);
+	private static final File file = new File(AppConstants.WINDOWCONFIGS_FILEPATH);
 
 	public static Map<String, WindowConfig> get() {
 		return ALLWINDOWCONFIGS;

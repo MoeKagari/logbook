@@ -2,16 +2,14 @@ package logbook.gui.window.table;
 
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.eclipse.swt.widgets.MenuItem;
 
 import logbook.config.AppConstants;
-import logbook.context.dto.battle.BattleDto;
-import logbook.context.dto.battle.info.InfoBattleStartDto;
-import logbook.context.update.GlobalContext;
+import logbook.dto.memory.battle.info.InfoBattleStartDto;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 
 /**
  * 战斗记录
@@ -33,18 +31,26 @@ public class BattleListTable extends AbstractTable<BattleListTable.SortBattle> {
 
 	@Override
 	protected void updateData(List<SortBattle> datas) {
-		datas.addAll(GlobalContext.getBattlelist().getBattleList().stream().filter(BattleDto::isStart).map(SortBattle::new).collect(Collectors.toList()));
+		GlobalContext.getMemorylist().memorys.forEach(memory -> {
+			if (memory instanceof InfoBattleStartDto) {
+				datas.add(new SortBattle((InfoBattleStartDto) memory));
+			}
+		});
 	}
 
 	public class SortBattle {
 		private final InfoBattleStartDto battle;
 
-		public SortBattle(BattleDto battle) {
-			this.battle = (InfoBattleStartDto) battle;
+		public SortBattle(InfoBattleStartDto battle) {
+			this.battle = battle;
 		}
 
 		public String getFleet() {
-			return this.battle.isCombined() ? "联合舰队" : AppConstants.DEFAULT_FLEET_NAME[this.battle.getDeckId() - 1];
+			if (this.battle.isCombined() && this.battle.getDeckId() == 1) {
+				return "联合舰队";
+			} else {
+				return AppConstants.DEFAULT_FLEET_NAME[this.battle.getDeckId() - 1];
+			}
 		}
 
 		public int getStart() {

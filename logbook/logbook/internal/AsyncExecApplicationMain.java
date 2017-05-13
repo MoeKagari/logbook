@@ -7,18 +7,18 @@ import org.eclipse.swt.widgets.Label;
 
 import logbook.config.AppConfig;
 import logbook.config.AppConstants;
-import logbook.context.dto.data.DeckDto;
-import logbook.context.dto.data.DeckDto.DeckMissionDto;
-import logbook.context.dto.data.MaterialDto;
-import logbook.context.dto.data.NdockDto;
-import logbook.context.dto.data.ShipDto;
-import logbook.context.dto.data.record.MaterialRecordDto;
-import logbook.context.dto.translator.ShipDtoTranslator;
-import logbook.context.update.GlobalContext;
-import logbook.context.update.GlobalContext.PLTime;
+import logbook.dto.memory.MaterialRecordDto;
+import logbook.dto.translator.ShipDtoTranslator;
+import logbook.dto.word.DeckDto;
+import logbook.dto.word.DeckDto.DeckMissionDto;
+import logbook.dto.word.MaterialDto;
+import logbook.dto.word.NdockDto;
+import logbook.dto.word.ShipDto;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.ApplicationMain;
 import logbook.gui.window.WindowBase;
+import logbook.update.GlobalContext;
+import logbook.update.GlobalContext.PLTime;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
@@ -68,7 +68,7 @@ public class AsyncExecApplicationMain extends Thread {
 			if (timerCounter.needNotify(currentTime)) {
 				MaterialDto currentMaterial = GlobalContext.getCurrentMaterial();
 				if (currentMaterial != null) {
-					GlobalContext.getMaterialRecord().add(new MaterialRecordDto("定时记录", currentTime, currentMaterial));
+					GlobalContext.getMemorylist().add(new MaterialRecordDto("定时记录", currentTime, currentMaterial));
 				}
 			}
 		}

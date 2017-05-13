@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
 
-import logbook.context.update.GlobalContextUpdater;
+import logbook.update.GlobalContextUpdater;
 
 /**
  * 为了使用缓存

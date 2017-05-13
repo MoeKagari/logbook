@@ -4,12 +4,12 @@ import java.util.List;
 
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.context.dto.data.record.CreateItemDto;
-import logbook.context.dto.translator.ItemDtoTranslator;
-import logbook.context.update.GlobalContext;
+import logbook.dto.memory.CreateItemDto;
+import logbook.dto.translator.ItemDtoTranslator;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 
 /**
  * 开发记录
@@ -34,6 +34,10 @@ public class CreateItemTable extends AbstractTable<CreateItemDto> {
 
 	@Override
 	protected void updateData(List<CreateItemDto> datas) {
-		datas.addAll(GlobalContext.getCreateitemlist());
+		GlobalContext.getMemorylist().memorys.forEach(memory -> {
+			if (memory instanceof CreateItemDto) {
+				datas.add((CreateItemDto) memory);
+			}
+		});
 	}
 }

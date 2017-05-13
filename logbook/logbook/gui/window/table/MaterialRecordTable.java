@@ -4,12 +4,12 @@ import java.util.List;
 
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.context.dto.data.MaterialDto;
-import logbook.context.dto.data.record.MaterialRecordDto;
-import logbook.context.update.GlobalContext;
+import logbook.dto.memory.MaterialRecordDto;
+import logbook.dto.word.MaterialDto;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 
 /**
  * 资源记录
@@ -34,6 +34,10 @@ public class MaterialRecordTable extends AbstractTable<MaterialRecordDto> {
 
 	@Override
 	protected void updateData(List<MaterialRecordDto> datas) {
-		datas.addAll(GlobalContext.getMaterialRecord());
+		GlobalContext.getMemorylist().memorys.forEach(memory -> {
+			if (memory instanceof MaterialRecordDto) {
+				datas.add((MaterialRecordDto) memory);
+			}
+		});
 	}
 }

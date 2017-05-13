@@ -7,13 +7,13 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Spinner;
 
-import logbook.context.dto.data.PracticeEnemyDto.PracticeEnemyShip;
-import logbook.context.update.GlobalContext;
-import logbook.context.update.data.DataType;
+import logbook.dto.word.PracticeEnemyDto.PracticeEnemyShip;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.SpinnerMouseWheelListener;
 import logbook.gui.logic.CalcuPracticeExp;
 import logbook.gui.logic.data.ShipExpMap;
+import logbook.update.GlobalContext;
+import logbook.update.data.DataType;
 import logbook.util.SwtUtils;
 
 public class CalcuPracticeExpWindow extends WindowBase {

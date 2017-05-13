@@ -4,12 +4,12 @@ import java.util.List;
 
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.context.dto.data.record.CreateshipDto;
-import logbook.context.dto.translator.ShipDtoTranslator;
-import logbook.context.update.GlobalContext;
+import logbook.dto.memory.CreateshipDto;
+import logbook.dto.translator.ShipDtoTranslator;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 import logbook.util.ToolUtils;
 
 /**
@@ -40,6 +40,10 @@ public class CreateShipTable extends AbstractTable<CreateshipDto> {
 
 	@Override
 	protected void updateData(List<CreateshipDto> datas) {
-		datas.addAll(GlobalContext.getCreateshiplist());
+		GlobalContext.getMemorylist().memorys.forEach(memory -> {
+			if (memory instanceof CreateshipDto) {
+				datas.add((CreateshipDto) memory);
+			}
+		});
 	}
 }

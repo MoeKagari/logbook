@@ -14,16 +14,16 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Spinner;
 
 import logbook.config.AppConfig;
-import logbook.context.dto.data.DeckDto;
-import logbook.context.dto.data.ShipDto;
-import logbook.context.dto.translator.ShipDtoTranslator;
-import logbook.context.update.GlobalContext;
+import logbook.dto.translator.ShipDtoTranslator;
+import logbook.dto.word.DeckDto;
+import logbook.dto.word.ShipDto;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.SpinnerMouseWheelListener;
 import logbook.gui.logic.CalcuExp;
 import logbook.gui.logic.data.EvalMap;
 import logbook.gui.logic.data.SeaExpMap;
 import logbook.gui.logic.data.ShipExpMap;
+import logbook.update.GlobalContext;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 

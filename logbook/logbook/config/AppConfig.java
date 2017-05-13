@@ -13,7 +13,7 @@ public class AppConfig implements Serializable {
 	private static final LoggerHolder LOG = new LoggerHolder(AppConfig.class);
 	private static final long serialVersionUID = 1L;
 	private static AppConfig config = null;
-	private static final File file = new File(AppConstants.APPCONFIGSFILEPATH);
+	private static final File file = new File(AppConstants.APPCONFIGS_FILEPATH);
 
 	public static AppConfig get() {
 		if (config == null) config = new AppConfig();
@@ -40,11 +40,11 @@ public class AppConfig implements Serializable {
 	}
 
 	private int listenPort = 8889;
+	private boolean allowOnlyFromLocalhost = false;
+	private boolean closeOutsidePort = true;
 	private boolean useProxy = true;
 	private String proxyHost = "127.0.0.1";
 	private int proxyPort = 8888;
-	private boolean allowOnlyFromLocalhost = true;
-	private boolean closeOutsidePort = true;
 
 	private boolean noticeDeckmission = true;
 	private boolean noticeNdock = true;

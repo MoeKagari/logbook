@@ -11,13 +11,13 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.context.dto.data.ItemDto;
-import logbook.context.dto.data.ShipDto;
-import logbook.context.dto.translator.ItemDtoTranslator;
-import logbook.context.dto.translator.ShipDtoTranslator;
-import logbook.context.update.GlobalContext;
+import logbook.dto.translator.ItemDtoTranslator;
+import logbook.dto.translator.ShipDtoTranslator;
+import logbook.dto.word.ItemDto;
+import logbook.dto.word.ShipDto;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 import logbook.util.ToolUtils;
 
 /**

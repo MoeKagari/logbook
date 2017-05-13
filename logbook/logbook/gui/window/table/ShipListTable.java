@@ -3,7 +3,6 @@ package logbook.gui.window.table;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.eclipse.swt.SWT;
@@ -11,16 +10,16 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ToolItem;
 
 import logbook.config.AppConstants;
-import logbook.context.dto.data.ItemDto;
-import logbook.context.dto.data.MasterDataDto.MasterShipDataDto;
-import logbook.context.dto.data.ShipDto;
-import logbook.context.dto.translator.ItemDtoTranslator;
-import logbook.context.dto.translator.MasterDataDtoTranslator;
-import logbook.context.dto.translator.ShipDtoTranslator;
-import logbook.context.update.GlobalContext;
+import logbook.dto.translator.ItemDtoTranslator;
+import logbook.dto.translator.MasterDataDtoTranslator;
+import logbook.dto.translator.ShipDtoTranslator;
+import logbook.dto.word.ItemDto;
+import logbook.dto.word.ShipDto;
+import logbook.dto.word.MasterDataDto.MasterShipDataDto;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 import logbook.util.ToolUtils;
 
 /**
@@ -64,20 +63,18 @@ public abstract class ShipListTable extends AbstractTable<ShipDto> {
 	}
 
 	private Predicate<ShipDto> addFilter(String text, int... types) {
-		Function<ToolItem, Predicate<ShipDto>> get = toolItem -> {
-			return ship -> {
-				if (toolItem.getSelection() == false) return false;
-				MasterShipDataDto msdd = MasterDataDtoTranslator.getMasterShipDataDto(ship.getShipId());
-				return msdd == null ? false : Arrays.stream(types).anyMatch(type -> type == msdd.getType());
-			};
+		ToolItem toolItem = this.newToolItem(SWT.CHECK, text);
+		return ship -> {
+			if (toolItem.getSelection() == false) return false;
+			MasterShipDataDto msdd = MasterDataDtoTranslator.getMasterShipDataDto(ship.getShipId());
+			return msdd == null ? false : Arrays.stream(types).anyMatch(type -> type == msdd.getType());
 		};
-		return ToolUtils.notNullThenHandle(this.newToolItem(SWT.CHECK, text), get, ship -> false);
 	}
 
 	protected abstract int getMode();
 
 	@Override
-	protected String getgetWindowConfigKey() {
+	protected String getWindowConfigKey() {
 		return ShipListTable.class.getName() + this.getMode();
 	}
 
@@ -127,7 +124,7 @@ public abstract class ShipListTable extends AbstractTable<ShipDto> {
 		tcms.add(new TableColumnManager("油耗", rd -> ToolUtils.notNullThenHandle(MasterDataDtoTranslator.getMasterShipDataDto(rd.getShipId()), MasterShipDataDto::getFuelMax, "")));
 		tcms.add(new TableColumnManager("弹耗", rd -> ToolUtils.notNullThenHandle(MasterDataDtoTranslator.getMasterShipDataDto(rd.getShipId()), MasterShipDataDto::getBullMax, "")));
 		tcms.add(new TableColumnManager("修理时间", rd -> TimeString.toDateRestString(rd.getNdockTime() / 1000, "")));
-		tcms.add(new TableColumnManager("修理花费", rd -> ToolUtils.ifNotHandle(rd.getNdockCost(), nc -> nc[0] == 0 && nc[1] == 0, Arrays::toString, "")));
+		tcms.add(new TableColumnManager("修理花费", rd -> ShipDtoTranslator.getHPPercent(rd) != 1 ? Arrays.toString(rd.getNdockCost()) : ""));
 	}
 
 	private void initTCMS2(List<TableColumnManager> tcms) {

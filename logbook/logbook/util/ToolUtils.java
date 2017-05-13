@@ -16,6 +16,20 @@ import java.util.function.ToIntFunction;
 
 public class ToolUtils {
 
+	public static <S> Runnable getRunnable(S s, Consumer<S> con) {
+		return () -> con.accept(s);
+	}
+
+	public static <S, T> Runnable getRunnable(S s, T t, BiConsumer<S, T> con) {
+		return () -> con.accept(s, t);
+	}
+
+	public static <S> Predicate<S> getPredicater(boolean flag, S s) {
+		return o -> flag;
+	}
+
+	/*----------------------------------------------------------------------------------------------------------*/
+
 	public static double division(int a, int b) {
 		return a * 1.0 / b;
 	}

@@ -14,7 +14,7 @@ public class AppConstants {
 	public static final SimpleDateFormat TABLE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	public static final SimpleDateFormat CONSOLE_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
 
-	public static final File MASTERDATAFILE = new File("MasterData.json").getAbsoluteFile();
+	public static final File MASTERDATA_FILE = new File("MasterData.json").getAbsoluteFile();
 	public static final String MASTERDATAFILE_BACKUP = "/resources/MasterData.json";
 
 	/** 航海日志的图标 */
@@ -22,8 +22,11 @@ public class AppConstants {
 
 	public static final String LOCKFILEPATH = "config/LOCK";
 	/** 各个窗口的配置MAP(String,{@link WindowConfig}) */
-	public static final String WINDOWCONFIGSFILEPATH = "config/window";
+	public static final String WINDOWCONFIGS_FILEPATH = "config/window";
 	/** 软件的各项设置{@link AppConfig} */
-	public static final String APPCONFIGSFILEPATH = "config/app";
+	public static final String APPCONFIGS_FILEPATH = "config/app";
+
+	/** 记录文件 */
+	public static final File MEMORY_FILE = new File("memory").getAbsoluteFile();
 
 }

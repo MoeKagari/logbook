@@ -25,8 +25,8 @@ public class FleetWindowOut extends WindowBase {
 	}
 
 	@Override
-	protected String getgetWindowConfigKey() {
-		return super.getgetWindowConfigKey() + this.fleetWindow.getId();
+	protected String getWindowConfigKey() {
+		return super.getWindowConfigKey() + this.fleetWindow.getId();
 	}
 
 	@Override

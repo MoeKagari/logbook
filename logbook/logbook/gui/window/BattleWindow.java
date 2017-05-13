@@ -10,12 +10,12 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ScrollBar;
 
 import logbook.config.AppConfig;
-import logbook.context.dto.battle.AbstractBattle;
-import logbook.context.dto.battle.BattleDto;
-import logbook.context.dto.battle.info.InfoBattleShipdeckDto;
-import logbook.context.dto.translator.BattleDtoTranslator;
-import logbook.context.update.GlobalContext;
-import logbook.context.update.data.DataType;
+import logbook.dto.memory.battle.AbstractBattle;
+import logbook.dto.memory.battle.BattleDto;
+import logbook.dto.memory.battle.info.InfoBattleShipdeckDto;
+import logbook.dto.translator.BattleDtoTranslator;
+import logbook.update.GlobalContext;
+import logbook.update.data.DataType;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
@@ -36,8 +36,9 @@ public class BattleWindow extends WindowBase {
 
 	@Override
 	public void update(DataType type) {
-		if (GlobalContext.getBattlelist().haveNew()) {
-			BattleDto last = GlobalContext.getBattlelist().getLast();
+		if (GlobalContext.getMemorylist().haveNewBattle()) {
+			BattleDto last = GlobalContext.getMemorylist().getLastBattle();
+
 			//自动更新
 			if (AppConfig.get().isAutoUpdateBattleFlow()) {
 				this.bfw.updateBattle(last, null);
@@ -92,7 +93,7 @@ public class BattleWindow extends WindowBase {
 		}
 
 		private void updateBattle(AbstractBattle battle) {
-			this.updateWindowRedraw(() -> BattleDtoTranslator.createBattleFlow(this.sbc.contentComposite, battle));
+			this.updateWindowRedraw(ToolUtils.getRunnable(this.sbc.contentComposite, battle, BattleDtoTranslator::createBattleFlow));
 		}
 	}
 

@@ -44,6 +44,7 @@ public final class ProxyServer {
 			// httpはこっちのハンドラでプロキシ
 			ServletContextHandler context = new ServletContextHandler(proxy, "/", ServletContextHandler.SESSIONS);
 			ServletHolder holder = new ServletHolder(new CacheReverseProxyServlet());
+			//holder = new ServletHolder(new ReverseProxyServlet());
 			holder.setInitParameter("maxThreads", "256");
 			holder.setInitParameter("timeout", "600000");
 			context.addServlet(holder, "/*");
@@ -68,7 +69,7 @@ public final class ProxyServer {
 				server.stop();
 				setConnector();
 				server.start();
-				ApplicationMain.main.logPrint("代理已再启动");
+				ApplicationMain.main.printMessage("代理已再启动", false);
 			}
 		} catch (Exception e) {
 			LOG.get().fatal("Proxyサーバーの起動に失敗しました", e);

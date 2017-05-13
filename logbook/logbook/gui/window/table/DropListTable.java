@@ -8,16 +8,17 @@ import java.util.function.Supplier;
 import org.eclipse.swt.widgets.MenuItem;
 
 import logbook.config.AppConstants;
-import logbook.context.dto.battle.AbstractBattle;
-import logbook.context.dto.battle.AbstractInfoBattleResult;
-import logbook.context.dto.battle.AbstractInfoBattleResult.BattleResult_GetShip;
-import logbook.context.dto.battle.AbstractInfoBattleStartNext;
-import logbook.context.dto.battle.BattleDto;
-import logbook.context.dto.battle.info.InfoBattleStartAirBaseDto;
-import logbook.context.dto.translator.BattleDtoTranslator;
-import logbook.context.update.GlobalContext;
+import logbook.dto.AbstractMemory;
+import logbook.dto.memory.battle.AbstractBattle;
+import logbook.dto.memory.battle.AbstractInfoBattleResult;
+import logbook.dto.memory.battle.AbstractInfoBattleResult.BattleResult_GetShip;
+import logbook.dto.memory.battle.AbstractInfoBattleStartNext;
+import logbook.dto.memory.battle.BattleDto;
+import logbook.dto.memory.battle.info.InfoBattleStartAirBaseDto;
+import logbook.dto.translator.BattleDtoTranslator;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 
 /**
  * 掉落记录
@@ -43,8 +44,16 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 
 	@Override
 	protected void updateData(List<SortDrop> datas) {
-		Iterator<BattleDto> it = GlobalContext.getBattlelist().getBattleList().iterator();
-		Supplier<BattleDto> next = () -> it.hasNext() ? it.next() : null;
+		Iterator<AbstractMemory> it = GlobalContext.getMemorylist().memorys.iterator();
+		Supplier<BattleDto> next = () -> {
+			while (it.hasNext()) {
+				AbstractMemory memory = it.next();
+				if (memory.isBattle()) {
+					return (BattleDto) memory;
+				}
+			}
+			return null;
+		};
 
 		BattleDto battle = null;
 		while (it.hasNext()) {

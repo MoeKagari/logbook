@@ -4,11 +4,11 @@ import java.util.List;
 
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.context.dto.data.record.DestroyShipDto;
-import logbook.context.update.GlobalContext;
+import logbook.dto.memory.DestroyShipDto;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
+import logbook.update.GlobalContext;
 
 /**
  * 解体记录
@@ -31,6 +31,10 @@ public class DestroyShipTable extends AbstractTable<DestroyShipDto> {
 
 	@Override
 	protected void updateData(List<DestroyShipDto> datas) {
-		datas.addAll(GlobalContext.getDestroyshiplist());
+		GlobalContext.getMemorylist().memorys.forEach(memory -> {
+			if (memory instanceof DestroyShipDto) {
+				datas.add((DestroyShipDto) memory);
+			}
+		});
 	}
 }

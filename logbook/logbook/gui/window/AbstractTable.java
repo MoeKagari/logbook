@@ -19,9 +19,9 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.ToolItem;
 
-import logbook.context.update.GlobalContext;
-import logbook.context.update.data.DataType;
 import logbook.gui.listener.ControlSelectionListener;
+import logbook.update.GlobalContext;
+import logbook.update.data.DataType;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 

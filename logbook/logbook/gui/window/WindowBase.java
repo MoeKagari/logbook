@@ -14,11 +14,11 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 
 import logbook.config.WindowConfig;
-import logbook.context.update.GlobalContextUpdater;
-import logbook.context.update.data.DataType;
-import logbook.context.update.data.EventListener;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.listener.NotCloseButHiddenShellListener;
+import logbook.update.GlobalContextUpdater;
+import logbook.update.data.DataType;
+import logbook.update.data.EventListener;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
@@ -85,10 +85,10 @@ public abstract class WindowBase implements EventListener {
 	/** 恢复当前窗口的配置 */
 	public void restoreWindowConfig() {
 		if (this.windowConfig == null) {
-			this.windowConfig = WindowConfig.get().get(this.getgetWindowConfigKey());
+			this.windowConfig = WindowConfig.get().get(this.getWindowConfigKey());
 			if (this.windowConfig == null) {
 				this.windowConfig = new WindowConfig();
-				WindowConfig.get().put(this.getgetWindowConfigKey(), this.windowConfig);
+				WindowConfig.get().put(this.getWindowConfigKey(), this.windowConfig);
 				this.storeWindowConfig();
 				return;
 			}
@@ -133,7 +133,7 @@ public abstract class WindowBase implements EventListener {
 
 	/*------------------------------------------------------------------------------------------------------------*/
 
-	protected String getgetWindowConfigKey() {
+	protected String getWindowConfigKey() {
 		return this.getClass().getName();
 	}
 
@@ -167,9 +167,14 @@ public abstract class WindowBase implements EventListener {
 
 	/** 更新窗口(延迟redraw) */
 	protected void updateWindowRedraw(Runnable run) {
-		this.shell.setRedraw(false);
+		this.composite.setRedraw(false);
 		run.run();
-		this.shell.setRedraw(true);
+		this.composite.setRedraw(true);
+	}
+
+	/** 更新窗口(延迟redraw) */
+	protected void updateWindowRedraw(boolean flag, Runnable run) {
+		ToolUtils.ifHandle(run, ToolUtils.getPredicater(flag, run), this::updateWindowRedraw);
 	}
 
 	/** 默认size */

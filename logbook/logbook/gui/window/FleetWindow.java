@@ -12,17 +12,17 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
 import logbook.config.AppConstants;
-import logbook.context.dto.data.DeckDto;
-import logbook.context.dto.data.ItemDto;
-import logbook.context.dto.data.ShipDto;
-import logbook.context.dto.translator.DeckDtoTranslator;
-import logbook.context.dto.translator.ItemDtoTranslator;
-import logbook.context.dto.translator.ShipDtoTranslator;
-import logbook.context.update.GlobalContext;
-import logbook.context.update.GlobalContextUpdater;
-import logbook.context.update.data.DataType;
-import logbook.context.update.data.EventListener;
+import logbook.dto.translator.DeckDtoTranslator;
+import logbook.dto.translator.ItemDtoTranslator;
+import logbook.dto.translator.ShipDtoTranslator;
+import logbook.dto.word.DeckDto;
+import logbook.dto.word.ItemDto;
+import logbook.dto.word.ShipDto;
 import logbook.gui.logic.HPMessage;
+import logbook.update.GlobalContext;
+import logbook.update.GlobalContextUpdater;
+import logbook.update.data.DataType;
+import logbook.update.data.EventListener;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 

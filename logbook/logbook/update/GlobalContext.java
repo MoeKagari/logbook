@@ -97,6 +97,20 @@ public class GlobalContext {
 		} catch (Exception e) {
 			LOG.get().warn("memory读取失败", e);
 		}
+
+		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(AppConstants.ITEM_FILE))) {
+			Object obj = ois.readObject();
+			if (obj instanceof Map) {
+				((Map<?, ?>) obj).forEach((id, ele) -> {
+					if (ele instanceof ItemDto) {
+						ItemDto item = (ItemDto) ele;
+						itemMap.put(item.getId(), item);
+					}
+				});
+			}
+		} catch (Exception e) {
+			LOG.get().warn("item读取失败", e);
+		}
 	}
 
 	public static void store() {
@@ -112,6 +126,12 @@ public class GlobalContext {
 			oos.writeObject(memoryList.memorys);
 		} catch (Exception e) {
 			LOG.get().warn("memory保存失败", e);
+		}
+
+		try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(AppConstants.ITEM_FILE))) {
+			oos.writeObject(itemMap);
+		} catch (Exception e) {
+			LOG.get().warn("item保存失败", e);
 		}
 	}
 

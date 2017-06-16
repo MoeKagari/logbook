@@ -12,7 +12,7 @@ import logbook.util.SwtUtils;
  * 舰队面板-单
  * @author MoeKagari
  */
-public class FleetWindowOut extends WindowBase {
+public abstract class FleetWindowOut extends WindowBase {
 	private FleetWindow fleetWindow;
 
 	public FleetWindowOut(ApplicationMain main, MenuItem menuItem, int id) {
@@ -24,9 +24,11 @@ public class FleetWindowOut extends WindowBase {
 		return this.fleetWindow;
 	}
 
+	public abstract int getId();
+
 	@Override
 	protected String getWindowConfigKey() {
-		return super.getWindowConfigKey() + this.fleetWindow.getId();
+		return super.getWindowConfigKey() + this.getId();
 	}
 
 	@Override

@@ -8,6 +8,7 @@ import logbook.gui.logic.TimeString;
  * @author MoeKagari
  */
 public abstract class BattleDto extends AbstractMemory {
+	private static final long serialVersionUID = 1L;
 
 	public static String getSearch(int id) {
 		switch (id) {

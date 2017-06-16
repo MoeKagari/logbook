@@ -9,7 +9,6 @@ import logbook.dto.AbstractWord;
  * @author MoeKagari
  */
 public class BasicDto extends AbstractWord {
-
 	private final JsonObject json;
 
 	public BasicDto(JsonObject json) {
@@ -43,5 +42,4 @@ public class BasicDto extends AbstractWord {
 	public int getNdockLength() {
 		return this.json.getInt("api_count_ndock");
 	}
-
 }

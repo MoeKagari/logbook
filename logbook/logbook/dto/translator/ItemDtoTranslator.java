@@ -19,6 +19,15 @@ public class ItemDtoTranslator {
 		return MasterDataDtoTranslator.getSlotitemName(slotitemId);
 	}
 
+	public static int[] getType(ItemDto item) {
+		return ToolUtils.notNullThenHandle(item, it -> getType(it.getSlotitemId()), null);
+	}
+
+	public static int[] getType(int slotitemId) {
+		MasterSlotitemDataDto msd = MasterDataDtoTranslator.getMasterSlotitemDataDto(slotitemId);
+		return ToolUtils.notNullThenHandle(msd, MasterSlotitemDataDto::getType, null);
+	}
+
 	public static String getTypeString(ItemDto item) {
 		return ToolUtils.notNullThenHandle(item, it -> getTypeString(it.getSlotitemId()), "");
 	}

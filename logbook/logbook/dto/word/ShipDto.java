@@ -47,6 +47,10 @@ public class ShipDto extends AbstractWord {
 	private int[] raisou;
 	private int[] karyoku;
 
+	public ShipDto(JsonValue value) {
+		this((JsonObject) value);
+	}
+
 	public ShipDto(JsonObject json) {
 		this.json = json;
 
@@ -75,10 +79,6 @@ public class ShipDto extends AbstractWord {
 		this.taiku = JsonUtils.getIntArray(json, "api_taiku");
 		this.raisou = JsonUtils.getIntArray(json, "api_raisou");
 		this.karyoku = JsonUtils.getIntArray(json, "api_karyoku");
-	}
-
-	public ShipDto(JsonValue value) {
-		this((JsonObject) value);
 	}
 
 	/** 加入镇守府时的编号 */

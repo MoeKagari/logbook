@@ -29,15 +29,16 @@ public class BattleWindow extends WindowBase {
 	private final BattleFlowWindow bfw;
 
 	public BattleWindow(ApplicationMain main, MenuItem menuItem, String title) {
-		super(main, menuItem, title, true);
+		super(main, menuItem, title);
 		this.sbc = new ScrolledBattleComposite(this.getComposite(), 0);
 		this.bfw = new BattleFlowWindow(main);
 	}
 
 	@Override
 	public void update(DataType type) {
+		BattleDto last;
 		if (GlobalContext.getMemorylist().haveNewBattle()) {
-			BattleDto last = GlobalContext.getMemorylist().getLastBattle();
+			last = GlobalContext.getMemorylist().getLastBattle();
 
 			//自动更新
 			if (AppConfig.get().isAutoUpdateBattleFlow()) {
@@ -49,16 +50,15 @@ public class BattleWindow extends WindowBase {
 			//battleresult → shipdeck → next ,后两个之间加入downarrow
 			haveDownArrow &= this.lastInWindow instanceof InfoBattleShipdeckDto;
 			BattleDtoTranslator.newBattleComposite(this.sbc.contentComposite, this.bfw::updateBattle, haveDownArrow, last);
-
-			this.lastInWindow = last;
 		} else {
 			if (type == DataType.PORT) {
 				this.sbc.clearWindow();
 				this.bfw.sbc.clearWindow();
-				this.lastInWindow = null;
 			}
+			last = null;
 		}
 
+		this.lastInWindow = last;
 		this.sbc.layout(true);
 	}
 
@@ -66,17 +66,27 @@ public class BattleWindow extends WindowBase {
 		return this.bfw;
 	}
 
-	private class BattleFlowWindow extends WindowBase {
+	@Override
+	protected int getShellStyle() {
+		return super.getShellStyle() | SWT.ON_TOP;
+	}
+
+	private static class BattleFlowWindow extends WindowBase {
 		private final ScrolledBattleComposite sbc;//战斗流程窗口
 
 		public BattleFlowWindow(ApplicationMain main) {
-			super(main, null, "战斗流程", true);
+			super(main, null, "战斗流程");
 			this.sbc = new ScrolledBattleComposite(this.getComposite(), 5);
 		}
 
 		@Override
 		protected void handlerAfterHidden() {
 			this.sbc.clearWindow();//隐藏窗口时,清空
+		}
+
+		@Override
+		protected int getShellStyle() {
+			return super.getShellStyle() | SWT.ON_TOP;
 		}
 
 		private void updateBattle(BattleDto battleDto, SelectionEvent ev) {
@@ -97,7 +107,7 @@ public class BattleWindow extends WindowBase {
 		}
 	}
 
-	private class ScrolledBattleComposite {
+	private static class ScrolledBattleComposite {
 		private final ScrolledComposite sc;
 		private final Composite contentComposite;
 

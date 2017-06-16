@@ -1,14 +1,14 @@
 package logbook.gui.window;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -22,13 +22,13 @@ import org.eclipse.swt.widgets.ToolItem;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.update.GlobalContext;
 import logbook.update.data.DataType;
-import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
 
 public abstract class AbstractTable<T> extends WindowBase {
 	private Table table;
 	private final List<T> datas = new ArrayList<>();
-	private final ArrayList<TableColumnManager> tcms = new ArrayList<>();
+	private final List<TableColumnManager> tcms = new ArrayList<>();
+	private final List<TableColumn> sortColumns = new ArrayList<>();//多级排序顺序
 	private final Predicate<T> filter;
 
 	public AbstractTable(ApplicationMain main, MenuItem menuItem, String title) {
@@ -47,8 +47,7 @@ public abstract class AbstractTable<T> extends WindowBase {
 		this.table.setLinesVisible(true);
 
 		for (int index = 0; index < this.tcms.size(); index++) {
-			TableColumnManager tcm = this.tcms.get(index);
-			tcm.stc = new SortedTableColumn(index, tcm);
+			new SortedTableColumn(index, this.tcms.get(index));
 		}
 	}
 
@@ -64,14 +63,25 @@ public abstract class AbstractTable<T> extends WindowBase {
 
 			MenuItem autoWidth = new MenuItem(cmdMenu, SWT.PUSH);
 			autoWidth.setText("自适应列宽");
-			autoWidth.addSelectionListener(new ControlSelectionListener(ev -> this.updateWindowRedraw(this::pack)));
+			autoWidth.addSelectionListener(new ControlSelectionListener(ev -> this.updateWindowRedraw(this::autoWidth)));
+
+			MenuItem clearSort = new MenuItem(cmdMenu, SWT.PUSH);
+			clearSort.setText("默认顺序");
+			clearSort.addSelectionListener(new ControlSelectionListener(ev -> this.updateWindowRedraw(this::clearSort)));
 		}
 	}
 
 	/*------------------------------------------------------------------------------------------------------------------------*/
 
+	/** 清除排序 */
+	private void clearSort() {
+		this.table.setSortColumn(null);
+		this.sortColumns.clear();
+		this.updateTable();
+	}
+
 	/** 自适应列宽 */
-	private void pack() {
+	private void autoWidth() {
 		ToolUtils.forEach(this.table.getColumns(), TableColumn::pack);
 	}
 
@@ -87,26 +97,28 @@ public abstract class AbstractTable<T> extends WindowBase {
 		ToolUtils.forEach(this.table.getItems(), TableItem::dispose);
 
 		//更新数据
-		this.datas.clear();
 		this.updateData(this.datas);
 		this.datas.removeIf(this.filter);
+		this.sortColumns.forEach(sortColumn -> {//多级排序
+			for (TableColumnManager tcm : this.tcms) {
+				if (tcm.stc.tableColumn == sortColumn) {
+					this.datas.sort(tcm.stc::compare);
+					break;
+				}
+			}
+		});
 		for (int row = 0; row < this.datas.size(); row++) {
 			T data = this.datas.get(row);
-			TableItem tableItem = new TableItem(this.table, SWT.NONE);
+			DataTableItem tableItem = new DataTableItem(data);
 			for (int col = 0; col < this.tcms.size(); col++) {
 				TableColumnManager tcm = this.tcms.get(col);
 				tableItem.setText(col, tcm.getValue(row + 1, data));
-				ToolUtils.notNullThenHandle(tcm.other, other -> other.accept(tableItem, data));
 			}
 		}
 		this.datas.clear();
 
-		//排序
-		TableColumn sortColumn = this.table.getSortColumn();
-		this.tcms.stream().filter(tcm -> tcm.stc.tableColumn == sortColumn).forEach(tcm -> this.sortTable(tcm.stc));
-
 		if (this.table.getData("packed") == null) {//只自动pack一次
-			this.pack();
+			this.autoWidth();
 			this.table.setData("packed", "");
 		}
 		this.table.setTopIndex(top);
@@ -116,21 +128,18 @@ public abstract class AbstractTable<T> extends WindowBase {
 	 * 排序table
 	 * @param stc 需要排序的TableColumn
 	 */
+	@SuppressWarnings("unchecked")
 	private void sortTable(SortedTableColumn stc) {
 		TableItem[] tableItems = this.table.getItems();
-		for (int i = 1; i < tableItems.length; i++) {
-			TableItem tableItem = tableItems[i];
-			String value = tableItem.getText(stc.index);
-			for (int j = 0; j < i; j++) {
-				if (stc.compare(value, tableItems[j].getText(stc.index)) > 0) {
-					String[] values = ToolUtils.toStringArray(this.tcms.size(), n -> tableItem.getText(n));
-					tableItem.dispose();
-					new TableItem(this.table, SWT.NONE, j).setText(values);
-					tableItems = this.table.getItems();
-					break;
-				}
-			}
-		}//刷新行号
+		Arrays.sort(tableItems, (a, b) -> stc.compare((DataTableItem) a, (DataTableItem) b));
+		for (TableItem tableItem : tableItems) {
+			T data = ((DataTableItem) tableItem).data;
+			String[] values = ToolUtils.toStringArray(this.tcms.size(), tableItem::getText);
+
+			tableItem.dispose();
+			new DataTableItem(data).setText(values);
+		}
+		//刷新行号
 		ToolUtils.forEach(this.table.getItems(), (tableItem, index) -> tableItem.setText(0, String.valueOf(index + 1)));
 	}
 
@@ -150,12 +159,7 @@ public abstract class AbstractTable<T> extends WindowBase {
 	}
 
 	protected ToolItem newToolItem(int style, String text) {
-		return this.newToolItem(style, text, ev -> this.updateWindowRedraw(this::updateTable));
-	}
-
-	@Override
-	public Point getDefaultSize() {
-		return SwtUtils.DPIAwareSize(new Point(1000, 600));
+		return super.newToolItem(style, text, ev -> this.updateWindowRedraw(this::updateTable));
 	}
 
 	@Override
@@ -165,7 +169,6 @@ public abstract class AbstractTable<T> extends WindowBase {
 
 	@Override
 	protected void handlerAfterHidden() {
-		this.datas.clear();
 		ToolUtils.forEach(this.table.getItems(), TableItem::dispose);
 	}
 
@@ -175,54 +178,68 @@ public abstract class AbstractTable<T> extends WindowBase {
 		this.updateTable();
 	}
 
+	public class DataTableItem extends TableItem {
+		public final T data;
+
+		public DataTableItem(T data) {
+			super(AbstractTable.this.table, SWT.NONE);
+			this.data = data;
+		}
+
+		public DataTableItem(T data, int index) {
+			super(AbstractTable.this.table, SWT.NONE, index);
+			this.data = data;
+		}
+
+		@Override
+		protected void checkSubclass() {}
+	}
+
 	/**
 	 * table列的属性
 	 * @author MoeKagari
 	 */
 	public class TableColumnManager {
+		private Comparator<T> compa = null;
 		private final boolean isInteger;
 		private final String name;
 		private final Function<T, Object> value;
-		private final BiConsumer<TableItem, T> other;//其它对TableItem的操作,比如颜色,tooltip
 		private SortedTableColumn stc = null;
 
 		public TableColumnManager(String name, boolean isInteger, Function<T, Object> value) {
-			this(name, isInteger, value, null);
-		}
-
-		public TableColumnManager(String name, boolean isInteger, Function<T, Object> value, BiConsumer<TableItem, T> other) {
 			this.name = name;
 			this.isInteger = isInteger;
 			this.value = value;
-			this.other = other;
 		}
 
 		public TableColumnManager(String name, Function<T, Object> value) {
-			this(name, false, value, null);
-		}
-
-		public TableColumnManager(String name, Function<T, Object> value, BiConsumer<TableItem, T> other) {
-			this(name, false, value, other);
+			this(name, false, value);
 		}
 
 		public String getValue(int index, T t) {
 			return this.value == null ? Integer.toString(index) : this.value.apply(t).toString();
 		}
+
+		public void setComparator(Comparator<T> compa) {
+			this.compa = compa;
+		}
 	}
 
 	/**
-	 * 排序table列
+	 * table列的排列功能
 	 * @author MoeKagari
 	 */
 	private class SortedTableColumn implements Listener {
-		private boolean direction = false;//是否从小到大排序,否则从大到小排序
-		private final boolean isInteger;
+		private boolean direction = true;//是否从小到大排序,否则从大到小排序
 		private final int index;
+		private final TableColumnManager tcm;
 		private final TableColumn tableColumn;
 
 		public SortedTableColumn(int index, TableColumnManager tcm) {
 			this.index = index;
-			this.isInteger = tcm.isInteger;
+			this.tcm = tcm;
+			tcm.stc = this;
+
 			this.tableColumn = new TableColumn(AbstractTable.this.table, SWT.LEFT);
 			this.tableColumn.setText(tcm.name);
 			this.tableColumn.setWidth(40);
@@ -233,27 +250,44 @@ public abstract class AbstractTable<T> extends WindowBase {
 		public void handleEvent(Event ev) {
 			if (this.index == 0) return;//不对行头排序
 
-			//如果不是改变排序列,则改变排序方向
 			if (AbstractTable.this.table.getSortColumn() == this.tableColumn) {
+				//如果不是改变排序列,则改变排序方向
 				this.direction = !this.direction;
 			}
 
-			AbstractTable.this.updateWindowRedraw(() -> AbstractTable.this.sortTable(this));
+			AbstractTable.this.updateWindowRedraw(ToolUtils.getRunnable(this, AbstractTable.this::sortTable));
 			AbstractTable.this.table.setSortColumn(this.tableColumn);
-			AbstractTable.this.table.setSortDirection(this.direction ? SWT.UP : SWT.DOWN);
+			AbstractTable.this.table.setSortDirection(this.direction ? SWT.DOWN : SWT.UP);
+
+			AbstractTable.this.sortColumns.remove(this.tableColumn);
+			AbstractTable.this.sortColumns.add(this.tableColumn);
 		}
 
-		public int compare(String value, String othervalue) {
-			int result = this.direction ? -1 : 1;
-
-			if (this.isInteger) {
-				int a = StringUtils.isBlank(value) ? 0 : Integer.parseInt(value);
-				int b = StringUtils.isBlank(othervalue) ? 0 : Integer.parseInt(othervalue);
-				return result * Integer.compare(a, b);
+		public int compare(DataTableItem item1, DataTableItem item2) {
+			if (this.tcm.compa != null) {
+				return this.compare(item1.data, item2.data);
 			} else {
-				return result * value.compareTo(othervalue);
+				return this.compare(item1.getText(this.index), item2.getText(this.index));
+			}
+		}
+
+		public int compare(T data1, T data2) {
+			if (this.tcm.compa != null) {
+				return (this.direction ? -1 : 1) * this.tcm.compa.compare(data1, data2);
+			} else {
+				return this.compare(this.tcm.value.apply(data1).toString(), this.tcm.value.apply(data2).toString());
+			}
+		}
+
+		public int compare(String value1, String value2) {
+			int direction = this.direction ? -1 : 1;
+			if (this.tcm.isInteger) {
+				int a = StringUtils.isBlank(value1) ? 0 : Integer.parseInt(value1);
+				int b = StringUtils.isBlank(value2) ? 0 : Integer.parseInt(value2);
+				return direction * Integer.compare(a, b);
+			} else {
+				return direction * value1.compareTo(value2);
 			}
 		}
 	}
-
 }

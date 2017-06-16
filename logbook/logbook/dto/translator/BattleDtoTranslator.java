@@ -26,13 +26,12 @@ import logbook.dto.memory.battle.AbstractBattle.BattleDeck;
 import logbook.dto.memory.battle.AbstractBattle.BattleDeckAttackDamage;
 import logbook.dto.memory.battle.AbstractBattle.BattleOneAttack;
 import logbook.dto.memory.battle.AbstractBattleDay;
-import logbook.dto.memory.battle.AbstractBattleDay.BattleDayStageType;
+import logbook.dto.memory.battle.AbstractBattleDay.BattleDayStage;
 import logbook.dto.memory.battle.AbstractBattleDay.InjectionKouko;
 import logbook.dto.memory.battle.AbstractBattleDay.Kouko;
 import logbook.dto.memory.battle.AbstractBattleDay.OpeningAttack;
 import logbook.dto.memory.battle.AbstractBattleDay.OpeningTaisen;
 import logbook.dto.memory.battle.AbstractBattleMidnight;
-import logbook.dto.memory.battle.AbstractBattleMidnight.BattleMidnightStage;
 import logbook.dto.memory.battle.AbstractInfoBattle;
 import logbook.dto.memory.battle.AbstractInfoBattleResult;
 import logbook.dto.memory.battle.AbstractInfoBattleResult.BattleResult_GetShip;
@@ -48,6 +47,8 @@ import logbook.dto.memory.battle.practice.PracticeBattleResultDto;
 import logbook.dto.word.DeckDto;
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.gui.logic.HPMessage;
+import logbook.gui.window.ApplicationMain;
+import logbook.internal.TrayMessageBox;
 import logbook.update.GlobalContext;
 import logbook.util.SwtUtils;
 import logbook.util.ToolUtils;
@@ -187,18 +188,24 @@ public class BattleDtoTranslator {
 		//大破检查
 		DeckDto[] decks;//出击的deck
 		int deckId = battleStart.getDeckId();
+		TrayMessageBox box = new TrayMessageBox();
 		if (battleStart.isCombined() && deckId == 1) {
 			decks = new DeckDto[] { GlobalContext.deckRoom[0].getDeck(), GlobalContext.deckRoom[1].getDeck() };
 		} else {
 			decks = new DeckDto[] { GlobalContext.deckRoom[deckId - 1].getDeck() };
 		}
 		if (Arrays.stream(decks).anyMatch(ToolUtils::isNull)) {
-			deckInformations.add("出击舰队状态未知,请注意");
+			String message = "出击舰队状态未知,请注意";
+			deckInformations.add(message);
+			box.add("警告", message);
 		} else {
 			if (Arrays.stream(decks).anyMatch(DeckDtoTranslator::hasDapo)) {
-				deckInformations.add("出击舰队中有大破舰娘,请注意");
+				String message = "出击舰队中有大破舰娘,请注意";
+				deckInformations.add(message);
+				box.add("大破", message);
 			}
 		}
+		TrayMessageBox.show(ApplicationMain.main, box);
 
 		return new BTResult(deckInformations, null, null);
 	}
@@ -218,20 +225,20 @@ public class BattleDtoTranslator {
 		//涡潮
 		String[] happening = battleNext.getHappening();
 		if (happening != null) {
-			text = String.format("涡潮种类:%s 电探:%s 掉落量:", happening[0], happening[1], happening[2]);
+			text = String.format("涡潮种类:%s 电探:%s 掉落量:%s", happening[0], happening[1], happening[2]);
 			deckInformations.add(text);
 		}
 
 		//基地受损
 		BattleStartNext_DestructionBattle destructionBattle = battleNext.getDestructionBattle();
 		if (destructionBattle != null) {
-			ToolUtils.notNullThenHandle(destructionBattle.getSeiku(), deckInformations::add);
 			{
 				int len = destructionBattle.getBaseNumber();
 				text = "基地受损:" + Arrays.toString(Arrays.copyOfRange(destructionBattle.getBefore(), 0, 0 + len)) + "→" + Arrays.toString(Arrays.copyOfRange(destructionBattle.getAfter(), 0, 0 + len));
 				deckInformations.add(text);
 			}
-			deckInformations.add(destructionBattle.getLostKind());
+			ToolUtils.notNullThenHandle(destructionBattle.getSeiku(), deckInformations::add);
+			ToolUtils.forEach(destructionBattle.getLostKind().split("\n"), deckInformations::add);
 		}
 
 		//侦察(侦察点only)
@@ -262,6 +269,11 @@ public class BattleDtoTranslator {
 		if (battleShipdeck.hasDapo()) {
 			ArrayList<String> deckInformations = new ArrayList<>();
 			deckInformations.add("出击舰队中有大破舰娘,请注意");
+
+			TrayMessageBox box = new TrayMessageBox();
+			box.add("大破", StringUtils.join(deckInformations, "\n"));
+			TrayMessageBox.show(ApplicationMain.main, box);
+
 			return new BTResult(deckInformations, null, null);
 		}
 		return null;
@@ -273,7 +285,7 @@ public class BattleDtoTranslator {
 		ArrayList<String[]> after = new ArrayList<>();
 
 		BiConsumer<BattleDeck, BattleDeckAttackDamage> addOneState = (bd, bdad) -> {
-			if (bd != null && bd.exist()) {
+			if (AbstractBattle.existBattleDeck(bd) && bdad != null) {
 				int length = bd.getDeckLength();
 				int[] nowhps = bd.nowhps;
 				int[] maxhps = bd.maxhps;
@@ -291,21 +303,14 @@ public class BattleDtoTranslator {
 			}
 		};
 
+		addOneState.accept(battleDto.getfDeck(), battleDto.getfDeckAttackDamage());
+		addOneState.accept(battleDto.getfDeckCombine(), battleDto.getfDeckCombineAttackDamage());
+		addOneState.accept(battleDto.geteDeck(), battleDto.geteDeckAttackDamage());
+		addOneState.accept(battleDto.geteDeckCombine(), battleDto.geteDeckCombineAttackDamage());
+
 		if (battleDto instanceof AbstractBattleMidnight) {
 			AbstractBattleMidnight battleMidnight = (AbstractBattleMidnight) battleDto;
-			BattleDeck[] activeDecks = battleMidnight.getActiveDeck();
-			BattleMidnightStage battleMidnightStage = battleMidnight.getBattleMidnightStage();
-			addOneState.accept(activeDecks[0], battleMidnightStage.getfAttackDamage());
-			addOneState.accept(activeDecks[1], battleMidnightStage.geteAttackDamage());
-
 			if (battleMidnight.isMidnightOnly() == false) deckInformations.add("夜战");
-		}
-		if (battleDto instanceof AbstractBattleDay) {
-			AbstractBattleDay battleDay = (AbstractBattleDay) battleDto;
-			addOneState.accept(battleDay.getfDeck(), battleDay.getfDeckAttackDamage());
-			addOneState.accept(battleDay.getfDeckCombine(), battleDay.getfDeckCombineAttackDamage());
-			addOneState.accept(battleDay.geteDeck(), battleDay.geteDeckAttackDamage());
-			addOneState.accept(battleDay.geteDeckCombine(), battleDay.geteDeckCombineAttackDamage());
 		}
 
 		return new BTResult(deckInformations, before, after);
@@ -371,33 +376,34 @@ public class BattleDtoTranslator {
 			SwtUtils.initLabel(new Label(parent, SWT.CENTER), "夜战", new GridData(GridData.FILL_HORIZONTAL));
 			//夜战只有一个stage,所以只加入详细的攻击流程
 			AbstractBattleMidnight midnight = ((AbstractBattleMidnight) battle);
-			addBattleAttack(parent, battle, midnight.getBattleMidnightStage().getBattleAttacks(), enemyAttack -> Boolean.FALSE);
+			addBattleAttack(parent, battle, midnight.battleMidnightStage.battleAttacks, enemyAttack -> Boolean.FALSE);
 		}
 		if (battle instanceof AbstractBattleDay) {
 			SwtUtils.initLabel(new Label(parent, SWT.CENTER), "昼战", new GridData(GridData.FILL_HORIZONTAL));
 
+			AbstractBattleDay day = ((AbstractBattleDay) battle);
 			BattleDeckAttackDamage fbdad = new BattleDeckAttackDamage();
 			BattleDeckAttackDamage fbdadco = new BattleDeckAttackDamage();
 			BattleDeckAttackDamage ebdad = new BattleDeckAttackDamage();
 			BattleDeckAttackDamage ebdadco = new BattleDeckAttackDamage();
-			AbstractBattleDay day = ((AbstractBattleDay) battle);
-			day.getBattleDayStage().forEach(stage -> {
+			for (int index = 0; index < day.battleDayStage.size(); index++) {
+				BattleDayStage stage = day.battleDayStage.get(index);
 				//昼战stage的name
-				SwtUtils.initLabel(new Label(parent, SWT.LEFT), stage.getStageName(), new GridData(GridData.FILL_HORIZONTAL));
+				SwtUtils.initLabel(new Label(parent, SWT.LEFT), String.format("%d.%s", index + 1, stage.getStageName()), new GridData(GridData.FILL_HORIZONTAL));
 
 				//有无详细的攻击信息
 				boolean haveAttack = false;
 				//详细的攻击流程,仅有,开幕对潜,开幕雷击,炮击战,雷击战
-				if (stage.getType() == BattleDayStageType.OPENINGTAISEN || stage.getType() == BattleDayStageType.HOUGEKI) {
+				if (stage instanceof OpeningTaisen) {
 					haveAttack = true;
 					addBattleAttack(parent, battle, stage.battleAttacks, ((OpeningTaisen) stage)::getSimulatorObject);
-				} else if (stage.getType() == BattleDayStageType.OPENINGATTACK || stage.getType() == BattleDayStageType.RAIGEKI) {
+				} else if (stage instanceof OpeningAttack) {
 					haveAttack = true;
 					addRaigekiAttack(parent, day, (OpeningAttack) stage);
 				}
 
 				//喷气机受损情况
-				if (stage.getType() == BattleDayStageType.INJECTIONKOUKO) {
+				if (stage instanceof InjectionKouko) {
 					String text;
 					InjectionKouko ik = (InjectionKouko) stage;
 					Function<int[], String> getPLSString = pls -> pls == null ? "" : (pls[0] + "→" + (pls[0] - pls[1]));
@@ -428,29 +434,20 @@ public class BattleDtoTranslator {
 					addOnedeckNowState(deckNowState, day.geteDeckCombine(), ebdadco, stage.eAttackDamageco, haveAttack);
 					ebdadco.add(stage.eAttackDamageco);
 				}
-			});
+			}
 		}
 	}
 
 	private static void addShipState(Composite parent, AbstractBattle battle) {
-		if (battle instanceof AbstractBattleDay) {
-			AbstractBattleDay battleDay = (AbstractBattleDay) battle;
-			addOneShipState(parent, "自-主力舰队", battleDay.getfDeck(), battleDay.getfDeckAttackDamage());
-			addOneShipState(parent, "自-随从舰队", battleDay.getfDeckCombine(), battleDay.getfDeckCombineAttackDamage());
-			addOneShipState(parent, "敌-主力舰队", battleDay.geteDeck(), battleDay.geteDeckAttackDamage());
-			addOneShipState(parent, "敌-随从舰队", battleDay.geteDeckCombine(), battleDay.geteDeckCombineAttackDamage());
-		}
-		if (battle instanceof AbstractBattleMidnight) {
-			AbstractBattleMidnight battleMidnight = (AbstractBattleMidnight) battle;
-			BattleDeck[] activeDecks = battleMidnight.getActiveDeck();
-			BattleMidnightStage battleMidnightStage = battleMidnight.getBattleMidnightStage();
-			addOneShipState(parent, "自", activeDecks[0], battleMidnightStage.getfAttackDamage());
-			addOneShipState(parent, "敌", activeDecks[1], battleMidnightStage.geteAttackDamage());
-		}
+		addOneShipState(parent, "自-主力舰队", battle.getfDeck(), battle.getfDeckAttackDamage());
+		addOneShipState(parent, "自-随从舰队", battle.getfDeckCombine(), battle.getfDeckCombineAttackDamage());
+		addOneShipState(parent, "敌-主力舰队", battle.geteDeck(), battle.geteDeckAttackDamage());
+		addOneShipState(parent, "敌-随从舰队", battle.geteDeckCombine(), battle.geteDeckCombineAttackDamage());
 	}
 
 	private static void addOneShipState(Composite parent, String deckname, BattleDeck bd, BattleDeckAttackDamage bdad) {
-		if (bd == null || bd.exist() == false) return;
+		if (AbstractBattle.existBattleDeck(bd) == false) return;
+		if (bdad == null) return;
 
 		String[] headers = { deckname, "状态", "先前", "伤害", "当前", "状态", "攻击" };
 		int len = headers.length;
@@ -472,7 +469,7 @@ public class BattleDtoTranslator {
 		int[] dmgs = bdad.dmgs;
 		int[] attacks = bdad.attack;
 		for (int i = 0; i < 6; i++) {
-			if (nowhps[i] == -1) continue;
+			if (maxhps[i] == -1) continue;
 
 			String name = names[i];
 			int before = nowhps[i];
@@ -514,7 +511,7 @@ public class BattleDtoTranslator {
 
 		if (battle instanceof AbstractBattleDay) {
 			AbstractBattleDay day = (AbstractBattleDay) battle;
-			day.getBattleDayStage().forEach(stage -> {
+			day.battleDayStage.forEach(stage -> {
 				if (stage instanceof Kouko) {
 					Predicate<int[]> hasPlane = pls -> pls != null && pls[0] != 0;
 					Function<int[], String> getPLSString = pls -> pls == null ? "" : (pls[0] + "→" + (pls[0] - pls[1]));
@@ -542,7 +539,7 @@ public class BattleDtoTranslator {
 						int[] duikongci = kouko.getDuikongci();
 						if (duikongci != null) {
 							BattleDeck fdc = day.getfDeckCombine();
-							String name = ArrayUtils.addAll(day.getfDeck().names, (fdc != null && fdc.exist()) ? fdc.names : AppConstants.EMPTY_NAMES)[duikongci[0]];
+							String name = ArrayUtils.addAll(day.getfDeck().names, AbstractBattle.existBattleDeck(fdc) ? fdc.names : AppConstants.EMPTY_NAMES)[duikongci[0]];
 							addOneBattleInformation(composite, "对空CI", name, String.valueOf(duikongci[1]));
 						}
 					}
@@ -753,7 +750,8 @@ public class BattleDtoTranslator {
 	}
 
 	private static void addOnedeckNowState(Composite parent, BattleDeck bd, BattleDeckAttackDamage bdad, BattleDeckAttackDamage ad, boolean haveAttack) {
-		if (bd == null || bd.exist() == false) return;
+		if (AbstractBattle.existBattleDeck(bd) == false) return;
+		if (bdad == null) return;
 
 		String[] headers = haveAttack ? new String[] { "", "状态", "当前", "伤害", "攻击" } : new String[] { "", "状态", "当前", "伤害" };
 		int len = headers.length;
@@ -787,7 +785,7 @@ public class BattleDtoTranslator {
 			{
 				Label nameLabel = new Label(parts[0], SWT.CENTER);
 				SwtUtils.initLabel(nameLabel, name, new GridData(SWT.CENTER, SWT.CENTER, false, false), 55);
-				ToolUtils.notNullThenHandle(name, n -> nameLabel.setToolTipText(n));
+				ToolUtils.notNullThenHandle(name, nameLabel::setToolTipText);
 
 				String state = bd.escapes.contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(now * 1.0 / max);
 				Color color = HPMessage.getColor(state);
@@ -811,16 +809,8 @@ public class BattleDtoTranslator {
 	/*------------------------------------------------------------------------------*/
 
 	public static boolean haveDamage(AbstractBattle battle) {
-		Predicate<BattleDeckAttackDamage> haveDamage = bdad -> Arrays.stream(bdad.dmgs).anyMatch(i -> i != 0);
-		if (battle instanceof AbstractBattleDay) {
-			AbstractBattleDay day = (AbstractBattleDay) battle;
-			return haveDamage.test(day.getfDeckAttackDamage()) || haveDamage.test(day.getfDeckCombineAttackDamage());
-		}
-		if (battle instanceof AbstractBattleMidnight) {
-			AbstractBattleMidnight midnight = (AbstractBattleMidnight) battle;
-			return haveDamage.test(midnight.getBattleMidnightStage().getfAttackDamage());
-		}
-		return true;
+		Predicate<BattleDeckAttackDamage> haveDamage = bdad -> bdad == null ? false : Arrays.stream(bdad.dmgs).anyMatch(i -> i != 0);
+		return haveDamage.test(battle.getfDeckAttackDamage()) || haveDamage.test(battle.getfDeckCombineAttackDamage());
 	}
 
 	public static String getBattleAttackType(boolean isMidnight, int attackType) {
@@ -861,7 +851,7 @@ public class BattleDtoTranslator {
 	public static double[] getBattleDamagePercent(AbstractBattle battle) {
 		BiFunction<BattleDeck, BattleDeckAttackDamage, int[]> get = (bd, bdad) -> {
 			int tnow = 0, tdmg = 0;
-			if (bd != null && bd.exist()) {
+			if (AbstractBattle.existBattleDeck(bd) && bdad != null) {
 				int[] nowhps = bd.nowhps;
 				int[] dmgs = bdad.dmgs;
 				for (int i = 0; i < 6; i++) {
@@ -878,37 +868,19 @@ public class BattleDtoTranslator {
 
 		int fnow = 0, enow = 0;
 		int fdmg = 0, edmg = 0;
-		if (battle instanceof AbstractBattleDay) {
-			AbstractBattleDay day = (AbstractBattleDay) battle;
-
-			for (int[] nd : new int[][] { //
-					get.apply(day.getfDeck(), day.getfDeckAttackDamage()),//
-					get.apply(day.getfDeckCombine(), day.getfDeckCombineAttackDamage()),//
-			}) {
-				fnow += nd[0];
-				fdmg += nd[1];
-			}
-			for (int[] nd : new int[][] { //
-					get.apply(day.geteDeck(), day.geteDeckAttackDamage()),//
-					get.apply(day.geteDeckCombine(), day.geteDeckCombineAttackDamage()),//
-			}) {
-				enow += nd[0];
-				edmg += nd[1];
-			}
+		for (int[] nd : new int[][] { //
+				get.apply(battle.getfDeck(), battle.getfDeckAttackDamage()),//
+				get.apply(battle.getfDeckCombine(), battle.getfDeckCombineAttackDamage()),//
+		}) {
+			fnow += nd[0];
+			fdmg += nd[1];
 		}
-		if (battle instanceof AbstractBattleMidnight) {
-			AbstractBattleMidnight midnight = (AbstractBattleMidnight) battle;
-
-			BattleDeck[] activeDecks = midnight.getActiveDeck();
-			BattleMidnightStage stage = midnight.getBattleMidnightStage();
-			for (int[] nd : new int[][] { get.apply(activeDecks[0], stage.getfAttackDamage()) }) {
-				fnow += nd[0];
-				fdmg += nd[1];
-			}
-			for (int[] nd : new int[][] { get.apply(activeDecks[1], stage.geteAttackDamage()) }) {
-				enow += nd[0];
-				edmg += nd[1];
-			}
+		for (int[] nd : new int[][] { //
+				get.apply(battle.geteDeck(), battle.geteDeckAttackDamage()),//
+				get.apply(battle.geteDeckCombine(), battle.geteDeckCombineAttackDamage()),//
+		}) {
+			enow += nd[0];
+			edmg += nd[1];
 		}
 
 		DoubleBinaryOperator calcu = (now, dmg) -> dmg == 0 ? 0 : (dmg * 1.0 / now);

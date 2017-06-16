@@ -10,10 +10,12 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
+import logbook.dto.AbstractMemory;
 import logbook.update.data.Data;
 import logbook.util.JsonUtils;
 
 public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
+	private static final long serialVersionUID = 1L;
 	private final int mapareaId;
 	private final int mapareaNo;
 	private final int next;
@@ -66,6 +68,12 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 			JsonObject api_happening = json.getJsonObject("api_happening");
 			this.happening = new int[] { api_happening.getInt("api_mst_id"), api_happening.getInt("api_dentan"), api_happening.getInt("api_count") };
 		}
+		/*
+		 * (1-6) "api_get_eo_rate": 75, "api_itemget_eo_result": {
+		 * "api_usemst": 5, "api_id": 60, "api_getcount": 1 },
+		 * "api_itemget_eo_comment": { "api_usemst": 4, "api_id": 1,
+		 * "api_getcount": 1000 }
+		 */
 	}
 
 	public String[] getHappening() {
@@ -131,23 +139,20 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 		return BattleDto.getNextPointType(this.nextEventId, this.nextEventKind);
 	}
 
-	protected int getMapareaId() {
+	public int getMapareaId() {
 		return this.mapareaId;
 	}
 
-	protected int getMapareaNo() {
+	public int getMapareaNo() {
 		return this.mapareaNo;
-	}
-
-	public int getMap() {
-		return this.mapareaId * 10 + this.mapareaNo;
 	}
 
 	public String getMapString() {
 		return this.mapareaId + "-" + this.mapareaNo;
 	}
 
-	public class BattleStartNext_GetItem {
+	public class BattleStartNext_GetItem extends AbstractMemory {
+		private static final long serialVersionUID = 1L;
 		private final int id;
 		private final int count;
 
@@ -191,7 +196,8 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 		}
 	}
 
-	public class BattleStartNext_DestructionBattle {
+	public class BattleStartNext_DestructionBattle extends AbstractMemory {
+		private static final long serialVersionUID = 1L;
 		public final int[] nowhps;
 		public final int[] maxhps;
 		public final int[] dmgs;
@@ -247,7 +253,7 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 				case 1:
 					return "空襲により備蓄資源に損害を受けました！";
 				case 2:
-					return "空襲により備蓄資源に損害を受け、基地航空隊にも地上撃破の損害が発生しました！";
+					return "空襲により備蓄資源に損害を受け\n基地航空隊にも地上撃破の損害が発生しました！";
 				case 3:
 					return "空襲により基地航空隊に地上撃破の損害が発生しました！";
 				case 4:
@@ -256,9 +262,4 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 			return "基地受损显示种类: " + this.lostKind;
 		}
 	}
-
-	public class ccc {
-
-	}
-
 }

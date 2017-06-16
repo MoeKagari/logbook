@@ -8,6 +8,7 @@ import logbook.dto.word.ShipDto;
 import logbook.update.data.Data;
 
 public class InfoBattleShipdeckDto extends AbstractInfoBattle {
+	private static final long serialVersionUID = 1L;
 	private final boolean hasDapo;
 
 	public InfoBattleShipdeckDto(Data data, JsonObject json) {

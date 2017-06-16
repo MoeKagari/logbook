@@ -9,6 +9,7 @@ import logbook.dto.AbstractMemory;
  * @author MoeKagari
  */
 public class CreateItemDto extends AbstractMemory {
+	private static final long serialVersionUID = 1L;
 	private final long time;
 	private final boolean success;
 	private final int[] material;
@@ -37,5 +38,4 @@ public class CreateItemDto extends AbstractMemory {
 	public int getSlotitemId() {
 		return this.slotitemId;
 	}
-
 }

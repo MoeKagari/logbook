@@ -117,7 +117,7 @@ public class AsyncExecApplicationMain extends Thread {
 					(AppConfig.get().isNoticeDeckmission() && rest >= 0) ||//
 							(AppConfig.get().isNoticeDeckmissionAgain() && rest < 0)//
 					)) {
-						box.add("远征", AppConstants.DEFAULT_FLEET_NAME[i] + "-远征已归还");
+						box.add("远征", String.format("%s-远征已归还", AppConstants.DEFAULT_FLEET_NAME[i]));
 					}
 
 					nameLabelText = dmd.getName();
@@ -139,10 +139,10 @@ public class AsyncExecApplicationMain extends Thread {
 								if (AppConfig.get().isNoticeCondOnlyMainFleet() && i != 0) {
 									//只通知第一舰队,并且此deck非第一舰队
 								} else {
-									box.add("疲劳", AppConstants.DEFAULT_FLEET_NAME[i] + "-疲劳已恢复");
+									box.add("疲劳", String.format("%s-疲劳已恢复", AppConstants.DEFAULT_FLEET_NAME[i]));
 								}
 							}
-							nameLabelText = "疲劳恢复中" + "(±" + (PLTIME.getRange() / 1000) + "秒)";
+							nameLabelText = String.format("疲劳恢复中(±%d秒)", (PLTIME.getRange() / 1000));
 							timeLabelText = TimeString.toDateRestString(rest, "疲劳已恢复");
 							timeLabelTooltipText = AppConstants.DECK_NDOCK_COMPLETE_TIME_FORMAT.format(end);
 						}
@@ -152,6 +152,9 @@ public class AsyncExecApplicationMain extends Thread {
 				SwtUtils.setText(nameLabels[i], nameLabelText);
 				SwtUtils.setText(timeLabels[i], timeLabelText);
 				SwtUtils.setToolTipText(timeLabels[i], timeLabelTooltipText);
+
+				SwtUtils.setText((Label) timeLabels[i].getData(), timeLabelText);
+				SwtUtils.setToolTipText((Label) timeLabels[i].getData(), timeLabelTooltipText);
 			}
 		}
 
@@ -170,7 +173,7 @@ public class AsyncExecApplicationMain extends Thread {
 						String name = ShipDtoTranslator.getName(ship);
 						long rest = (ndock.getTime() - currentTime) / 1000;
 						if (AppConfig.get().isNoticeNdock() && ndock.getTimerCounter().needNotify(currentTime)) {
-							box.add("入渠", name + "(Lv." + ship.getLevel() + ")" + "-入渠已完了");
+							box.add("入渠", String.format("%s(Lv.%d)-入渠已完了", name, ship.getLevel()));
 						}
 
 						nameLabelText = String.format("%s(Lv.%d)", name, ship.getLevel());
@@ -182,6 +185,9 @@ public class AsyncExecApplicationMain extends Thread {
 				SwtUtils.setText(nameLabels[i], nameLabelText);
 				SwtUtils.setText(timeLabels[i], timeLabelText);
 				SwtUtils.setToolTipText(timeLabels[i], timeLabelTooltipText);
+
+				SwtUtils.setText((Label) timeLabels[i].getData(), timeLabelText);
+				SwtUtils.setToolTipText((Label) timeLabels[i].getData(), timeLabelTooltipText);
 			}
 		}
 	}

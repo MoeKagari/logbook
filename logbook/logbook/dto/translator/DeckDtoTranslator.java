@@ -61,18 +61,23 @@ public class DeckDtoTranslator {
 	/** 泊地修理到点时,是否应该提醒 */
 	public static boolean shouldNotifyAkashiTimer(DeckDto deck) {
 		if (deck == null) return false;
-		if (isInMission(deck)) return false;//远征中
-		if (isAkashiFlagship(deck) == false) return false;//非明石旗舰
+		//远征中
+		if (isInMission(deck)) return false;
+		//非明石旗舰
+		if (isAkashiFlagship(deck) == false) return false;
 
-		//中破大破入渠中,不能修理
-		Predicate<ShipDto> cannot = ship -> ship == null || ShipDtoTranslator.isInNyukyo(ship) || ShipDtoTranslator.terribleState(ship);
+		//没有入渠,擦伤小破,可以修理
+		Predicate<ShipDto> can = ship -> !ShipDtoTranslator.isInNyukyo(ship) && ShipDtoTranslator.healthyState(ship);
+		//中破大破入渠中,不能修理		
+		Predicate<ShipDto> cannot = ship -> ShipDtoTranslator.isInNyukyo(ship) || ShipDtoTranslator.terribleState(ship);
 
 		ShipDto flagship = GlobalContext.getShip(deck.getShips()[0]);
-		if (cannot.test(flagship)) return false;//明石中破大破入渠中,不能修理其它舰娘
+		//明石中破大破入渠中,不能修理其它舰娘
+		if (cannot.test(flagship)) return false;
 
 		//修理数(2+修理设施)
 		int equipCount = 2 + (int) Arrays.stream(flagship.getSlots()).filter(ItemDtoTranslator::isRepairItem).count();
-		return Arrays.stream(deck.getShips()).limit(equipCount).mapToObj(GlobalContext::getShip).anyMatch(cannot.negate());
+		return Arrays.stream(deck.getShips()).limit(equipCount).mapToObj(GlobalContext::getShip).anyMatch(can);
 	}
 
 	public static boolean isInMission(DeckDto deck) {

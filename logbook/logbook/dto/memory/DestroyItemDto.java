@@ -9,7 +9,7 @@ import logbook.dto.word.ItemDto;
  * @author MoeKagari
  */
 public class DestroyItemDto extends AbstractMemory {
-
+	private static final long serialVersionUID = 1L;
 	private final long time;
 	private final String event;
 	private final int id;
@@ -56,5 +56,4 @@ public class DestroyItemDto extends AbstractMemory {
 	public int getGroup() {
 		return this.group;
 	}
-
 }

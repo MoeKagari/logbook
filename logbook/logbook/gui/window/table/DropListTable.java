@@ -14,31 +14,50 @@ import logbook.dto.memory.battle.AbstractInfoBattleResult;
 import logbook.dto.memory.battle.AbstractInfoBattleResult.BattleResult_GetShip;
 import logbook.dto.memory.battle.AbstractInfoBattleStartNext;
 import logbook.dto.memory.battle.BattleDto;
+import logbook.dto.memory.battle.info.InfoBattleResultDto;
 import logbook.dto.memory.battle.info.InfoBattleStartAirBaseDto;
 import logbook.dto.translator.BattleDtoTranslator;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
 import logbook.update.GlobalContext;
+import logbook.util.ToolUtils;
 
 /**
  * 掉落记录
  * @author MoeKagari
  */
 public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
-
 	public DropListTable(ApplicationMain main, MenuItem menuItem, String title) {
 		super(main, menuItem, title);
 	}
 
 	@Override
 	protected void initTCMS(List<TableColumnManager> tcms) {
-		tcms.add(new TableColumnManager("日期", rd -> AppConstants.TABLE_TIME_FORMAT.format(new Date(rd.getTime()))));
-		tcms.add(new TableColumnManager("地图", SortDrop::getMap));
-		tcms.add(new TableColumnManager("Cell", SortDrop::getCell));
-		tcms.add(new TableColumnManager("Boss", rd -> rd.isBoss() ? "是" : ""));
-		tcms.add(new TableColumnManager("评价", SortDrop::getRank));
-		tcms.add(new TableColumnManager("舰种", SortDrop::getShipType));
-		tcms.add(new TableColumnManager("舰名", SortDrop::getShipName));
+		tcms.add(new TableColumnManager("日期", rd -> AppConstants.TABLE_TIME_FORMAT.format(new Date(rd.time))));
+		{
+			TableColumnManager tcm = new TableColumnManager("地图", rd -> String.format("%s(%s)", rd.battleResult.getQuestName(), rd.battleStartNext.getMapString()));
+			tcm.setComparator((a, b) -> {
+				int res = Integer.compare(a.battleStartNext.getMapareaId(), b.battleStartNext.getMapareaId());
+				if (res == 0) {
+					res = Integer.compare(a.battleStartNext.getMapareaNo(), b.battleStartNext.getMapareaNo());
+				}
+				return res;
+			});
+			tcms.add(tcm);
+		}
+		tcms.add(new TableColumnManager("Cell", true, rd -> rd.battleStartNext.getNext()));
+		tcms.add(new TableColumnManager("敌舰队", rd -> rd.battleResult.getDeckName()));
+		tcms.add(new TableColumnManager("Boss", rd -> rd.battleStartNext.isBoss() ? "是" : ""));
+		tcms.add(new TableColumnManager("评价", rd -> {
+			String rank = rd.battleResult.getRank();
+			if (!rd.haveDamage && rank.startsWith("S")) {
+				return "S完全胜利";
+			} else {
+				return rank;
+			}
+		}));
+		tcms.add(new TableColumnManager("舰种", rd -> ToolUtils.notNullThenHandle(rd.battleResult.getNewShip(), BattleResult_GetShip::getType, "")));
+		tcms.add(new TableColumnManager("舰名", rd -> ToolUtils.notNullThenHandle(rd.battleResult.getNewShip(), BattleResult_GetShip::getName, "")));
 
 	}
 
@@ -55,6 +74,7 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 			return null;
 		};
 
+		//没有演习
 		BattleDto battle = null;
 		while (it.hasNext()) {
 			if (battle instanceof AbstractInfoBattleStartNext == false) {
@@ -68,6 +88,7 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 				battle = next.get();
 			}
 			if (battle instanceof AbstractBattle == false) continue;
+			long time = battle.getTime();//展示时间选择为战斗开始时间
 			boolean haveDamage = BattleDtoTranslator.haveDamage((AbstractBattle) battle);
 
 			battle = next.get();
@@ -75,69 +96,24 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 				haveDamage |= BattleDtoTranslator.haveDamage((AbstractBattle) battle);
 				battle = next.get();
 			}
-			if (battle instanceof AbstractInfoBattleResult == false) continue;
-			AbstractInfoBattleResult battleResult = (AbstractInfoBattleResult) battle;
+			if (battle instanceof InfoBattleResultDto == false) continue;
+			InfoBattleResultDto battleResult = (InfoBattleResultDto) battle;
 
-			datas.add(new SortDrop(battleStartNext, haveDamage, battleResult));
+			datas.add(new SortDrop(battleStartNext, time, haveDamage, battleResult));
 		}
 	}
 
 	public class SortDrop {
 		private final long time;
-		private final String map, shipType, shipName, rank;
-		private final int cell;
-		private final boolean isBoss;
-		private final int shipId;
+		private final boolean haveDamage;
+		private final AbstractInfoBattleStartNext battleStartNext;
+		private final AbstractInfoBattleResult battleResult;
 
-		public SortDrop(AbstractInfoBattleStartNext battleStartNext, boolean haveDamage, AbstractInfoBattleResult battleResult) {
-			this.time = battleResult.getTime();
-			this.map = battleStartNext.getMapString();
-			this.cell = battleStartNext.getNext();
-			this.isBoss = battleStartNext.isBoss();
-			this.rank = (!haveDamage && battleResult.getRank().startsWith("S")) ? "S完全胜利" : battleResult.getRank();
-
-			BattleResult_GetShip newShip = battleResult.getNewShip();
-			if (newShip != null) {
-				this.shipId = newShip.getId();
-				this.shipType = newShip.getType();
-				this.shipName = newShip.getName();
-			} else {
-				this.shipId = -1;
-				this.shipType = "";
-				this.shipName = "";
-			}
-		}
-
-		public boolean isBoss() {
-			return this.isBoss;
-		}
-
-		public long getTime() {
-			return this.time;
-		}
-
-		public String getMap() {
-			return this.map;
-		}
-
-		public int getCell() {
-			return this.cell;
-		}
-
-		public String getRank() {
-			return this.rank;
-		}
-
-		public int getShipId() {
-			return this.shipId;
-		}
-
-		public String getShipType() {
-			return this.shipType;
-		}
-
-		public String getShipName() {
-			return this.shipName;
+		public SortDrop(AbstractInfoBattleStartNext battleStartNext, long time, boolean haveDamage, AbstractInfoBattleResult battleResult) {
+			this.time = time;
+			this.haveDamage = haveDamage;
+			this.battleStartNext = battleStartNext;
+			this.battleResult = battleResult;
 		}
 	}
 }

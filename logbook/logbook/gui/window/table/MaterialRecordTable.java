@@ -28,7 +28,7 @@ public class MaterialRecordTable extends AbstractTable<MaterialRecordDto> {
 		String[] materialStrings = MaterialDto.getMaterialStrings();
 		for (int i = 0; i < materialStrings.length; i++) {
 			final int index = i;
-			tcms.add(new TableColumnManager(materialStrings[i], true, rd -> rd.getMaterial().getMaterial()[index]));
+			tcms.add(new TableColumnManager(materialStrings[i], true, rd -> rd.getMaterial()[index]));
 		}
 	}
 

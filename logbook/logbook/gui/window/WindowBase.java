@@ -3,10 +3,15 @@ package logbook.gui.window;
 import java.util.function.Consumer;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.internal.win32.OS;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
@@ -26,23 +31,22 @@ import logbook.util.ToolUtils;
  * 呼出式窗口的super class
  * @author MoeKagari
  */
-public abstract class WindowBase implements EventListener {
+public class WindowBase implements EventListener {
 	private final ApplicationMain main;
 	private final Shell shell;
 	private final MenuItem menuItem;
 	private final Composite composite;
 	private final Menu menuBar;
+
+	private boolean topMost = false;
 	private ToolBar toolBar = null;
 	private WindowConfig windowConfig = null;
+	private final MouseDragListener mouseDragListener = new MouseDragListener();
 
 	public WindowBase(ApplicationMain main, MenuItem menuItem, String title) {
-		this(main, menuItem, title, false);
-	}
-
-	public WindowBase(ApplicationMain main, MenuItem menuItem, String title, boolean top) {
 		this.main = main;
 
-		this.shell = new Shell(main.getSubShell(), this.getShellStyle() | (top ? SWT.ON_TOP : SWT.NONE));
+		this.shell = new Shell(main.getSubShell(), this.getShellStyle());
 		this.shell.setText(title);
 		this.shell.setImage(main.getLogo());
 		this.shell.setSize(this.getDefaultSize());
@@ -56,7 +60,7 @@ public abstract class WindowBase implements EventListener {
 		this.composite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		this.menuItem = menuItem;
-		ToolUtils.notNullThenHandle(this.menuItem, mi -> ControlSelectionListener.add(mi, () -> this.setVisible(mi.getSelection())));
+		ToolUtils.notNullThenHandle(this.menuItem, mi -> ControlSelectionListener.add(mi, this::setVisible));
 
 		this.menuBar = new Menu(this.shell, SWT.BAR);
 		this.shell.setMenuBar(this.menuBar);
@@ -80,16 +84,17 @@ public abstract class WindowBase implements EventListener {
 		}
 		this.windowConfig.setMinimized(this.shell.getMinimized());
 		this.windowConfig.setVisible(this.shell.isVisible());
+		//	this.windowConfig.setTopMost(this.isTopMost());
 	}
 
 	/** 恢复当前窗口的配置 */
-	public void restoreWindowConfig() {
+	protected void restoreWindowConfig() {
 		if (this.windowConfig == null) {
 			this.windowConfig = WindowConfig.get().get(this.getWindowConfigKey());
 			if (this.windowConfig == null) {
 				this.windowConfig = new WindowConfig();
-				WindowConfig.get().put(this.getWindowConfigKey(), this.windowConfig);
 				this.storeWindowConfig();
+				WindowConfig.get().put(this.getWindowConfigKey(), this.windowConfig);
 				return;
 			}
 		}
@@ -98,6 +103,7 @@ public abstract class WindowBase implements EventListener {
 		this.shell.setLocation(this.windowConfig.getLocation());
 		this.shell.setMinimized(this.windowConfig.getMinimized());
 		this.setVisible(this.windowConfig.isVisible());
+		//this.setTopMost(this.windowConfig.isTopMost());
 	}
 
 	public ApplicationMain getMain() {
@@ -116,12 +122,18 @@ public abstract class WindowBase implements EventListener {
 		return this.composite;
 	}
 
-	public void hiddenWindow() {
+	protected void hiddenWindow() {
 		this.setVisible(false);
 	}
 
-	public void displayWindow() {
+	protected void displayWindow() {
 		this.setVisible(true);
+	}
+
+	private void setVisible() {
+		if (this.menuItem != null) {
+			this.setVisible(this.menuItem.getSelection());
+		}
 	}
 
 	private void setVisible(boolean visible) {
@@ -131,7 +143,28 @@ public abstract class WindowBase implements EventListener {
 		ToolUtils.ifHandle(visible, this.shell::forceActive);
 	}
 
+	protected void allowMouseDrag(Control con) {
+		con.addMouseListener(this.mouseDragListener);
+		con.addMouseMoveListener(this.mouseDragListener);
+	}
+
+	protected boolean isTopMost() {
+		return this.topMost;
+	}
+
+	protected void setTopMost(boolean topMost) {
+		this.topMost = topMost;
+
+		Point location = this.shell.getLocation();
+		Point size = this.shell.getSize();
+		int hWndInsertAfter = topMost ? OS.HWND_TOPMOST : OS.HWND_NOTOPMOST;
+		OS.SetWindowPos(this.shell.handle, hWndInsertAfter, location.x, location.y, size.x, size.y, SWT.NULL);
+	}
+
 	/*------------------------------------------------------------------------------------------------------------*/
+
+	@Override
+	public void update(DataType type) {}
 
 	protected String getWindowConfigKey() {
 		return this.getClass().getName();
@@ -156,9 +189,6 @@ public abstract class WindowBase implements EventListener {
 		return null;
 	}
 
-	@Override
-	public void update(DataType type) {}
-
 	/** 显示窗口前的操作 */
 	protected void handlerBeforeDisplay() {}
 
@@ -172,18 +202,45 @@ public abstract class WindowBase implements EventListener {
 		this.composite.setRedraw(true);
 	}
 
-	/** 更新窗口(延迟redraw) */
-	protected void updateWindowRedraw(boolean flag, Runnable run) {
-		ToolUtils.ifHandle(run, ToolUtils.getPredicater(flag, run), this::updateWindowRedraw);
-	}
-
 	/** 默认size */
-	public Point getDefaultSize() {
+	protected Point getDefaultSize() {
 		return SwtUtils.DPIAwareSize(new Point(400, 200));
 	}
 
 	/** 默认shellstyle */
-	public int getShellStyle() {
+	protected int getShellStyle() {
 		return SWT.CLOSE | SWT.TITLE | SWT.RESIZE | SWT.MIN;
+	}
+
+	/** shell跟随鼠标的拖动而移动 */
+	private class MouseDragListener implements MouseListener, MouseMoveListener {
+		private boolean allowDrag = false;
+		private Point oldLocation = null;
+
+		@Override
+		public void mouseMove(MouseEvent ev) {
+			if (this.allowDrag) {
+				Point shellLocation = WindowBase.this.shell.getLocation();
+				int x = shellLocation.x - this.oldLocation.x + ev.x;
+				int y = shellLocation.y - this.oldLocation.y + ev.y;
+				WindowBase.this.shell.setLocation(x, y);
+			}
+		}
+
+		@Override
+		public void mouseDoubleClick(MouseEvent ev) {}
+
+		@Override
+		public void mouseDown(MouseEvent ev) {
+			if (ev.button == 1) {
+				this.allowDrag = true;
+				this.oldLocation = new Point(ev.x, ev.y);
+			}
+		}
+
+		@Override
+		public void mouseUp(MouseEvent ev) {
+			this.allowDrag = false;
+		}
 	}
 }

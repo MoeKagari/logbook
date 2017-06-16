@@ -1,6 +1,5 @@
 package logbook.dto.memory.battle;
 
-import java.util.ArrayList;
 import java.util.function.BiFunction;
 
 import javax.json.JsonArray;
@@ -10,24 +9,25 @@ import logbook.update.data.Data;
 import logbook.util.JsonUtils;
 
 public abstract class AbstractBattleMidnight extends AbstractBattle {
+	private static final long serialVersionUID = 1L;
 	private final int[] touchPlane;
 	private final int[] flare;
-	private final BattleMidnightStage battleMidnightStage;
 	private int[] activeDeck = { 1, 1 };
+	public final BattleMidnightStage battleMidnightStage;
 
 	public AbstractBattleMidnight(Data data, JsonObject json) {
 		super(json);
 
 		this.flare = AbstractBattle.dissociateIntarray(json, "api_flare_pos");
 		this.touchPlane = AbstractBattle.dissociateIntarray(json, "api_touch_plane");
+		this.battleMidnightStage = new BattleMidnightStage(json.getJsonObject("api_hougeki"));
 		if (json.containsKey("api_active_deck")) {
 			this.activeDeck = AbstractBattle.dissociateIntarray(json, "api_active_deck");
 		} else {
-			if (this.getfDeckCombine() != null && this.getfDeckCombine().exist()) {
+			if (existBattleDeck(this.getfDeckCombine())) {
 				this.activeDeck = new int[] { 2, 1 };
 			}
 		}
-		this.battleMidnightStage = new BattleMidnightStage(json.getJsonObject("api_hougeki"));
 	}
 
 	@Override
@@ -42,18 +42,6 @@ public abstract class AbstractBattleMidnight extends AbstractBattle {
 		return false;
 	}
 
-	public BattleMidnightStage getBattleMidnightStage() {
-		return this.battleMidnightStage;
-	}
-
-	public BattleDeck[] getActiveDeck() {
-		BiFunction<Integer, BattleDeck[], BattleDeck> get = (index, bds) -> index == 1 ? bds[0] : (index == 2 ? bds[1] : null);
-		return new BattleDeck[] {//
-				get.apply(this.activeDeck[0], new BattleDeck[] { this.getfDeck(), this.getfDeckCombine() }),//
-				get.apply(this.activeDeck[1], new BattleDeck[] { this.geteDeck(), this.geteDeckCombine() })//
-		};
-	}
-
 	public boolean[] getTouchPlane() {
 		return this.touchPlane == null ? null : new boolean[] { this.touchPlane[0] > 0, this.touchPlane[1] > 0 };
 	}
@@ -62,10 +50,36 @@ public abstract class AbstractBattleMidnight extends AbstractBattle {
 		return this.flare == null ? null : new boolean[] { this.flare[0] > 0, this.flare[1] > 0 };
 	}
 
-	public class BattleMidnightStage {
-		private ArrayList<BattleOneAttack> battleAttacks = new ArrayList<>();
-		private final BattleDeckAttackDamage fAttackDamage = new BattleDeckAttackDamage();
-		private final BattleDeckAttackDamage eAttackDamage = new BattleDeckAttackDamage();
+	@Override
+	public BattleDeckAttackDamage getfDeckAttackDamage() {
+		return this.activeDeck[0] == 1 ? this.battleMidnightStage.fAttackDamage : null;
+	}
+
+	@Override
+	public BattleDeckAttackDamage getfDeckCombineAttackDamage() {
+		return this.activeDeck[0] == 1 ? null : this.battleMidnightStage.fAttackDamage;
+	}
+
+	@Override
+	public BattleDeckAttackDamage geteDeckAttackDamage() {
+		return this.activeDeck[1] == 1 ? this.battleMidnightStage.eAttackDamage : null;
+	}
+
+	@Override
+	public BattleDeckAttackDamage geteDeckCombineAttackDamage() {
+		return this.activeDeck[1] == 1 ? null : this.battleMidnightStage.eAttackDamage;
+	}
+
+	public BattleDeck[] getActiveDeck() {
+		BiFunction<Integer, BattleDeck[], BattleDeck> get = (index, bds) -> index == 1 ? bds[0] : bds[1];
+		return new BattleDeck[] {//
+				get.apply(this.activeDeck[0], new BattleDeck[] { this.getfDeck(), this.getfDeckCombine() }),//
+				get.apply(this.activeDeck[1], new BattleDeck[] { this.geteDeck(), this.geteDeckCombine() })//
+		};
+	}
+
+	public class BattleMidnightStage extends BattleStage {
+		private static final long serialVersionUID = 1L;
 
 		public BattleMidnightStage(JsonObject json) {
 			JsonArray at_list = json.getJsonArray("api_at_list");
@@ -82,25 +96,12 @@ public abstract class AbstractBattleMidnight extends AbstractBattle {
 
 			BattleOneAttackSimulator boas = new BattleOneAttackSimulator();
 			this.battleAttacks.forEach(boa -> boas.accept(boa, Boolean.FALSE));
-			{
-				this.fAttackDamage.getDamage(boas.fdmg);
-				this.fAttackDamage.setAttack(boas.fatt);
-				this.eAttackDamage.getDamage(boas.edmg);
-				this.eAttackDamage.setAttack(boas.eatt);
-			}
+			this.accept(boas);
 		}
 
-		public BattleDeckAttackDamage getfAttackDamage() {
-			return this.fAttackDamage;
-		}
-
-		public BattleDeckAttackDamage geteAttackDamage() {
-			return this.eAttackDamage;
-		}
-
-		public ArrayList<BattleOneAttack> getBattleAttacks() {
-			return this.battleAttacks;
+		@Override
+		public String getStageName() {
+			return AbstractBattleMidnight.this.isMidnightOnly() ? "开幕" : "" + "夜战";
 		}
 	}
-
 }

@@ -32,7 +32,18 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 	@Override
 	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("装备", SortItem::getName));
-		tcms.add(new TableColumnManager("种类", SortItem::getType));
+		{
+			TableColumnManager tcm = new TableColumnManager("种类", SortItem::getTypeString);
+			tcm.setComparator((a, b) -> {
+				int res = 0;
+				for (int i = 0; i < a.type.length; i++) {
+					res = Integer.compare(a.type[i], b.type[i]);
+					if (res != 0) return res;
+				}
+				return res;
+			});
+			tcms.add(tcm);
+		}
 		IntFunction<String> levelString = level -> level > 0 ? String.valueOf(level) : "";
 		tcms.add(new TableColumnManager("改修", true, rd -> levelString.apply(rd.getLevel())));
 		tcms.add(new TableColumnManager("熟练度", true, rd -> levelString.apply(rd.getAlv())));
@@ -68,7 +79,8 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 		private int count;
 		private int level;
 		private int alv;
-		private String type;
+		private String typeString;
+		private int[] type;
 		private String name;
 		private String whichShipWithItem;
 
@@ -76,13 +88,14 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 			this.count = count;
 			this.level = level;
 			this.alv = alv;
-			this.type = ItemDtoTranslator.getTypeString(slotitemId);
+			this.type = ItemDtoTranslator.getType(slotitemId);
+			this.typeString = ItemDtoTranslator.getTypeString(slotitemId);
 			this.name = ItemDtoTranslator.getName(slotitemId);
 			this.whichShipWithItem = whichShipWithItem;
 		}
 
-		public String getType() {
-			return this.type;
+		public String getTypeString() {
+			return this.typeString;
 		}
 
 		public String getWhichShipWithItem() {

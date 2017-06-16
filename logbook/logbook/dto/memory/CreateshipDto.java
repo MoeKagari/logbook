@@ -9,19 +9,17 @@ import logbook.dto.word.ShipDto;
  * @author MoeKagari
  */
 public class CreateshipDto extends AbstractMemory {
-
-	private String flagship = null;
-	private int flagshipLevel = -1;
-	private int emptyCount = -1;
-	private int[] mm;
-	private long time;
+	private static final long serialVersionUID = 1L;
+	private final String flagship;
+	private final int flagshipLevel;
+	private final int[] mm;
+	private final long time;
 	private int shipId;
+	private int emptyCount = -1;
 
 	public CreateshipDto(ShipDto secretary, int[] mm, long time) {
-		if (secretary != null) {
-			this.flagship = ShipDtoTranslator.getName(secretary.getShipId());
-			this.flagshipLevel = secretary.getLevel();
-		}
+		this.flagship = ShipDtoTranslator.getName(secretary.getShipId());
+		this.flagshipLevel = secretary.getLevel();
 		this.mm = mm;
 		this.time = time;
 	}

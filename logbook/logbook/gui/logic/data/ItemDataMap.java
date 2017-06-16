@@ -3,6 +3,10 @@ package logbook.gui.logic.data;
 import java.util.HashMap;
 import java.util.Map;
 
+import logbook.dto.word.MasterDataDto.MasterSlotitemDataDto;
+import logbook.update.GlobalContext;
+import logbook.util.ToolUtils;
+
 public class ItemDataMap {
 
 	private static final Map<Integer, ItemData> ITEMDATA = new HashMap<>();
@@ -211,6 +215,41 @@ public class ItemDataMap {
 		ITEMDATA.put(204, new ItemData(204, "艦本新設計 増設バルジ(大型艦)", '板'));
 		ITEMDATA.put(205, new ItemData(205, "F6F-3", '战'));
 
+		//start 2017-6-4 2:29:22
+		ITEMDATA.put(203, new ItemData(203, "艦本新設計 増設バルジ(中型艦)", '板'));
+		ITEMDATA.put(207, new ItemData(207, "瑞雲(六三一空)", '爆'));
+		ITEMDATA.put(208, new ItemData(208, "晴嵐(六三一空)", '爆'));
+		ITEMDATA.put(209, new ItemData(209, "彩雲(輸送用分解済)", '它'));
+		ITEMDATA.put(210, new ItemData(210, "潜水艦搭載電探&水防式望遠鏡", '它'));
+		ITEMDATA.put(211, new ItemData(211, "潜水艦搭載電探&逆探(E27)", '它'));
+		ITEMDATA.put(212, new ItemData(212, "彩雲(東カロリン空)", '彩'));
+		ITEMDATA.put(213, new ItemData(213, "後期型艦首魚雷(6門)", '雷'));
+		ITEMDATA.put(214, new ItemData(214, "熟練聴音員+後期型艦首魚雷(6門)", '雷'));
+		ITEMDATA.put(215, new ItemData(215, "Ro.44水上戦闘機bis", '战'));
+		ITEMDATA.put(216, new ItemData(216, "二式水戦改(熟練)", '战'));
+		ITEMDATA.put(217, new ItemData(217, "強風改", '战'));
+		ITEMDATA.put(219, new ItemData(219, "零式艦戦63型(爆戦)", '爆'));
+		ITEMDATA.put(220, new ItemData(220, "8cm高角砲改+増設機銃", '副'));
+		ITEMDATA.put(221, new ItemData(221, "一式戦 隼II型", '陆'));
+		ITEMDATA.put(222, new ItemData(222, "一式戦 隼III型甲", '陆'));
+		ITEMDATA.put(223, new ItemData(223, "一式戦 隼III型甲(54戦隊)", '陆'));
+		ITEMDATA.put(224, new ItemData(224, "爆装一式戦 隼III型改(55戦隊)", '陆'));
+		ITEMDATA.put(225, new ItemData(225, "一式戦 隼II型(64戦隊)", '陆'));
+		ITEMDATA.put(226, new ItemData(226, "九五式爆雷", '投'));
+		ITEMDATA.put(227, new ItemData(227, "二式爆雷", '投'));
+		ITEMDATA.put(228, new ItemData(228, "九六式艦戦改", '战'));
+		ITEMDATA.put(229, new ItemData(229, "12.7cm単装高角砲(後期型)", '副'));
+		ITEMDATA.put(230, new ItemData(230, "特大発動艇+戦車第11連隊", '发'));
+		ITEMDATA.put(231, new ItemData(231, "30.5cm三連装砲", '大'));
+		ITEMDATA.put(232, new ItemData(232, "30.5cm三連装砲改", '大'));
+		ITEMDATA.put(236, new ItemData(236, "41cm三連装砲改", '大'));
+
+		ITEMDATA.put(573, new ItemData(573, "深海潜水下駄履き", ' '));
+		ITEMDATA.put(574, new ItemData(574, "深海攻撃哨戒鷹", ' '));
+		ITEMDATA.put(575, new ItemData(575, "深海攻撃哨戒鷹改", ' '));
+		ITEMDATA.put(576, new ItemData(576, "深海12inch三連装砲", ' '));
+		//end
+
 		ITEMDATA.put(501, new ItemData(501, "5inch単装砲", ' '));
 		ITEMDATA.put(502, new ItemData(502, "5inch連装砲", ' '));
 		ITEMDATA.put(503, new ItemData(503, "3inch単装高角砲", ' '));
@@ -283,7 +322,18 @@ public class ItemDataMap {
 		ITEMDATA.put(570, new ItemData(570, "高速深海魚雷 mod.2", ' '));
 		ITEMDATA.put(571, new ItemData(571, "深海水母小鬼機", ' '));
 		ITEMDATA.put(572, new ItemData(572, "深海熊猫艦戦", ' '));
+	}
 
+	public static void main(String[] args) {
+		GlobalContext.load();
+		ToolUtils.notNullThenHandle(GlobalContext.getMasterData(), md -> {
+			Map<Integer, MasterSlotitemDataDto> map = md.getMasterSlotitemDataMap();
+			map.forEach((id, msd) -> {
+				if (ITEMDATA.containsKey(id) == false) {
+					System.out.println(String.format("ITEMDATA.put(%d, new ItemData(%d, \"%s\", ' '));", id, id, msd.getName()));
+				}
+			});
+		});
 	}
 
 	public static ItemData get(int id) {

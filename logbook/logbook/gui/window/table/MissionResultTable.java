@@ -27,7 +27,11 @@ public class MissionResultTable extends AbstractTable<MissionResultDto> {
 	@Override
 	protected void initTCMS(List<TableColumnManager> tcms) {
 		tcms.add(new TableColumnManager("日期", rd -> TimeString.timeToStringForTable(rd.getTime())));
-		tcms.add(new TableColumnManager("舰队", rd -> AppConstants.DEFAULT_FLEET_NAME[rd.getDeckId() - 1]));
+		{
+			TableColumnManager tcm = new TableColumnManager("舰队", rd -> AppConstants.DEFAULT_FLEET_NAME[rd.getDeckId() - 1]);
+			tcm.setComparator((a, b) -> Integer.compare(a.getDeckId(), b.getDeckId()));
+			tcms.add(tcm);
+		}
 		tcms.add(new TableColumnManager("远征", rd -> rd.getName()));
 		tcms.add(new TableColumnManager("状态", rd -> rd.getStateString()));
 		IntFunction<String> materialString = count -> count == 0 ? "" : String.valueOf(count);
@@ -35,9 +39,9 @@ public class MissionResultTable extends AbstractTable<MissionResultDto> {
 		tcms.add(new TableColumnManager("弹", true, rd -> materialString.apply(rd.getMaterial()[1])));
 		tcms.add(new TableColumnManager("钢", true, rd -> materialString.apply(rd.getMaterial()[2])));
 		tcms.add(new TableColumnManager("铝", true, rd -> materialString.apply(rd.getMaterial()[3])));
-		tcms.add(new TableColumnManager("道具1", rd -> ToolUtils.notNullThenHandle(rd.getItems()[0], MissionResultItem::getId, "")));
+		tcms.add(new TableColumnManager("道具1", rd -> ToolUtils.notNullThenHandle(rd.getItems()[0], MissionResultItem::getName, "")));
 		tcms.add(new TableColumnManager("数量", true, rd -> ToolUtils.notNullThenHandle(rd.getItems()[0], MissionResultItem::getCount, "")));
-		tcms.add(new TableColumnManager("道具2", rd -> ToolUtils.notNullThenHandle(rd.getItems()[1], MissionResultItem::getId, "")));
+		tcms.add(new TableColumnManager("道具2", rd -> ToolUtils.notNullThenHandle(rd.getItems()[1], MissionResultItem::getName, "")));
 		tcms.add(new TableColumnManager("数量", true, rd -> ToolUtils.notNullThenHandle(rd.getItems()[1], MissionResultItem::getCount, "")));
 	}
 

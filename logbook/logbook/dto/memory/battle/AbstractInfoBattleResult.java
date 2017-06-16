@@ -4,9 +4,12 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
+import logbook.dto.AbstractMemory;
 import logbook.update.data.Data;
 
 public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
+	private static final long serialVersionUID = 1L;
+
 	private final String rank;
 
 	private final String questName;
@@ -57,7 +60,8 @@ public abstract class AbstractInfoBattleResult extends AbstractInfoBattle {
 		return this.getShip;
 	}
 
-	public class BattleResult_GetShip {
+	public class BattleResult_GetShip extends AbstractMemory {
+		private static final long serialVersionUID = 1L;
 		private final int id;
 		private final String type;
 		private final String name;

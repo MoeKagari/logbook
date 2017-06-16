@@ -10,12 +10,14 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 
 import logbook.config.AppConstants;
+import logbook.dto.AbstractMemory;
 import logbook.dto.translator.DeckDtoTranslator;
 import logbook.dto.translator.ShipDtoTranslator;
 import logbook.util.JsonUtils;
 import logbook.util.ToolUtils;
 
 public abstract class AbstractBattle extends BattleDto {
+	private static final long serialVersionUID = 1L;
 	private BattleDeck fDeck = null;
 	private BattleDeck fDeckCombine = null;
 	private BattleDeck eDeck = null;
@@ -35,16 +37,17 @@ public abstract class AbstractBattle extends BattleDto {
 		if (json.containsKey("api_nowhps_combined") && json.containsKey("api_maxhps_combined")) {
 			int[] nowhps_combined = JsonUtils.getIntArray(json, "api_nowhps_combined");
 			int[] maxhps_combined = JsonUtils.getIntArray(json, "api_maxhps_combined");
-			switch (nowhps_combined.length) {
-				case 1 + 12:
-					this.eDeckCombine = new BattleDeck(true, true, Arrays.copyOfRange(nowhps_combined, 7, 13), Arrays.copyOfRange(maxhps_combined, 7, 13));
-				case 1 + 6:
-					this.fDeckCombine = new BattleDeck(true, false, Arrays.copyOfRange(nowhps_combined, 1, 7), Arrays.copyOfRange(maxhps_combined, 1, 7));
+			int len = nowhps_combined.length;
+			if (len <= 1 + 6) {
+				this.fDeckCombine = new BattleDeck(true, false, Arrays.copyOfRange(nowhps_combined, 1, 7), Arrays.copyOfRange(maxhps_combined, 1, 7));
+			} else {
+				this.fDeckCombine = new BattleDeck(true, false, Arrays.copyOfRange(nowhps_combined, 1, 7), Arrays.copyOfRange(maxhps_combined, 1, 7));
+				this.eDeckCombine = new BattleDeck(true, true, Arrays.copyOfRange(nowhps_combined, 7, 13), Arrays.copyOfRange(maxhps_combined, 7, 13));
 			}
 		}
 
 		//BattleDeck的舰娘名
-		if (this.fDeckCombine != null && this.fDeckCombine.exist()) {//我方为联合舰队
+		if (existBattleDeck(this.fDeckCombine)) {//我方为联合舰队
 			this.fDeck.setNames(DeckDtoTranslator.getShipNames(1));
 			this.fDeckCombine.setNames(DeckDtoTranslator.getShipNames(2));
 		} else {
@@ -121,6 +124,16 @@ public abstract class AbstractBattle extends BattleDto {
 		return this.eDeckCombine;
 	}
 
+	public abstract BattleDeckAttackDamage getfDeckAttackDamage();
+
+	public abstract BattleDeckAttackDamage getfDeckCombineAttackDamage();
+
+	public abstract BattleDeckAttackDamage geteDeckAttackDamage();
+
+	public abstract BattleDeckAttackDamage geteDeckCombineAttackDamage();
+
+	/*--------------------------------------------------------------------------------------------------------------------*/
+
 	protected static int[] dissociateIntarray(JsonObject json, String key) {
 		int[] intArray = null;
 		if (json.containsKey(key)) {
@@ -144,11 +157,16 @@ public abstract class AbstractBattle extends BattleDto {
 		}
 	}
 
+	public static boolean existBattleDeck(BattleDeck deck) {
+		return ToolUtils.notNullThenHandle(deck, BattleDeck::exist, false);
+	}
+
 	/**
 	 * 战斗时的舰队的信息
 	 * @author MoeKagari
 	 */
-	public static class BattleDeck {
+	public static class BattleDeck extends AbstractMemory {
+		private static final long serialVersionUID = 1L;
 		public final ArrayList<Integer> escapes = new ArrayList<>();
 		public final boolean isCombine;
 		public final boolean isEnemy;
@@ -170,7 +188,7 @@ public abstract class AbstractBattle extends BattleDto {
 		public int getDeckLength() {
 			int count = 0;
 			for (int i = 0; i < 6; i++) {
-				if (this.nowhps[i] != -1) {
+				if (this.maxhps[i] != -1) {
 					count++;
 				}
 			}
@@ -182,11 +200,34 @@ public abstract class AbstractBattle extends BattleDto {
 		}
 	}
 
+	public static abstract class BattleStage extends AbstractMemory {
+		private static final long serialVersionUID = 1L;
+		public final BattleDeckAttackDamage fAttackDamage = new BattleDeckAttackDamage();
+		public final BattleDeckAttackDamage eAttackDamage = new BattleDeckAttackDamage();
+		public final BattleDeckAttackDamage fAttackDamageco = new BattleDeckAttackDamage();
+		public final BattleDeckAttackDamage eAttackDamageco = new BattleDeckAttackDamage();
+		public final ArrayList<BattleOneAttack> battleAttacks = new ArrayList<>();
+
+		public void accept(BattleOneAttackSimulator boas) {
+			this.fAttackDamage.getDamage(boas.fdmg);
+			this.fAttackDamage.setAttack(boas.fatt);
+			this.eAttackDamage.getDamage(boas.edmg);
+			this.eAttackDamage.setAttack(boas.eatt);
+			this.fAttackDamageco.getDamage(boas.fdmgco);
+			this.fAttackDamageco.setAttack(boas.fattco);
+			this.eAttackDamageco.getDamage(boas.edmgco);
+			this.eAttackDamageco.setAttack(boas.eattco);
+		}
+
+		public abstract String getStageName();
+	}
+
 	/**
 	 * 昼战开幕反潜,三次炮击战,夜战
 	 * @author MoeKagari
 	 */
-	public static class BattleOneAttack {
+	public static class BattleOneAttack extends AbstractMemory {
+		private static final long serialVersionUID = 1L;
 		/** 敌联合舰队时存在(因为有混战)  */
 		public final Boolean enemyAttack;
 		public final int attackIndex;//攻击方位置(1-12),enemyAttack所代表的两只舰队,非联合舰队时,自方舰队在前,联合舰队时,第一舰队在前
@@ -219,7 +260,8 @@ public abstract class AbstractBattle extends BattleDto {
 	 * 接收{@link BattleOneAttack}进行模拟
 	 * @author MoeKagari
 	 */
-	public static class BattleOneAttackSimulator {
+	public static class BattleOneAttackSimulator extends AbstractMemory {
+		private static final long serialVersionUID = 1L;
 		public final int[] fdmg = new int[6];
 		public final int[] fatt = new int[6];
 		public final int[] edmg = new int[6];
@@ -266,7 +308,8 @@ public abstract class AbstractBattle extends BattleDto {
 	 * 供每个 BattleStage 用
 	 * @author MoeKagari
 	 */
-	public static class BattleDeckAttackDamage {
+	public static class BattleDeckAttackDamage extends AbstractMemory {
+		private static final long serialVersionUID = 1L;
 		public final int[] dmgs = new int[6];
 		public final int[] attack = new int[6];
 

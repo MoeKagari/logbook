@@ -10,8 +10,8 @@ import java.io.Serializable;
 import logbook.internal.LoggerHolder;
 
 public class AppConfig implements Serializable {
-	private static final LoggerHolder LOG = new LoggerHolder(AppConfig.class);
 	private static final long serialVersionUID = 1L;
+	private static final LoggerHolder LOG = new LoggerHolder(AppConfig.class);
 	private static AppConfig config = null;
 	private static final File file = new File(AppConstants.APPCONFIGS_FILEPATH);
 
@@ -24,7 +24,7 @@ public class AppConfig implements Serializable {
 		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
 			Object obj = ois.readObject();
 			if (obj instanceof AppConfig) {
-				config = (AppConfig) obj;
+				//config = (AppConfig) obj;
 			}
 		} catch (Exception e) {
 			LOG.get().warn("app配置读取失败", e);
@@ -42,9 +42,9 @@ public class AppConfig implements Serializable {
 	private int listenPort = 8889;
 	private boolean allowOnlyFromLocalhost = false;
 	private boolean closeOutsidePort = true;
-	private boolean useProxy = true;
+	private boolean useProxy = false;
 	private String proxyHost = "127.0.0.1";
-	private int proxyPort = 8888;
+	private int proxyPort = 8099;
 
 	private boolean noticeDeckmission = true;
 	private boolean noticeNdock = true;

@@ -57,8 +57,17 @@ import logbook.util.ToolUtils;
 public class ApplicationMain {
 
 	public static void main(String[] args) {
-		//多重启动检查之后启动
-		ToolUtils.ifHandle(applicationLockCheck(), ApplicationMain::startLogbook);
+		boolean test = true;
+		if (!test) {
+			main = new ApplicationMain();
+			HPMessage.initColor(main);
+			main.display();//程序堵塞在这里
+			main.dispose();
+			HPMessage.dispose();
+		} else {
+			//多重启动检查之后启动			
+			ToolUtils.ifHandle(applicationLockCheck(), ApplicationMain::startLogbook);
+		}
 	}
 
 	/**
@@ -116,6 +125,9 @@ public class ApplicationMain {
 	private static final LoggerHolder userLogger = new LoggerHolder("user");
 
 	/*------------------------------------------------------------------------------------------------------*/
+
+	/** 悬浮窗 */
+	private FloatingWindow floatingWindow;
 
 	/** 舰队面板-全 */
 	private FleetWindowAll fleetWindowAll;
@@ -192,7 +204,7 @@ public class ApplicationMain {
 	private org.eclipse.swt.widgets.List console;
 
 	private Composite rightComposite;//右面板
-	private final int fleetLength = 2;
+	private final int fleetLength = 1;
 	private FleetWindow[] fleetWindows;//舰队面板
 
 	private ApplicationMain() {
@@ -209,7 +221,8 @@ public class ApplicationMain {
 		this.initMenuBar();
 		this.shell.setMenuBar(this.menubar);
 
-		this.windows = new WindowBase[] {//{//
+		this.windows = new WindowBase[] {//
+				this.floatingWindow,//
 				this.fleetWindowAll, this.fleetWindowOuts[0], this.fleetWindowOuts[1], this.fleetWindowOuts[2], this.fleetWindowOuts[3],//
 				this.calcuExpWindow, this.calcuPracticeExpWindow,//
 				this.battleWindow, this.battleWindow.getBattleFlowWindow(), this.mapinfoWindow,//
@@ -444,7 +457,7 @@ public class ApplicationMain {
 
 			MenuItem dispose = new MenuItem(cmdMenu, SWT.NONE);
 			dispose.setText("退出");
-			dispose.addSelectionListener(new ControlSelectionListener(ev -> this.shell.close()));
+			dispose.addSelectionListener(new ControlSelectionListener(this.shell::close));
 		}
 
 		MenuItem recordMenuItem = new MenuItem(this.menubar, SWT.CASCADE);
@@ -500,9 +513,15 @@ public class ApplicationMain {
 
 			this.fleetWindowOuts = new FleetWindowOut[4];
 			for (int i = 0; i < this.fleetWindowOuts.length; i++) {
+				int index = i;
 				MenuItem fleetWindowOutMenuItem = new MenuItem(fleetMenu, SWT.CHECK);
-				fleetWindowOutMenuItem.setText(AppConstants.DEFAULT_FLEET_NAME[i]);
-				this.fleetWindowOuts[i] = new FleetWindowOut(this, fleetWindowOutMenuItem, i + 1);
+				fleetWindowOutMenuItem.setText(AppConstants.DEFAULT_FLEET_NAME[index]);
+				this.fleetWindowOuts[index] = new FleetWindowOut(this, fleetWindowOutMenuItem, index + 1) {
+					@Override
+					public int getId() {
+						return index;
+					}
+				};
 			}
 		}
 
@@ -524,6 +543,11 @@ public class ApplicationMain {
 		etcMenuItem.setText("其它");
 		Menu etcMenu = new Menu(etcMenuItem);
 		etcMenuItem.setMenu(etcMenu);
+		{
+			MenuItem floatwindow = new MenuItem(etcMenu, SWT.CHECK);
+			floatwindow.setText("悬浮窗");
+			this.floatingWindow = new FloatingWindow(this, floatwindow, floatwindow.getText());
+		}
 		{
 			MenuItem deckbuilder = new MenuItem(etcMenu, SWT.PUSH);
 			deckbuilder.setText("DeckBuilder");
@@ -603,6 +627,10 @@ public class ApplicationMain {
 		return this.windows;
 	}
 
+	public FloatingWindow getFloatingWindow() {
+		return this.floatingWindow;
+	}
+
 	/*----------------------------------------------------------------------------------------------------------------*/
 
 	public void printMessage(String mes, boolean printToLog) {
@@ -631,7 +659,6 @@ public class ApplicationMain {
 		this.printNewDay(TimeString.getCurrentTime());
 		this.printMessage("航海日志启动", true);
 		this.shell.open();
-		this.shell.forceActive();
 		this.rightComposite.forceFocus();
 		while (this.shell.isDisposed() == false) {
 			ToolUtils.ifNotHandle(this.display.readAndDispatch(), this.display::sleep);

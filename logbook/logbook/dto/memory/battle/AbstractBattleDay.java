@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonValue;
 
 import logbook.dto.memory.battle.daymidnight.BattleDayDto;
 import logbook.dto.memory.battle.daymidnight.CombinebattleDayDto;
@@ -16,7 +17,8 @@ import logbook.util.JsonUtils;
 import logbook.util.ToolUtils;
 
 public abstract class AbstractBattleDay extends AbstractBattle {
-	private ArrayList<BattleDayStage> battleDayStage = new ArrayList<>();
+	private static final long serialVersionUID = 1L;
+	public final ArrayList<BattleDayStage> battleDayStage = new ArrayList<>();
 
 	public AbstractBattleDay(Data data, JsonObject json) {
 		super(json);
@@ -63,22 +65,22 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		}
 	}
 
-	public ArrayList<BattleDayStage> getBattleDayStage() {
-		return this.battleDayStage;
-	}
-
+	@Override
 	public BattleDeckAttackDamage getfDeckAttackDamage() {
 		return this.getBattleDeckAttackDamage(bds -> bds.fAttackDamage);
 	}
 
+	@Override
 	public BattleDeckAttackDamage getfDeckCombineAttackDamage() {
 		return this.getBattleDeckAttackDamage(bds -> bds.fAttackDamageco);
 	}
 
+	@Override
 	public BattleDeckAttackDamage geteDeckAttackDamage() {
 		return this.getBattleDeckAttackDamage(bds -> bds.eAttackDamage);
 	}
 
+	@Override
 	public BattleDeckAttackDamage geteDeckCombineAttackDamage() {
 		return this.getBattleDeckAttackDamage(bds -> bds.eAttackDamageco);
 	}
@@ -98,64 +100,23 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 
 	/*---------------------------------昼战的各个战斗阶段--------------------------------------------*/
 
-	public abstract class BattleDayStage {
-		public final BattleDeckAttackDamage fAttackDamage = new BattleDeckAttackDamage();
-		public final BattleDeckAttackDamage eAttackDamage = new BattleDeckAttackDamage();
-		public final BattleDeckAttackDamage fAttackDamageco = new BattleDeckAttackDamage();
-		public final BattleDeckAttackDamage eAttackDamageco = new BattleDeckAttackDamage();
-		public final ArrayList<BattleOneAttack> battleAttacks = new ArrayList<>();
-
-		public String getStageName() {
-			return this.getType().getName();
-		}
-
-		public void accept(BattleOneAttackSimulator boas) {
-			this.fAttackDamage.getDamage(boas.fdmg);
-			this.fAttackDamage.setAttack(boas.fatt);
-			this.eAttackDamage.getDamage(boas.edmg);
-			this.eAttackDamage.setAttack(boas.eatt);
-			this.fAttackDamageco.getDamage(boas.fdmgco);
-			this.fAttackDamageco.setAttack(boas.fattco);
-			this.eAttackDamageco.getDamage(boas.edmgco);
-			this.eAttackDamageco.setAttack(boas.eattco);
-		}
-
-		public abstract BattleDayStageType getType();
-	}
-
-	public enum BattleDayStageType {
-		AIRBASEINJECTION("基地航空队-喷气机"),
-		INJECTIONKOUKO("喷气机航空战"),
-		AIRBASEATTACK("基地航空队"),
-		KOUKO("航空战"),
-		SUPPORTATTACK("支援舰队"),
-		OPENINGTAISEN("先制反潜"),
-		OPENINGATTACK("开幕雷击"),
-		HOUGEKI("炮击战"),
-		RAIGEKI("雷击战");
-
-		private final String name;
-
-		private BattleDayStageType(String name) {
-			this.name = name;
-		}
-
-		public String getName() {
-			return this.name;
-		}
+	public abstract class BattleDayStage extends BattleStage {
+		private static final long serialVersionUID = 1L;
 	}
 
 	public class AirbaseInjection extends BattleDayStage {
+		private static final long serialVersionUID = 1L;
 
 		public AirbaseInjection(JsonObject json) {}
 
 		@Override
-		public BattleDayStageType getType() {
-			return BattleDayStageType.AIRBASEINJECTION;
+		public String getStageName() {
+			return "基地航空队-喷气机";
 		}
 	}
 
 	public class InjectionKouko extends BattleDayStage {
+		private static final long serialVersionUID = 1L;
 		private final int[][] planeLostStage1 = new int[][] { null, null };
 		private final int[][] planeLostStage2 = new int[][] { null, null };
 
@@ -173,26 +134,32 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			int[] fdmgco = new int[6];
 			int[] edmgco = new int[6];
 			{
-				JsonObject stage3 = json.getJsonObject("api_stage3");
-				int[] fdam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_fdam"));
-				int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_edam"));
-				for (int i = 1; i <= 6; i++) {
-					fdmg[i - 1] += fdam[i];
-					edmg[i - 1] += edam[i];
+				JsonValue api_stage3 = json.get("api_stage3");
+				if (api_stage3 instanceof JsonObject) {//舰载机被打光时，为JsonValue.NULL
+					JsonObject stage3 = (JsonObject) api_stage3;
+					int[] fdam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_fdam"));
+					int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_edam"));
+					for (int i = 1; i <= 6; i++) {
+						fdmg[i - 1] += fdam[i];
+						edmg[i - 1] += edam[i];
+					}
 				}
 			}
 			if (json.containsKey("api_stage3_combined")) {
-				JsonObject stage3_combined = json.getJsonObject("api_stage3_combined");
-				if (stage3_combined.containsKey("api_fdam")) {
-					int[] fdam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3_combined, "api_fdam"));
-					for (int i = 1; i <= 6; i++) {
-						fdmgco[i - 1] += fdam[i];
+				JsonValue api_stage3_combined = json.get("api_stage3_combined");
+				if (api_stage3_combined instanceof JsonObject) {//舰载机被打光时，为JsonValue.NULL
+					JsonObject stage3_combined = (JsonObject) api_stage3_combined;
+					if (stage3_combined.containsKey("api_fdam")) {
+						int[] fdam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3_combined, "api_fdam"));
+						for (int i = 1; i <= 6; i++) {
+							fdmgco[i - 1] += fdam[i];
+						}
 					}
-				}
-				if (stage3_combined.containsKey("api_edam")) {
-					int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3_combined, "api_edam"));
-					for (int i = 1; i <= 6; i++) {
-						edmgco[i - 1] += edam[i];
+					if (stage3_combined.containsKey("api_edam")) {
+						int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3_combined, "api_edam"));
+						for (int i = 1; i <= 6; i++) {
+							edmgco[i - 1] += edam[i];
+						}
 					}
 				}
 			}
@@ -211,12 +178,13 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		}
 
 		@Override
-		public BattleDayStageType getType() {
-			return BattleDayStageType.INJECTIONKOUKO;
+		public String getStageName() {
+			return "航空战-喷气机";
 		}
 	}
 
 	public class AirbaseAttack extends BattleDayStage {
+		private static final long serialVersionUID = 1L;
 		private final int index;
 		private final int[][] planeLostStage1 = new int[][] { null, null };
 		private final int[][] planeLostStage2 = new int[][] { null, null };
@@ -270,16 +238,12 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 
 		@Override
 		public String getStageName() {
-			return "第" + new String[] { "一", "二", "三", "四", "五", "六", "七", "八" }[this.index] + "轮" + super.getStageName();
-		}
-
-		@Override
-		public BattleDayStageType getType() {
-			return BattleDayStageType.AIRBASEATTACK;
+			return "第" + new String[] { "一", "二", "三", "四", "五", "六", "七", "八" }[this.index] + "轮基地航空队";
 		}
 	}
 
 	public class Kouko extends BattleDayStage {
+		private static final long serialVersionUID = 1L;
 		private final int index;
 		private boolean[] stages = null;
 		private Integer seiku = null;
@@ -370,16 +334,12 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 
 		@Override
 		public String getStageName() {
-			return (this.index != 1 ? ("第" + new String[] { "零", "一", "二", "三", "四" }[this.index] + "轮") : "") + super.getStageName();
-		}
-
-		@Override
-		public BattleDayStageType getType() {
-			return BattleDayStageType.KOUKO;
+			return (this.index != 1 ? String.format("第%s轮", new String[] { "零", "一", "二", "三", "四" }[this.index]) : "") + "航空战";
 		}
 	}
 
 	public class SupportAttack extends BattleDayStage {
+		private static final long serialVersionUID = 1L;
 		private final int type;
 
 		public SupportAttack(int type, JsonObject json) {
@@ -407,17 +367,14 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			}
 		}
 
-		public String getSupportType() {
-			return BattleDto.getSupportType(this.type);
-		}
-
 		@Override
-		public BattleDayStageType getType() {
-			return BattleDayStageType.SUPPORTATTACK;
+		public String getStageName() {
+			return BattleDto.getSupportType(this.type);
 		}
 	}
 
 	public class OpeningTaisen extends BattleDayStage {
+		private static final long serialVersionUID = 1L;
 		/**
 		 *  0,开幕对潜<br>
 		 *  1,第一轮炮击战<br>
@@ -426,11 +383,13 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		 */
 		private final int index;
 
-		public OpeningTaisen(JsonObject json) {//开幕反潜用
+		/**开幕反潜用*/
+		public OpeningTaisen(JsonObject json) {
 			this(0, json);
 		}
 
-		public OpeningTaisen(int index, JsonObject json) {//炮击战用
+		/**炮击战用*/
+		public OpeningTaisen(int index, JsonObject json) {
 			this.index = index;
 			/** 敌联合舰队时存在(因为有混战)  */
 			JsonArray at_eflag = json.containsKey("api_at_eflag") ? json.getJsonArray("api_at_eflag") : null;
@@ -484,12 +443,13 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		}
 
 		@Override
-		public BattleDayStageType getType() {
-			return BattleDayStageType.OPENINGTAISEN;
+		public String getStageName() {
+			return "先制反潜";
 		}
 	}
 
 	public class OpeningAttack extends BattleDayStage {
+		private static final long serialVersionUID = 1L;
 		public int[] frai;
 		public int[] erai;
 		public int[] fdam;
@@ -512,7 +472,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					this.fAttackDamageco.getDamage(Arrays.copyOfRange(this.fdam, 7, 13));
 					break;
 				case 1 + 6:
-					if (AbstractBattleDay.this.getfDeckCombine() != null && AbstractBattleDay.this.getfDeckCombine().exist()) {//自方联合舰队,2队受到雷击
+					if (existBattleDeck(AbstractBattleDay.this.getfDeckCombine())) {//自方联合舰队,2队受到雷击
 						this.fAttackDamageco.getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
 					} else {//自方非联合舰队
 						this.fAttackDamage.getDamage(Arrays.copyOfRange(this.fdam, 1, 7));
@@ -525,7 +485,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					this.eAttackDamageco.getDamage(Arrays.copyOfRange(this.edam, 7, 13));
 					break;
 				case 1 + 6:
-					if (AbstractBattleDay.this.geteDeckCombine() != null && AbstractBattleDay.this.geteDeckCombine().exist()) {
+					if (existBattleDeck(AbstractBattleDay.this.geteDeckCombine())) {
 						this.eAttackDamageco.getDamage(Arrays.copyOfRange(this.edam, 1, 7));
 					} else {//敌方非联合舰队
 						this.eAttackDamage.getDamage(Arrays.copyOfRange(this.edam, 1, 7));
@@ -538,7 +498,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					this.fAttackDamageco.setAttack(Arrays.copyOfRange(this.fydam, 7, 13));
 					break;
 				case 1 + 6:
-					if (AbstractBattleDay.this.getfDeckCombine() != null && AbstractBattleDay.this.getfDeckCombine().exist()) {//自方联合舰队
+					if (existBattleDeck(AbstractBattleDay.this.getfDeckCombine())) {//自方联合舰队
 						this.fAttackDamageco.setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
 					} else {//自方非联合舰队
 						this.fAttackDamage.setAttack(Arrays.copyOfRange(this.fydam, 1, 7));
@@ -551,7 +511,7 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 					this.eAttackDamageco.setAttack(Arrays.copyOfRange(this.eydam, 7, 13));
 					break;
 				case 1 + 6:
-					if (AbstractBattleDay.this.geteDeckCombine() != null && AbstractBattleDay.this.geteDeckCombine().exist()) {
+					if (existBattleDeck(AbstractBattleDay.this.geteDeckCombine())) {
 						this.eAttackDamageco.setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
 					} else {//敌方非联合舰队
 						this.eAttackDamage.setAttack(Arrays.copyOfRange(this.eydam, 1, 7));
@@ -561,36 +521,34 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 		}
 
 		@Override
-		public BattleDayStageType getType() {
-			return BattleDayStageType.OPENINGATTACK;
+		public String getStageName() {
+			return "开幕雷击";
 		}
 	}
 
 	public class Hougeki extends OpeningTaisen {
+		private static final long serialVersionUID = 1L;
+
 		public Hougeki(int index, JsonObject json) {
 			super(index, json);
 		}
 
 		@Override
 		public String getStageName() {
-			return "第" + new String[] { "零", "一", "二", "三", "四" }[this.getIndex()] + "轮" + super.getStageName();
-		}
-
-		@Override
-		public BattleDayStageType getType() {
-			return BattleDayStageType.HOUGEKI;
+			return "第" + new String[] { "零", "一", "二", "三", "四" }[this.getIndex()] + "轮炮击战";
 		}
 	}
 
 	public class Raigeki extends OpeningAttack {
+		private static final long serialVersionUID = 1L;
+
 		public Raigeki(JsonObject json) {
 			super(json);
 		}
 
 		@Override
-		public BattleDayStageType getType() {
-			return BattleDayStageType.RAIGEKI;
+		public String getStageName() {
+			return "雷击战";
 		}
 	}
-
 }

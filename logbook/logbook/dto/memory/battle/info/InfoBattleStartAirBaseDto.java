@@ -6,6 +6,7 @@ import logbook.dto.memory.battle.AbstractInfoBattle;
 import logbook.update.data.Data;
 
 public class InfoBattleStartAirBaseDto extends AbstractInfoBattle {
+	private static final long serialVersionUID = 1L;
 	/* 三支路基的打击点 */
 	private final int strikePoint[][] = new int[][] { null, null, null };
 

@@ -1,5 +1,7 @@
 package logbook.dto.word;
 
+import java.io.Serializable;
+
 import javax.json.JsonObject;
 
 import logbook.dto.AbstractWord;
@@ -8,8 +10,8 @@ import logbook.dto.AbstractWord;
  * 玩家所持装备
  * @author MoeKagari
  */
-public class ItemDto extends AbstractWord {
-
+public class ItemDto extends AbstractWord implements Serializable {
+	private static final long serialVersionUID = 1L;
 	private final int id;
 	private final int slotitemId;
 	private boolean isLocked;

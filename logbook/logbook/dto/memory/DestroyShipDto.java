@@ -9,7 +9,7 @@ import logbook.dto.word.ShipDto;
  * @author MoeKagari
  */
 public class DestroyShipDto extends AbstractMemory {
-
+	private static final long serialVersionUID = 1L;
 	private final long time;
 	private final String event;
 	private final int id;
@@ -44,5 +44,4 @@ public class DestroyShipDto extends AbstractMemory {
 	public int getLevel() {
 		return this.level;
 	}
-
 }

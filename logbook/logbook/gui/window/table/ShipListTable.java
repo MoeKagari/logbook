@@ -14,8 +14,8 @@ import logbook.dto.translator.ItemDtoTranslator;
 import logbook.dto.translator.MasterDataDtoTranslator;
 import logbook.dto.translator.ShipDtoTranslator;
 import logbook.dto.word.ItemDto;
-import logbook.dto.word.ShipDto;
 import logbook.dto.word.MasterDataDto.MasterShipDataDto;
+import logbook.dto.word.ShipDto;
 import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
@@ -121,10 +121,18 @@ public abstract class ShipListTable extends AbstractTable<ShipDto> {
 		tcms.add(new TableColumnManager("Lock", rd -> rd.isLocked() ? "" : "无"));
 		tcms.add(new TableColumnManager("远征中", rd -> ShipDtoTranslator.isInMission(rd) ? "是" : ""));
 		tcms.add(new TableColumnManager("入渠中", rd -> ShipDtoTranslator.isInNyukyo(rd) ? "是" : ""));
-		tcms.add(new TableColumnManager("油耗", rd -> ToolUtils.notNullThenHandle(MasterDataDtoTranslator.getMasterShipDataDto(rd.getShipId()), MasterShipDataDto::getFuelMax, "")));
-		tcms.add(new TableColumnManager("弹耗", rd -> ToolUtils.notNullThenHandle(MasterDataDtoTranslator.getMasterShipDataDto(rd.getShipId()), MasterShipDataDto::getBullMax, "")));
-		tcms.add(new TableColumnManager("修理时间", rd -> TimeString.toDateRestString(rd.getNdockTime() / 1000, "")));
-		tcms.add(new TableColumnManager("修理花费", rd -> ShipDtoTranslator.getHPPercent(rd) != 1 ? Arrays.toString(rd.getNdockCost()) : ""));
+		tcms.add(new TableColumnManager("油耗", true, rd -> ToolUtils.notNullThenHandle(MasterDataDtoTranslator.getMasterShipDataDto(rd.getShipId()), MasterShipDataDto::getFuelMax, "")));
+		tcms.add(new TableColumnManager("弹耗", true, rd -> ToolUtils.notNullThenHandle(MasterDataDtoTranslator.getMasterShipDataDto(rd.getShipId()), MasterShipDataDto::getBullMax, "")));
+		{
+			TableColumnManager tcm = new TableColumnManager("修理时间", rd -> TimeString.toDateRestString(rd.getNdockTime() / 1000, ""));
+			tcm.setComparator((a, b) -> Long.compare(a.getNdockTime(), b.getNdockTime()));
+			tcms.add(tcm);
+		}
+		{
+			TableColumnManager tcm = new TableColumnManager("修理花费", rd -> ShipDtoTranslator.getHPPercent(rd) != 1 ? Arrays.toString(rd.getNdockCost()) : "");
+			tcm.setComparator((a, b) -> Integer.compare(a.getNdockCost()[0], b.getNdockCost()[0]));
+			tcms.add(tcm);
+		}
 	}
 
 	private void initTCMS2(List<TableColumnManager> tcms) {

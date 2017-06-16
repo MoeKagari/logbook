@@ -6,6 +6,7 @@ import logbook.dto.memory.battle.AbstractInfoBattleStartNext;
 import logbook.update.data.Data;
 
 public class InfoBattleStartDto extends AbstractInfoBattleStartNext {
+	private static final long serialVersionUID = 1L;
 	private final boolean combined;//是否是联合舰队出击
 	private final int deckId;//出击舰队,联合舰队时为1
 	private final int start;//出击点

@@ -50,6 +50,7 @@ public class WindowConfig implements Serializable {
 	private Point size = new Point(0, 0);
 	private boolean visible = false;
 	private boolean minimized = false;
+	private boolean topMost = false;
 
 	public Point getLocation() {
 		return this.location;
@@ -81,5 +82,13 @@ public class WindowConfig implements Serializable {
 
 	public void setMinimized(boolean minimized) {
 		this.minimized = minimized;
+	}
+
+	public boolean isTopMost() {
+		return this.topMost;
+	}
+
+	public void setTopMost(boolean topMost) {
+		this.topMost = topMost;
 	}
 }

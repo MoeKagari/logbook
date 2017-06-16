@@ -6,6 +6,8 @@ import logbook.dto.memory.battle.AbstractBattleDay;
 import logbook.update.data.Data;
 
 public class CombineBattleEachDayWaterDto extends AbstractBattleDay {
+	private static final long serialVersionUID = 1L;
+
 	public CombineBattleEachDayWaterDto(Data data, JsonObject json) {
 		super(data, json);
 	}

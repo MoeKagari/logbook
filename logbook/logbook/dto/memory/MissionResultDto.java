@@ -13,6 +13,7 @@ import logbook.util.JsonUtils;
  *
  */
 public class MissionResultDto extends AbstractMemory {
+	private static final long serialVersionUID = 1L;
 	private final int deckId;
 	private final int state;//0=失败,1=成功,2=大成功
 	private final String area;
@@ -35,11 +36,12 @@ public class MissionResultDto extends AbstractMemory {
 			this.material = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
 		}
 
-		if (json.containsKey("api_get_item1")) {
-			this.items[0] = new MissionResultItem(json.getJsonObject("api_get_item1"));
+		int[] flags = JsonUtils.getIntArray(json, "api_useitem_flag");
+		if (flags[0] != 0) {
+			this.items[0] = new MissionResultItem(json.getJsonObject("api_get_item1"), flags[0]);
 		}
-		if (json.containsKey("api_get_item2")) {
-			this.items[0] = new MissionResultItem(json.getJsonObject("api_get_item2"));
+		if (flags[1] != 0) {
+			this.items[1] = new MissionResultItem(json.getJsonObject("api_get_item2"), flags[1]);
 		}
 	}
 
@@ -85,14 +87,17 @@ public class MissionResultDto extends AbstractMemory {
 		return this.time;
 	}
 
-	public static class MissionResultItem {
+	public class MissionResultItem extends AbstractMemory {
+		private static final long serialVersionUID = 1L;
+		private final int flag;
 		private final int id;
 		private final String name;
 		private final int count;
 
-		public MissionResultItem(JsonObject json) {
+		public MissionResultItem(JsonObject json, int flag) {
+			this.flag = flag;
 			this.id = json.getInt("api_useitem_id");
-			this.name = json.getString("api_useitem_name", "");
+			this.name = json.getString("api_useitem_name", null);
 			this.count = json.getInt("api_useitem_count");
 		}
 
@@ -101,7 +106,7 @@ public class MissionResultDto extends AbstractMemory {
 		}
 
 		public String getName() {
-			switch (this.id) {
+			switch (this.flag) {
 				case 0:
 					return "";
 				case 1:
@@ -112,17 +117,12 @@ public class MissionResultDto extends AbstractMemory {
 					return "开发资材";
 				case 4:
 					return this.name;
-				case 5:
-					return "家具币";
-				default:
-					return "";
 			}
+			return this.flag + ":" + this.id + ":" + this.name;
 		}
 
 		public int getCount() {
 			return this.count;
 		}
-
 	}
-
 }

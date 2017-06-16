@@ -6,6 +6,8 @@ import logbook.dto.memory.battle.AbstractBattleDay;
 import logbook.update.data.Data;
 
 public class PracticeBattleDayDto extends AbstractBattleDay {
+	private static final long serialVersionUID = 1L;
+
 	public PracticeBattleDayDto(Data data, JsonObject json) {
 		super(data, json);
 	}

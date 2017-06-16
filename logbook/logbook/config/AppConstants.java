@@ -29,4 +29,7 @@ public class AppConstants {
 	/** 记录文件 */
 	public static final File MEMORY_FILE = new File("memory").getAbsoluteFile();
 
+	/** 所有装备 */
+	public static final File ITEM_FILE = new File("item").getAbsoluteFile();
+
 }

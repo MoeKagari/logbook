@@ -139,6 +139,10 @@ public abstract class BattleDto extends AbstractMemory {
 				}
 				break;
 			case 7:
+				switch (nextEventKind) {
+					case 0:
+						return "航空侦察";
+				}
 				break;
 			case 8:
 				switch (nextEventKind) {

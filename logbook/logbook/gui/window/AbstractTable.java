@@ -17,12 +17,11 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.ToolItem;
 
 import logbook.gui.listener.ControlSelectionListener;
 import logbook.update.GlobalContext;
 import logbook.update.data.DataType;
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 public abstract class AbstractTable<T> extends WindowBase {
 	private Table table;
@@ -30,22 +29,24 @@ public abstract class AbstractTable<T> extends WindowBase {
 	private final List<TableColumnManager> tcms = new ArrayList<>();
 	private final List<TableColumn> sortColumns = new ArrayList<>();//多级排序顺序
 	private final Predicate<T> filter;
+	private final ControlSelectionListener updateTableListener = new ControlSelectionListener(ev -> this.updateWindowRedraw(this::updateTable));
 
 	public AbstractTable(ApplicationMain main, MenuItem menuItem, String title) {
 		super(main, menuItem, title);
-		this.tcms.add(new TableColumnManager("", true, null));//行头
+
+		this.filter = this.initFilter();
 		this.initTCMS(this.tcms);
-		this.filter = this.initFilter().negate();
 		this.initTable();
 		this.initMenuBar();
 	}
 
 	private void initTable() {
-		this.table = new Table(this.getComposite(), SWT.MULTI | SWT.FULL_SELECTION);
+		this.table = new Table(this.getComposite(), SWT.MULTI | SWT.HIDE_SELECTION);
 		this.table.setLayoutData(new GridData(GridData.FILL_BOTH));
 		this.table.setHeaderVisible(true);
 		this.table.setLinesVisible(true);
 
+		this.tcms.add(0, new TableColumnManager("", true, null));//行头
 		for (int index = 0; index < this.tcms.size(); index++) {
 			new SortedTableColumn(index, this.tcms.get(index));
 		}
@@ -59,7 +60,7 @@ public abstract class AbstractTable<T> extends WindowBase {
 		{
 			MenuItem update = new MenuItem(cmdMenu, SWT.PUSH);
 			update.setText("刷新");
-			update.addSelectionListener(new ControlSelectionListener(ev -> this.updateWindowRedraw(this::updateTable)));
+			update.addSelectionListener(this.updateTableListener);
 
 			MenuItem autoWidth = new MenuItem(cmdMenu, SWT.PUSH);
 			autoWidth.setText("自适应列宽");
@@ -73,23 +74,23 @@ public abstract class AbstractTable<T> extends WindowBase {
 
 	/*------------------------------------------------------------------------------------------------------------------------*/
 
+	@Override
+	public void update(DataType type) {
+		if (this.needUpdate(type) && this.getShell().isVisible()) {
+			this.updateWindowRedraw(this::updateTable);
+		}
+	}
+
 	/** 清除排序 */
 	private void clearSort() {
-		this.table.setSortColumn(null);
 		this.sortColumns.clear();
+		this.table.setSortColumn(null);
 		this.updateTable();
 	}
 
 	/** 自适应列宽 */
 	private void autoWidth() {
 		ToolUtils.forEach(this.table.getColumns(), TableColumn::pack);
-	}
-
-	@Override
-	public void update(DataType type) {
-		if (this.needUpdate(type) && this.getShell().isVisible()) {
-			this.updateWindowRedraw(this::updateTable);
-		}
 	}
 
 	private void updateTable() {
@@ -124,42 +125,24 @@ public abstract class AbstractTable<T> extends WindowBase {
 		this.table.setTopIndex(top);
 	}
 
-	/**
-	 * 排序table
-	 * @param stc 需要排序的TableColumn
-	 */
-	@SuppressWarnings("unchecked")
-	private void sortTable(SortedTableColumn stc) {
-		TableItem[] tableItems = this.table.getItems();
-		Arrays.sort(tableItems, (a, b) -> stc.compare((DataTableItem) a, (DataTableItem) b));
-		for (TableItem tableItem : tableItems) {
-			T data = ((DataTableItem) tableItem).data;
-			String[] values = ToolUtils.toStringArray(this.tcms.size(), tableItem::getText);
-
-			tableItem.dispose();
-			new DataTableItem(data).setText(values);
-		}
-		//刷新行号
-		ToolUtils.forEach(this.table.getItems(), (tableItem, index) -> tableItem.setText(0, String.valueOf(index + 1)));
-	}
-
 	/*------------------------------------------------------------------------------------------------------------------------*/
 
+	public ControlSelectionListener getUpdateTableListener() {
+		return this.updateTableListener;
+	}
+
+	/** 时候remove某条data */
 	protected Predicate<T> initFilter() {
-		return data -> true;
+		return data -> false;
 	}
 
 	protected abstract void initTCMS(List<AbstractTable<T>.TableColumnManager> tcms);
 
 	protected abstract void updateData(List<T> datas);
 
-	/** {@link GlobalContext}接收到类型为type的数据,更新了全局数据后,是否更新此table */
+	/** {@link GlobalContext}接收到类型为type的数据,更新了全局数据后,是否自动更新此table */
 	protected boolean needUpdate(DataType type) {
 		return false;
-	}
-
-	protected ToolItem newToolItem(int style, String text) {
-		return super.newToolItem(style, text, ev -> this.updateWindowRedraw(this::updateTable));
 	}
 
 	@Override
@@ -167,6 +150,7 @@ public abstract class AbstractTable<T> extends WindowBase {
 		return super.getShellStyle() | SWT.MAX;
 	}
 
+	/** 隐藏之前清空 */
 	@Override
 	protected void handlerAfterHidden() {
 		ToolUtils.forEach(this.table.getItems(), TableItem::dispose);
@@ -249,18 +233,32 @@ public abstract class AbstractTable<T> extends WindowBase {
 		@Override
 		public void handleEvent(Event ev) {
 			if (this.index == 0) return;//不对行头排序
-
-			if (AbstractTable.this.table.getSortColumn() == this.tableColumn) {
-				//如果不是改变排序列,则改变排序方向
-				this.direction = !this.direction;
-			}
-
-			AbstractTable.this.updateWindowRedraw(ToolUtils.getRunnable(this, AbstractTable.this::sortTable));
-			AbstractTable.this.table.setSortColumn(this.tableColumn);
-			AbstractTable.this.table.setSortDirection(this.direction ? SWT.DOWN : SWT.UP);
-
 			AbstractTable.this.sortColumns.remove(this.tableColumn);
 			AbstractTable.this.sortColumns.add(this.tableColumn);
+
+			if (AbstractTable.this.table.getSortColumn() == this.tableColumn) {
+				this.direction = !this.direction;//如果不是改变排序列,则改变排序方向
+			}
+
+			AbstractTable.this.updateWindowRedraw(this::sortTable);
+			AbstractTable.this.table.setSortColumn(this.tableColumn);
+			AbstractTable.this.table.setSortDirection(this.direction ? SWT.DOWN : SWT.UP);
+		}
+
+		/* 排序table */
+		@SuppressWarnings("unchecked")
+		private void sortTable() {
+			TableItem[] tableItems = AbstractTable.this.table.getItems();
+			Arrays.sort(tableItems, (a, b) -> this.compare((DataTableItem) a, (DataTableItem) b));
+			for (TableItem tableItem : tableItems) {
+				T data = ((DataTableItem) tableItem).data;
+				String[] values = ToolUtils.toStringArray(AbstractTable.this.tcms.size(), tableItem::getText);
+
+				tableItem.dispose();
+				new DataTableItem(data).setText(values);
+			}
+			//刷新行号
+			ToolUtils.forEach(AbstractTable.this.table.getItems(), (tableItem, index) -> tableItem.setText(0, String.valueOf(index + 1)));
 		}
 
 		public int compare(DataTableItem item1, DataTableItem item2) {

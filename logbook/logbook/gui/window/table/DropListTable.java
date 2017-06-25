@@ -1,5 +1,6 @@
 package logbook.gui.window.table;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -20,7 +21,7 @@ import logbook.dto.translator.BattleDtoTranslator;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
 import logbook.update.GlobalContext;
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 掉落记录
@@ -45,6 +46,14 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 			});
 			tcms.add(tcm);
 		}
+		tcms.add(new TableColumnManager("起终", rd -> {
+			boolean start = rd.battleStartNext.isStart();
+			boolean goal = rd.battleStartNext.isGoal();
+			if (start && goal) return "起终";
+			if (start) return "起点";
+			if (goal) return "终点";
+			return "";
+		}));
 		tcms.add(new TableColumnManager("Cell", true, rd -> rd.battleStartNext.getNext()));
 		tcms.add(new TableColumnManager("敌舰队", rd -> rd.battleResult.getDeckName()));
 		tcms.add(new TableColumnManager("Boss", rd -> rd.battleStartNext.isBoss() ? "是" : ""));
@@ -56,8 +65,8 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 				return rank;
 			}
 		}));
-		tcms.add(new TableColumnManager("舰种", rd -> ToolUtils.notNullThenHandle(rd.battleResult.getNewShip(), BattleResult_GetShip::getType, "")));
-		tcms.add(new TableColumnManager("舰名", rd -> ToolUtils.notNullThenHandle(rd.battleResult.getNewShip(), BattleResult_GetShip::getName, "")));
+		tcms.add(new TableColumnManager("舰种", rd -> ToolUtils.notNull(rd.battleResult.getNewShip(), BattleResult_GetShip::getType, "")));
+		tcms.add(new TableColumnManager("舰名", rd -> ToolUtils.notNull(rd.battleResult.getNewShip(), BattleResult_GetShip::getName, "")));
 
 	}
 
@@ -77,7 +86,7 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 		//没有演习
 		BattleDto battle = null;
 		while (it.hasNext()) {
-			if (battle instanceof AbstractInfoBattleStartNext == false) {
+			if (ToolUtils.isFalse(battle instanceof AbstractInfoBattleStartNext)) {
 				battle = next.get();
 				continue;
 			}
@@ -87,7 +96,7 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 			if (battle instanceof InfoBattleStartAirBaseDto) {
 				battle = next.get();
 			}
-			if (battle instanceof AbstractBattle == false) continue;
+			if (ToolUtils.isFalse(battle instanceof AbstractBattle)) continue;
 			long time = battle.getTime();//展示时间选择为战斗开始时间
 			boolean haveDamage = BattleDtoTranslator.haveDamage((AbstractBattle) battle);
 
@@ -96,11 +105,13 @@ public class DropListTable extends AbstractTable<DropListTable.SortDrop> {
 				haveDamage |= BattleDtoTranslator.haveDamage((AbstractBattle) battle);
 				battle = next.get();
 			}
-			if (battle instanceof InfoBattleResultDto == false) continue;
+			if (ToolUtils.isFalse(battle instanceof InfoBattleResultDto)) continue;
 			InfoBattleResultDto battleResult = (InfoBattleResultDto) battle;
 
 			datas.add(new SortDrop(battleStartNext, time, haveDamage, battleResult));
 		}
+
+		Collections.reverse(datas);
 	}
 
 	public class SortDrop {

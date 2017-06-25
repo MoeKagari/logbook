@@ -6,7 +6,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.MenuItem;
 
 import logbook.config.AppConstants;
-import logbook.util.SwtUtils;
+import logbook.utils.SwtUtils;
 
 /**
  * 舰队面板-单

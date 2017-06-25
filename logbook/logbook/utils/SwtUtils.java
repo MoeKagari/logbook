@@ -1,4 +1,4 @@
-package logbook.util;
+package logbook.utils;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;

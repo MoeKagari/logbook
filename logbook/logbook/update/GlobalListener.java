@@ -13,8 +13,8 @@ import logbook.dto.word.MapinfoDto.OneMap;
 import logbook.dto.word.MaterialDto;
 import logbook.gui.window.ApplicationMain;
 import logbook.update.data.DataType;
-import logbook.util.SwtUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.SwtUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 负责在{@link GlobalContext}更新数据之后更新一些界面

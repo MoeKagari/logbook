@@ -17,7 +17,7 @@ import logbook.gui.logic.TimeString;
 import logbook.update.GlobalContext;
 import logbook.update.GlobalContext.FleetAkashiTimer;
 import logbook.update.data.Data;
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 public class MainRoom extends ApiRoom {
 	/** 最后一次返回母港 */
@@ -57,7 +57,7 @@ public class MainRoom extends ApiRoom {
 			long newtime = this.lastUpdateTime;
 			GlobalContext.updatePLTIME(oldtime, oldconds, newtime, newconds);
 
-			ToolUtils.notNullThenHandle(GlobalContext.getAkashiTimer(), FleetAkashiTimer::resetWhenPort);
+			ToolUtils.notNull(GlobalContext.getAkashiTimer(), FleetAkashiTimer::resetWhenPort);
 		} catch (Exception e) {
 			this.getLog().get().warn("doPort" + "处理错误", e);
 			this.getLog().get().warn(data);

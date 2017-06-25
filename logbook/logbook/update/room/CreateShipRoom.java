@@ -11,7 +11,7 @@ import logbook.dto.word.KdockDto;
 import logbook.gui.logic.TimeString;
 import logbook.update.GlobalContext;
 import logbook.update.data.Data;
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 public class CreateShipRoom extends ApiRoom {
 	private final int id;

@@ -1,5 +1,6 @@
 package logbook.update;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -28,7 +29,6 @@ import logbook.dto.memory.DestroyItemDto;
 import logbook.dto.memory.DestroyShipDto;
 import logbook.dto.memory.battle.BattleDto;
 import logbook.dto.translator.DeckDtoTranslator;
-import logbook.dto.translator.ShipDtoTranslator;
 import logbook.dto.word.AirbaseDto;
 import logbook.dto.word.BasicDto;
 import logbook.dto.word.ItemDto;
@@ -61,7 +61,7 @@ import logbook.update.room.PracticeRoom;
 import logbook.update.room.PresetDeckRoom;
 import logbook.update.room.QuestRoom;
 import logbook.update.room.RemodelRoom;
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 负责更新全局数据
@@ -73,41 +73,37 @@ public class GlobalContext {
 	public static void load() {
 		try {
 			InputStream is;
-			if (AppConstants.MASTERDATA_FILE.exists() && AppConstants.MASTERDATA_FILE.isFile()) {
-				is = new FileInputStream(AppConstants.MASTERDATA_FILE);
+			File file = AppConstants.MASTERDATA_FILE;
+			if (file.exists() && file.isFile()) {
+				is = new FileInputStream(file);
 			} else {//读取程序内置的备份
 				is = GlobalContext.class.getResourceAsStream(AppConstants.MASTERDATAFILE_BACKUP);
 			}
 			JsonObject json = Json.createReader(new InputStreamReader(is, Charset.forName("utf-8"))).readObject();
 			masterData = new MasterDataDto(json);
+			is.close();
 		} catch (Exception e) {
 			ApplicationMain.main.printMessage("MasterData读取失败", false);
 			LOG.get().warn("MasterData读取失败", e);
 		}
 
 		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(AppConstants.MEMORY_FILE))) {
-			Object obj = ois.readObject();
-			if (obj instanceof List) {
-				((List<?>) obj).forEach(ele -> {
-					if (ele instanceof AbstractMemory) {
-						memoryList.memorys.add((AbstractMemory) ele);
-					}
-				});
-			}
+			((List<?>) ois.readObject()).forEach(ele -> {
+				if (ele instanceof AbstractMemory) {
+					memoryList.memorys.add((AbstractMemory) ele);
+				}
+			});
 		} catch (Exception e) {
 			LOG.get().warn("memory读取失败", e);
 		}
 
 		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(AppConstants.ITEM_FILE))) {
-			Object obj = ois.readObject();
-			if (obj instanceof Map) {
-				((Map<?, ?>) obj).forEach((id, ele) -> {
-					if (ele instanceof ItemDto) {
-						ItemDto item = (ItemDto) ele;
-						itemMap.put(item.getId(), item);
-					}
-				});
-			}
+			((List<?>) ois.readObject()).forEach(ele -> {
+				if (ele instanceof ItemDto) {
+					ItemDto item = (ItemDto) ele;
+					itemMap.put(item.getId(), item);
+				}
+			});
 		} catch (Exception e) {
 			LOG.get().warn("item读取失败", e);
 		}
@@ -129,7 +125,7 @@ public class GlobalContext {
 		}
 
 		try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(AppConstants.ITEM_FILE))) {
-			oos.writeObject(itemMap);
+			oos.writeObject(new ArrayList<>(itemMap.values()));
 		} catch (Exception e) {
 			LOG.get().warn("item保存失败", e);
 		}
@@ -484,7 +480,7 @@ public class GlobalContext {
 	/*----------------------------------------------静态方法------------------------------------------------------------------*/
 
 	public static void updatePLTIME(long oldtime, int[] oldconds, long newtime, int[] newconds) {
-		if (PLTIME != null && PLTIME.getRange() < 2) return;
+		if (PLTIME != null && PLTIME.getRange() < 2 * 1000) return;
 		if (oldtime <= 0 || newtime <= 0) return;
 
 		if (PLTime.need(oldtime, oldconds, newtime, newconds)) {
@@ -529,14 +525,14 @@ public class GlobalContext {
 	public static void destroyShip(long time, String event, int id) {
 		ShipDto ship = shipMap.get(id);
 		if (ship != null) {
-			final int count = ShipDtoTranslator.getSlotCount(ship);
+			final int count = Arrays.stream(ship.getSlots()).filter(slot -> slot > 0).map(i -> 1).sum();
 			ToolUtils.forEach(ship.getSlots(), item -> destroyItem(time, event, item, count));
 			destroyItem(time, event, ship.getSlotex(), -1);
 
 			memoryList.add(new DestroyShipDto(time, event, ship));
 			shipMap.remove(ship.getId());
 		}
-		ToolUtils.forEach(deckRoom, dr -> ToolUtils.notNullThenHandle(dr.getDeck(), deck -> deck.remove(id)));
+		ToolUtils.forEach(deckRoom, dr -> ToolUtils.notNull(dr.getDeck(), deck -> deck.remove(id)));
 	}
 
 	public static void destroyItem(long time, String event, int id, int group) {
@@ -587,11 +583,11 @@ public class GlobalContext {
 	}
 
 	public static void updateShip(int id, Consumer<ShipDto> handler) {
-		ToolUtils.notNullThenHandle(shipMap.get(id), handler);
+		ToolUtils.notNull(shipMap.get(id), handler);
 	}
 
 	public static ShipDto getSecretaryship() {
-		return ToolUtils.notNullThenHandle(deckRoom[0].getDeck(), deck -> getShip(deck.getShips()[0]), null);
+		return ToolUtils.notNull(deckRoom[0].getDeck(), deck -> getShip(deck.getShips()[0]), null);
 	}
 
 	public static void setAkashiTimer() {

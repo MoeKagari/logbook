@@ -50,8 +50,9 @@ import logbook.gui.logic.HPMessage;
 import logbook.gui.window.ApplicationMain;
 import logbook.internal.TrayMessageBox;
 import logbook.update.GlobalContext;
-import logbook.util.SwtUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.SwtUtils;
+import logbook.utils.ToolUtils;
+import logbook.utils.ToolUtils.BiIntObjFunction;
 
 public class BattleDtoTranslator {
 
@@ -89,7 +90,7 @@ public class BattleDtoTranslator {
 		base.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		//行进信息
-		ToolUtils.notNullThenHandle(btr.deckInformations, di -> newLabels(base, di));
+		ToolUtils.notNull(btr.deckInformations, di -> newLabels(base, di));
 		//战斗前后状态
 		if (btr.before != null && btr.after != null) {
 			Composite stateComposite = new Composite(base, SWT.NONE);
@@ -114,7 +115,9 @@ public class BattleDtoTranslator {
 			if (lastOne instanceof AbstractBattle) {//右键菜单,只对battle有效
 				MenuItem show = new MenuItem(new Menu(stateComposite), SWT.NONE);
 				show.setText("战斗流程");
-				if (handler != null) ControlSelectionListener.add(show, ev -> handler.accept((AbstractBattle) lastOne, ev));
+				if (handler != null) {
+					ControlSelectionListener.add(show, ev -> handler.accept((AbstractBattle) lastOne, ev));
+				}
 				SwtUtils.setMenu(stateComposite, show.getParent());
 			}
 		}
@@ -125,10 +128,9 @@ public class BattleDtoTranslator {
 	}
 
 	private static void newStateComposite(Composite composite, ArrayList<String[]> shipInformations) {
-		int length = shipInformations.stream().mapToInt(strs -> strs.length).max().orElse(0);
-		if (length == 0) return;
+		int length = shipInformations.stream().filter(ToolUtils::isNotNull).mapToInt(strs -> strs.length).max().orElse(0);
 
-		BiFunction<Integer, Integer, String> getText = (i, j) -> {
+		BiIntObjFunction<String> getText = (i, j) -> {
 			if (j >= shipInformations.size() || j < 0) return "";
 			String[] strs = shipInformations.get(j);
 			if (i >= strs.length || i < 0) return "";
@@ -139,13 +141,33 @@ public class BattleDtoTranslator {
 		oneSide.setLayout(SwtUtils.makeGridLayout(length, 4, 0, 0, 0));
 		oneSide.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
 		for (int i = 0; i < length; i++) {
+			int nullIndex = 0;
 			Composite oneState = new Composite(oneSide, SWT.NONE);
-			oneState.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
+			oneState.setLayout(SwtUtils.makeGridLayout(1, 0, 4, 0, 0));
 			oneState.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
-			for (int j = 0; j < shipInformations.size(); j++) {
-				String text = getText.apply(i, j);
-				Color background = HPMessage.getColor(text);
-				SwtUtils.initLabel(new Label(oneState, SWT.CENTER), text, new GridData(SWT.CENTER, SWT.CENTER, true, true), background);
+			{
+				Composite oneUpState = new Composite(oneState, SWT.NONE);
+				oneUpState.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
+				oneUpState.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
+				for (int j = 0; j < shipInformations.size(); j++) {
+					if (shipInformations.get(j) == null) {
+						nullIndex = j;
+						break;
+					}
+					String text = getText.apply(i, j);
+					Color background = HPMessage.getColor(text);
+					SwtUtils.initLabel(new Label(oneUpState, SWT.CENTER), text, new GridData(SWT.CENTER, SWT.CENTER, true, true), background);
+				}
+			}
+			{
+				Composite oneDownState = new Composite(oneState, SWT.NONE);
+				oneDownState.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
+				oneDownState.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
+				for (int j = nullIndex + 1; j < shipInformations.size(); j++) {
+					String text = getText.apply(i, j);
+					Color background = HPMessage.getColor(text);
+					SwtUtils.initLabel(new Label(oneDownState, SWT.CENTER), text, new GridData(SWT.CENTER, SWT.CENTER, true, true), background);
+				}
 			}
 		}
 	}
@@ -217,7 +239,7 @@ public class BattleDtoTranslator {
 		//下一点的类型
 				"(" + battleNext.getNextType() +
 				//获得资源
-				ToolUtils.notNullThenHandle(battleNext.getItems(), items -> items.stream().map(item -> "," + item.toString()).reduce("", StringUtils::join), "") +
+				ToolUtils.notNull(battleNext.getItems(), items -> items.stream().map(item -> "," + item.toString()).reduce("", StringUtils::join), "") +
 				//终点?
 				(battleNext.isGoal() ? ",终点" : "") + ")";
 		deckInformations.add(text);
@@ -237,7 +259,7 @@ public class BattleDtoTranslator {
 				text = "基地受损:" + Arrays.toString(Arrays.copyOfRange(destructionBattle.getBefore(), 0, 0 + len)) + "→" + Arrays.toString(Arrays.copyOfRange(destructionBattle.getAfter(), 0, 0 + len));
 				deckInformations.add(text);
 			}
-			ToolUtils.notNullThenHandle(destructionBattle.getSeiku(), deckInformations::add);
+			ToolUtils.notNull(destructionBattle.getSeiku(), deckInformations::add);
 			ToolUtils.forEach(destructionBattle.getLostKind().split("\n"), deckInformations::add);
 		}
 
@@ -291,26 +313,32 @@ public class BattleDtoTranslator {
 				int[] maxhps = bd.maxhps;
 				int[] dmgs = bdad.dmgs;
 
-				String[] oneStateBefore = new String[length];
-				String[] oneStateAfter = new String[length];
+				String[] oneBefore = new String[length];
+				String[] oneAfter = new String[length];
 				for (int index = 0; index < length; index++) {
-					oneStateBefore[index] = bd.escapes.contains(index) ? HPMessage.ESCAPE_STRING : HPMessage.getString(nowhps[index] * 1.0 / maxhps[index]);
-					oneStateAfter[index] = bd.escapes.contains(index) ? HPMessage.ESCAPE_STRING : HPMessage.getString((nowhps[index] - dmgs[index]) * 1.0 / maxhps[index]);
+					oneBefore[index] = bd.escapes.contains(index) ? HPMessage.ESCAPE_STRING : HPMessage.getString(ToolUtils.division(nowhps[index], maxhps[index]));
+					oneAfter[index] = bd.escapes.contains(index) ? HPMessage.ESCAPE_STRING : HPMessage.getString(ToolUtils.division(nowhps[index] - dmgs[index], maxhps[index]));
 				}
 
-				before.add(oneStateBefore);
-				after.add(oneStateAfter);
+				before.add(oneBefore);
+				after.add(oneAfter);
 			}
 		};
 
 		addOneState.accept(battleDto.getfDeck(), battleDto.getfDeckAttackDamage());
 		addOneState.accept(battleDto.getfDeckCombine(), battleDto.getfDeckCombineAttackDamage());
+
+		before.add(null);
+		after.add(null);
+
 		addOneState.accept(battleDto.geteDeck(), battleDto.geteDeckAttackDamage());
 		addOneState.accept(battleDto.geteDeckCombine(), battleDto.geteDeckCombineAttackDamage());
 
 		if (battleDto instanceof AbstractBattleMidnight) {
 			AbstractBattleMidnight battleMidnight = (AbstractBattleMidnight) battleDto;
-			if (battleMidnight.isMidnightOnly() == false) deckInformations.add("夜战");
+			if (battleMidnight.isMidnightOnly() == false) {
+				deckInformations.add("夜战");
+			}
 		}
 
 		return new BTResult(deckInformations, before, after);
@@ -330,7 +358,7 @@ public class BattleDtoTranslator {
 		for (int i = 0; i < strikePoints.length; i++) {
 			String number = NUMBERS[i];
 			int[] strikePoint = strikePoints[i];
-			ToolUtils.notNullThenHandle(strikePoint, sp -> deckInformations.add("第" + number + "基地航空队 -> " + Arrays.toString(sp)));
+			ToolUtils.notNull(strikePoint, sp -> deckInformations.add("第" + number + "基地航空队 -> " + Arrays.toString(sp)));
 		}
 
 		return new BTResult(deckInformations, null, null);
@@ -505,9 +533,9 @@ public class BattleDtoTranslator {
 		Composite composite = new Composite(parent, SWT.BORDER);
 		composite.setLayout(new RowLayout());
 
-		ToolUtils.notNullThenHandle(battle.getHangxiang(), hangxiang -> addOneBattleInformation(composite, "航向", hangxiang));
-		ToolUtils.notNullThenHandle(battle.getZhenxin(), zhenxin -> addOneBattleInformation(composite, "阵型", zhenxin[0], zhenxin[1]));
-		ToolUtils.notNullThenHandle(battle.getSearch(), search -> addOneBattleInformation(composite, "索敌", search[0], search[1]));
+		ToolUtils.notNull(battle.getHangxiang(), hangxiang -> addOneBattleInformation(composite, "航向", hangxiang));
+		ToolUtils.notNull(battle.getZhenxin(), zhenxin -> addOneBattleInformation(composite, "阵型", zhenxin[0], zhenxin[1]));
+		ToolUtils.notNull(battle.getSearch(), search -> addOneBattleInformation(composite, "索敌", search[0], search[1]));
 
 		if (battle instanceof AbstractBattleDay) {
 			AbstractBattleDay day = (AbstractBattleDay) battle;
@@ -517,8 +545,8 @@ public class BattleDtoTranslator {
 					Function<int[], String> getPLSString = pls -> pls == null ? "" : (pls[0] + "→" + (pls[0] - pls[1]));
 					Kouko kouko = (Kouko) stage;
 
-					ToolUtils.notNullThenHandle(kouko.getSeiku(), seiku -> addOneBattleInformation(composite, "制空", seiku));
-					ToolUtils.notNullThenHandle(kouko.getTouchPlane(), tp -> {
+					ToolUtils.notNull(kouko.getSeiku(), seiku -> addOneBattleInformation(composite, "制空", seiku));
+					ToolUtils.notNull(kouko.getTouchPlane(), tp -> {
 						if (tp[0] == true || tp[1] == true) {
 							addOneBattleInformation(composite, "触接", tp[0] ? "有" : "", tp[1] ? "有" : "");
 						}
@@ -548,12 +576,12 @@ public class BattleDtoTranslator {
 		}
 		if (battle instanceof AbstractBattleMidnight) {
 			AbstractBattleMidnight mid = (AbstractBattleMidnight) battle;
-			ToolUtils.notNullThenHandle(mid.getTouchPlane(), tp -> {
+			ToolUtils.notNull(mid.getTouchPlane(), tp -> {
 				if (tp[0] == true || tp[1] == true) {
 					addOneBattleInformation(composite, "触接", tp[0] ? "有" : "", tp[1] ? "有" : "");
 				}
 			});
-			ToolUtils.notNullThenHandle(mid.getFlare(), flare -> {
+			ToolUtils.notNull(mid.getFlare(), flare -> {
 				if (flare[0] == true || flare[1] == true) {
 					addOneBattleInformation(composite, "照明弹", flare[0] ? "有" : "", flare[1] ? "有" : "");
 				}
@@ -785,7 +813,7 @@ public class BattleDtoTranslator {
 			{
 				Label nameLabel = new Label(parts[0], SWT.CENTER);
 				SwtUtils.initLabel(nameLabel, name, new GridData(SWT.CENTER, SWT.CENTER, false, false), 55);
-				ToolUtils.notNullThenHandle(name, nameLabel::setToolTipText);
+				ToolUtils.notNull(name, nameLabel::setToolTipText);
 
 				String state = bd.escapes.contains(i) ? HPMessage.ESCAPE_STRING : HPMessage.getString(now * 1.0 / max);
 				Color color = HPMessage.getColor(state);

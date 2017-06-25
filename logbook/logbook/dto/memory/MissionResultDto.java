@@ -5,7 +5,7 @@ import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import logbook.dto.AbstractMemory;
-import logbook.util.JsonUtils;
+import logbook.utils.JsonUtils;
 
 /**
  * 远征结果

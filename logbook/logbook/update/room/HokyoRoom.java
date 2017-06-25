@@ -5,7 +5,7 @@ import javax.json.JsonValue;
 
 import logbook.update.GlobalContext;
 import logbook.update.data.Data;
-import logbook.util.JsonUtils;
+import logbook.utils.JsonUtils;
 
 public class HokyoRoom extends ApiRoom {
 	public void doCharge(Data data, JsonValue json) {

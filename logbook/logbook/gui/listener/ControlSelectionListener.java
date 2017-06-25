@@ -6,7 +6,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 public class ControlSelectionListener extends SelectionAdapter {
 	private final Consumer<SelectionEvent> handler;
@@ -21,7 +21,7 @@ public class ControlSelectionListener extends SelectionAdapter {
 
 	@Override
 	public void widgetSelected(SelectionEvent ev) {
-		ToolUtils.notNullThenHandle(this.handler, h -> h.accept(ev));
+		ToolUtils.notNull(this.handler, h -> h.accept(ev));
 	}
 
 	public static void add(MenuItem menuItem, Consumer<SelectionEvent> handler) {

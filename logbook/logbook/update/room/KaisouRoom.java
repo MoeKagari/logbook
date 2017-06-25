@@ -7,8 +7,8 @@ import logbook.dto.word.ShipDto;
 import logbook.gui.logic.TimeString;
 import logbook.update.GlobalContext;
 import logbook.update.data.Data;
-import logbook.util.JsonUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.JsonUtils;
+import logbook.utils.ToolUtils;
 
 public class KaisouRoom extends ApiRoom {
 
@@ -32,7 +32,7 @@ public class KaisouRoom extends ApiRoom {
 	public void doSlotItemLock(Data data, JsonValue json) {
 		try {
 			int id = Integer.parseInt(data.getField("api_slotitem_id"));
-			ToolUtils.notNullThenHandle(GlobalContext.getItem(id), item -> item.slotItemLock(((JsonObject) json).getInt("api_locked") == 1));
+			ToolUtils.notNull(GlobalContext.getItem(id), item -> item.slotItemLock(((JsonObject) json).getInt("api_locked") == 1));
 		} catch (Exception e) {
 			this.getLog().get().warn("doSlotItemLock" + "处理错误", e);
 			this.getLog().get().warn(data);

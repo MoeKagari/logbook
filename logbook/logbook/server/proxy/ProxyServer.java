@@ -10,7 +10,9 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Shell;
 
 import logbook.config.AppConfig;
 import logbook.gui.window.ApplicationMain;
@@ -73,7 +75,7 @@ public final class ProxyServer {
 				ApplicationMain.main.printMessage("代理已再启动", false);
 			}
 		} catch (Exception e) {
-			LOG.get().fatal("Proxyサーバーの起動に失敗しました", e);
+			LOG.get().fatal("代理再启动失败", e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -134,13 +136,15 @@ public final class ProxyServer {
 			sb.append("很有可能是由于其他软件使用同一端口导致的").append("\r\n");
 		}
 
-		ApplicationMain.main.getDisplay().asyncExec(new Runnable() {
+		Display.getDefault().asyncExec(new Runnable() {
 			@Override
 			public void run() {
-				MessageBox box = new MessageBox(ApplicationMain.main.getShell(), SWT.YES | SWT.ICON_ERROR);
+				Shell shell = new Shell(Display.getDefault());
+				MessageBox box = new MessageBox(shell, SWT.YES | SWT.ICON_ERROR);
 				box.setText("代理终了");
 				box.setMessage(sb.toString());
 				box.open();
+				shell.dispose();
 			}
 		});
 	}

@@ -14,8 +14,8 @@ import org.eclipse.swt.widgets.ProgressBar;
 import logbook.dto.word.MapinfoDto.OneMap;
 import logbook.update.GlobalContext;
 import logbook.update.data.DataType;
-import logbook.util.SwtUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.SwtUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 地图详情
@@ -53,7 +53,7 @@ public class MapinfoWindow extends WindowBase {
 
 	private void updateWindow() {
 		ToolUtils.forEach(this.contentComposite.getChildren(), Control::dispose);
-		ToolUtils.notNullThenHandle(GlobalContext.getMapinfo(), mapinfo -> mapinfo.getMaps().forEach(this::updateOneMap));
+		ToolUtils.notNull(GlobalContext.getMapinfo(), mapinfo -> mapinfo.getMaps().forEach(this::updateOneMap));
 		this.contentComposite.layout();
 	}
 

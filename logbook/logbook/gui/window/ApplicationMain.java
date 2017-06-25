@@ -48,11 +48,10 @@ import logbook.gui.window.table.ShipListTable;
 import logbook.internal.ApplicationLock;
 import logbook.internal.AsyncExecApplicationMain;
 import logbook.internal.LoggerHolder;
-import logbook.internal.ShutdownHookThread;
 import logbook.server.proxy.ProxyServer;
 import logbook.update.GlobalContext;
-import logbook.util.SwtUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.SwtUtils;
+import logbook.utils.ToolUtils;
 
 public class ApplicationMain {
 
@@ -60,19 +59,17 @@ public class ApplicationMain {
 		boolean test = true;
 		if (!test) {
 			main = new ApplicationMain();
+			main.shell.open();
 			HPMessage.initColor(main);
 			main.display();//程序堵塞在这里
-			main.dispose();
-			HPMessage.dispose();
+			main.display.dispose();
 		} else {
-			//多重启动检查之后启动			
+			//多重启动检查之后启动
 			ToolUtils.ifHandle(applicationLockCheck(), ApplicationMain::startLogbook);
 		}
 	}
 
-	/**
-	 * 没有锁住(false),代表本次启动为多重启动
-	 */
+	/**	  没有锁住(false),代表本次启动为多重启动	 */
 	private static boolean applicationLockCheck() {
 		if (applicationLock.isError() || applicationLock.isLocked()) return true;
 
@@ -96,19 +93,20 @@ public class ApplicationMain {
 		try {
 			AppConfig.load();
 			WindowConfig.load();
-			GlobalContext.load();
+
 			main = new ApplicationMain();
-			new AsyncExecApplicationMain(main).start();
-			ProxyServer.start();
+			main.shell.open();
 			HPMessage.initColor(main);
-			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
+			new AsyncExecApplicationMain(main).start();
+
+			ProxyServer.start();
+			GlobalContext.load();
 			main.display();//程序堵塞在这里
 		} catch (Exception | Error e) {
 			LOG.get().fatal("main thread 异常中止", e);
 		} finally {
 			applicationLock.release();
-			main.dispose();
-			HPMessage.dispose();
+			main.display.dispose();
 			ProxyServer.end();
 
 			AppConfig.store();
@@ -180,7 +178,6 @@ public class ApplicationMain {
 	private final Display display;
 	private final Image logo;
 	private final Shell shell;//主面板shell
-	private final Shell subShell;//辅助shell,不显示,用于其他呼出式窗口
 	private final Menu menubar;//菜单栏
 	private TrayItem trayItem;
 
@@ -212,7 +209,6 @@ public class ApplicationMain {
 		this.logo = new Image(this.display, this.getClass().getResourceAsStream(AppConstants.LOGO));
 		this.shell = new Shell(this.display, SWT.CLOSE | SWT.TITLE | SWT.MIN | SWT.RESIZE);
 		this.initShell();
-		this.subShell = new Shell(this.display, SWT.TOOL);
 		this.initLeftComposite();
 		this.initRightComposite();
 		this.initTrayItem();
@@ -233,6 +229,7 @@ public class ApplicationMain {
 				this.itemListTable, this.questListTable//
 		};
 		ToolUtils.forEach(this.windows, WindowBase::restoreWindowConfig);
+		ToolUtils.forEach(this.windows, WindowBase::resizeCoolBar);
 	}
 
 	private void initShell() {
@@ -410,8 +407,8 @@ public class ApplicationMain {
 			ship.setText("所有舰娘(信息)");
 			this.shipListTable1 = new ShipListTable(this, ship, ship.getText()) {
 				@Override
-				protected int getMode() {
-					return 1;
+				protected ShipListTableMode getMode() {
+					return ShipListTableMode.INFORMATION;
 				}
 			};
 			this.shipList.addSelectionListener(new ControlSelectionListener(this.shipListTable1::displayWindow));
@@ -420,8 +417,8 @@ public class ApplicationMain {
 			ship2.setText("所有舰娘(属性)");
 			this.shipListTable2 = new ShipListTable(this, ship2, ship2.getText()) {
 				@Override
-				protected int getMode() {
-					return 2;
+				protected ShipListTableMode getMode() {
+					return ShipListTableMode.PARAMENTER;
 				}
 			};
 
@@ -429,8 +426,8 @@ public class ApplicationMain {
 			ship3.setText("所有舰娘(综合)");
 			this.shipListTable3 = new ShipListTable(this, ship3, ship3.getText()) {
 				@Override
-				protected int getMode() {
-					return 3;
+				protected ShipListTableMode getMode() {
+					return ShipListTableMode.ALL;
 				}
 			};
 
@@ -452,6 +449,16 @@ public class ApplicationMain {
 			MenuItem mapinfo = new MenuItem(cmdMenu, SWT.CHECK);
 			mapinfo.setText("地图详情");
 			this.mapinfoWindow = new MapinfoWindow(this, mapinfo, mapinfo.getText());
+
+			new MenuItem(cmdMenu, SWT.SEPARATOR);
+
+			MenuItem expcalu = new MenuItem(cmdMenu, SWT.CHECK);
+			expcalu.setText("经验计算器");
+			this.calcuExpWindow = new CalcuExpWindow(this, expcalu, expcalu.getText());
+
+			MenuItem practiceexpcalu = new MenuItem(cmdMenu, SWT.CHECK);
+			practiceexpcalu.setText("演习经验计算器");
+			this.calcuPracticeExpWindow = new CalcuPracticeExpWindow(this, practiceexpcalu, practiceexpcalu.getText());
 
 			new MenuItem(cmdMenu, SWT.SEPARATOR);
 
@@ -525,20 +532,6 @@ public class ApplicationMain {
 			}
 		}
 
-		MenuItem calcMenuItem = new MenuItem(this.menubar, SWT.CASCADE);
-		calcMenuItem.setText("计算器");
-		Menu calcMenu = new Menu(calcMenuItem);
-		calcMenuItem.setMenu(calcMenu);
-		{
-			MenuItem expcalu = new MenuItem(calcMenu, SWT.CHECK);
-			expcalu.setText("经验计算器");
-			this.calcuExpWindow = new CalcuExpWindow(this, expcalu, expcalu.getText());
-
-			MenuItem practiceexpcalu = new MenuItem(calcMenu, SWT.CHECK);
-			practiceexpcalu.setText("演习经验计算器");
-			this.calcuPracticeExpWindow = new CalcuPracticeExpWindow(this, practiceexpcalu, practiceexpcalu.getText());
-		}
-
 		MenuItem etcMenuItem = new MenuItem(this.menubar, SWT.CASCADE);
 		etcMenuItem.setText("其它");
 		Menu etcMenu = new Menu(etcMenuItem);
@@ -563,10 +556,6 @@ public class ApplicationMain {
 
 	public Shell getShell() {
 		return this.shell;
-	}
-
-	public Shell getSubShell() {
-		return this.subShell;
 	}
 
 	public Display getDisplay() {
@@ -649,7 +638,7 @@ public class ApplicationMain {
 	private void printMessage(String message) {
 		if (this.console.isDisposed()) return;
 
-		ToolUtils.ifHandle(this.console.getItemCount() >= 200, () -> this.console.remove(0));
+		if (this.console.getItemCount() >= 200) this.console.remove(0);
 		this.console.add(message);
 		this.console.setSelection(this.console.getItemCount() - 1);
 		this.console.deselectAll();
@@ -658,24 +647,16 @@ public class ApplicationMain {
 	private void display() {
 		this.printNewDay(TimeString.getCurrentTime());
 		this.printMessage("航海日志启动", true);
-		this.shell.open();
-		this.rightComposite.forceFocus();
-		while (this.shell.isDisposed() == false) {
-			ToolUtils.ifNotHandle(this.display.readAndDispatch(), this.display::sleep);
+		this.resourceGroup.forceFocus();
+		while (ToolUtils.isFalse(this.shell.isDisposed())) {
+			ToolUtils.ifNotHandle(this.display, Display::readAndDispatch, Display::sleep);
 		}
 		this.display.dispose();
 	}
 
 	private void setVisible(boolean visible) {
-		ToolUtils.ifHandle(visible, () -> this.shell.setMinimized(false));
+		if (visible) this.shell.setMinimized(false);
 		this.shell.setVisible(visible);
 		ToolUtils.ifHandle(visible, this.shell::forceActive);
 	}
-
-	private void dispose() {
-		this.trayItem.dispose();
-		this.subShell.dispose();
-		this.logo.dispose();
-	}
-
 }

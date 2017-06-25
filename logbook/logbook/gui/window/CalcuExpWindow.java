@@ -24,8 +24,8 @@ import logbook.gui.logic.data.EvalMap;
 import logbook.gui.logic.data.SeaExpMap;
 import logbook.gui.logic.data.ShipExpMap;
 import logbook.update.GlobalContext;
-import logbook.util.SwtUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.SwtUtils;
+import logbook.utils.ToolUtils;
 
 public class CalcuExpWindow extends WindowBase {
 	private Combo shipcombo;

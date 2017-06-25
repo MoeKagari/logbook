@@ -1,22 +1,20 @@
 package logbook.gui.window;
 
-import java.util.function.Consumer;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseMoveListener;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.internal.win32.OS;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.CoolBar;
+import org.eclipse.swt.widgets.CoolItem;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolBar;
-import org.eclipse.swt.widgets.ToolItem;
 
 import logbook.config.WindowConfig;
 import logbook.gui.listener.ControlSelectionListener;
@@ -24,8 +22,8 @@ import logbook.gui.listener.NotCloseButHiddenShellListener;
 import logbook.update.GlobalContextUpdater;
 import logbook.update.data.DataType;
 import logbook.update.data.EventListener;
-import logbook.util.SwtUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.SwtUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 呼出式窗口的super class
@@ -39,14 +37,14 @@ public class WindowBase implements EventListener {
 	private final Menu menuBar;
 
 	private boolean topMost = false;
-	private ToolBar toolBar = null;
+	private CoolBar coolBar = null;
 	private WindowConfig windowConfig = null;
 	private final MouseDragListener mouseDragListener = new MouseDragListener();
 
 	public WindowBase(ApplicationMain main, MenuItem menuItem, String title) {
 		this.main = main;
 
-		this.shell = new Shell(main.getSubShell(), this.getShellStyle());
+		this.shell = new Shell(new Shell(main.getDisplay(), SWT.TOOL), this.getShellStyle());
 		this.shell.setText(title);
 		this.shell.setImage(main.getLogo());
 		this.shell.setSize(this.getDefaultSize());
@@ -55,22 +53,48 @@ public class WindowBase implements EventListener {
 		this.shell.addShellListener(new NotCloseButHiddenShellListener(this::hiddenWindow));
 		this.shell.addShellListener(new NotCloseButHiddenShellListener(this::handlerAfterHidden));
 
+		this.coolBar = new CoolBar(this.shell, SWT.HORIZONTAL);
+		this.coolBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		this.coolBar.addListener(SWT.Resize, event -> this.shell.layout());
+
 		this.composite = new Composite(this.shell, SWT.NONE);
 		this.composite.setLayout(SwtUtils.makeGridLayout(1, 0, 0, 0, 0));
 		this.composite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		this.menuItem = menuItem;
-		ToolUtils.notNullThenHandle(this.menuItem, mi -> ControlSelectionListener.add(mi, this::setVisible));
+		ToolUtils.notNull(this.menuItem, mi -> ControlSelectionListener.add(mi, this::setVisible));
 
 		this.menuBar = new Menu(this.shell, SWT.BAR);
 		this.shell.setMenuBar(this.menuBar);
 
-		if (this.haveToolBar()) {
-			this.toolBar = new ToolBar(this.composite, SWT.WRAP);
-			this.toolBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		GlobalContextUpdater.addEventListener(this);
+	}
+
+	public void resizeCoolBar() {
+		CoolItem[] items = this.coolBar.getItems();
+		for (int i = 0; i < items.length; i++) {
+			CoolItem item = items[i];
+			Control control = item.getControl();
+
+			Point controlSize = control.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+			Point coolItemSize = item.computeSize(controlSize.x, controlSize.y);
+
+			if (control instanceof ToolBar) {
+				ToolBar toolBar = (ToolBar) control;
+				if (toolBar.getItemCount() > 0) {
+					controlSize.x = toolBar.getItem(0).getWidth();
+				}
+			}
+			item.setMinimumSize(controlSize);
+			item.setPreferredSize(coolItemSize);
+			item.setSize(coolItemSize);
 		}
 
-		GlobalContextUpdater.addEventListener(this);
+		int[] ind = new int[items.length];
+		for (int index = 0; index < ind.length; index++) {
+			ind[index] = index;
+		}
+		this.coolBar.setWrapIndices(ind);
 	}
 
 	/*------------------------------------------------------------------------------------------------------------*/
@@ -114,6 +138,10 @@ public class WindowBase implements EventListener {
 		return this.menuBar;
 	}
 
+	public CoolBar getCoolBar() {
+		return this.coolBar;
+	}
+
 	public Shell getShell() {
 		return this.shell;
 	}
@@ -138,7 +166,7 @@ public class WindowBase implements EventListener {
 
 	private void setVisible(boolean visible) {
 		ToolUtils.ifHandle(visible, this::handlerBeforeDisplay);
-		ToolUtils.notNullThenHandle(this.menuItem, mi -> mi.setSelection(visible));
+		ToolUtils.notNull(this.menuItem, mi -> mi.setSelection(visible));
 		this.shell.setVisible(visible);
 		ToolUtils.ifHandle(visible, this.shell::forceActive);
 	}
@@ -168,25 +196,6 @@ public class WindowBase implements EventListener {
 
 	protected String getWindowConfigKey() {
 		return this.getClass().getName();
-	}
-
-	/** 是否有toolbar,默认false */
-	protected boolean haveToolBar() {
-		return false;
-	}
-
-	/**
-	 * 需要将haveToolBar()返回true
-	 * @return 可能返回null(haveToolBar()为false时)
-	 */
-	protected ToolItem newToolItem(int style, String text, Consumer<SelectionEvent> handler) {
-		if (this.haveToolBar()) {
-			ToolItem toolItem = new ToolItem(this.toolBar, style);
-			toolItem.setText(text);
-			toolItem.addSelectionListener(new ControlSelectionListener(handler));
-			return toolItem;
-		}
-		return null;
 	}
 
 	/** 显示窗口前的操作 */

@@ -2,7 +2,7 @@ package logbook.dto.memory;
 
 import logbook.dto.AbstractMemory;
 import logbook.dto.word.MaterialDto;
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 资源记录

@@ -13,8 +13,8 @@ import logbook.dto.memory.battle.daymidnight.CombinebattleDayDto;
 import logbook.dto.memory.battle.daymidnight.CombinebattleDayWaterDto;
 import logbook.dto.memory.battle.practice.PracticeBattleDayDto;
 import logbook.update.data.Data;
-import logbook.util.JsonUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.JsonUtils;
+import logbook.utils.ToolUtils;
 
 public abstract class AbstractBattleDay extends AbstractBattle {
 	private static final long serialVersionUID = 1L;
@@ -208,16 +208,16 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 			int[] edmgco = new int[6];
 			if (stages[2] == 1) {
 				JsonObject stage3 = json.getJsonObject("api_stage3");
-				double[] edam = JsonUtils.getDoubleArray(stage3, "api_edam");
+				int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3, "api_edam"));
 				for (int i = 1; i <= 6; i++) {
-					edmg[i - 1] += Math.floor(edam[i]);
+					edmg[i - 1] += edam[i];
 				}
 			}
 			if (stages[2] == 1 && json.containsKey("api_stage3_combined")) {
 				JsonObject stage3_combined = json.getJsonObject("api_stage3_combined");
-				double[] edam = JsonUtils.getDoubleArray(stage3_combined, "api_edam");
+				int[] edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(stage3_combined, "api_edam"));
 				for (int i = 1; i <= 6; i++) {
-					edmgco[i - 1] += Math.floor(edam[i]);
+					edmgco[i - 1] += edam[i];
 				}
 			}
 			this.eAttackDamage.getDamage(edmg);
@@ -401,9 +401,9 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 				Boolean enemyAttack = at_eflag == null ? null : (at_eflag.getInt(x) == 1 ? Boolean.TRUE : Boolean.FALSE);
 				int attackIndex = at_list.getInt(x);
 				int[] defenseIndexs = JsonUtils.getIntArray(df_list.getJsonArray(x));
-				int[] damages = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(damage.getJsonArray(x)));
+				int[] dmgs = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(damage.getJsonArray(x)));
 				int type = at_type.getInt(x);
-				this.battleAttacks.add(new BattleOneAttack(enemyAttack, false, attackIndex, defenseIndexs, damages, type));
+				this.battleAttacks.add(new BattleOneAttack(enemyAttack, false, attackIndex, defenseIndexs, dmgs, type));
 			}
 
 			BattleOneAttackSimulator boas = new BattleOneAttackSimulator();
@@ -459,12 +459,12 @@ public abstract class AbstractBattleDay extends AbstractBattle {
 
 		public OpeningAttack(JsonObject json) {
 			//-1开头,长度1+(6or12)
-			this.frai = JsonUtils.getIntArray(json, "api_frai");//目标
-			this.erai = JsonUtils.getIntArray(json, "api_erai");
-			this.fdam = JsonUtils.getIntArray(json, "api_fdam");//受到的伤害
-			this.edam = JsonUtils.getIntArray(json, "api_edam");
-			this.fydam = JsonUtils.getIntArray(json, "api_fydam");//攻击
-			this.eydam = JsonUtils.getIntArray(json, "api_eydam");
+			this.frai = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(json, "api_frai"));//目标
+			this.erai = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(json, "api_erai"));
+			this.fdam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(json, "api_fdam"));//受到的伤害
+			this.edam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(json, "api_edam"));
+			this.fydam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(json, "api_fydam"));//攻击
+			this.eydam = ToolUtils.doubleToIntegerFloor(JsonUtils.getDoubleArray(json, "api_eydam"));
 
 			switch (this.fdam.length) {//自方受伤
 				case 1 + 12:

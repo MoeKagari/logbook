@@ -23,8 +23,8 @@ import logbook.update.GlobalContext;
 import logbook.update.GlobalContextUpdater;
 import logbook.update.data.DataType;
 import logbook.update.data.EventListener;
-import logbook.util.SwtUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.SwtUtils;
+import logbook.utils.ToolUtils;
 
 public class FleetWindow implements EventListener {
 	private static final int MAXCHARA = 6;
@@ -139,7 +139,7 @@ public class FleetWindow implements EventListener {
 			default:
 				return;
 			case UPDATEDECKNAME:
-				ToolUtils.notNullThenHandle(this.getDeck(), d -> SwtUtils.setText(this.fleetNameLabel, d.getName()));
+				ToolUtils.notNull(this.getDeck(), d -> SwtUtils.setText(this.fleetNameLabel, d.getName()));
 				return;
 
 			case PORT:
@@ -169,7 +169,7 @@ public class FleetWindow implements EventListener {
 		}
 
 		this.composite.setRedraw(false);
-		ToolUtils.notNullThenHandle(this.getDeck(), this::updateDeck);
+		ToolUtils.notNull(this.getDeck(), this::updateDeck);
 		this.composite.setRedraw(true);
 	}
 

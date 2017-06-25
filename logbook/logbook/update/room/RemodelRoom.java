@@ -8,8 +8,8 @@ import logbook.dto.word.MaterialDto;
 import logbook.gui.logic.TimeString;
 import logbook.update.GlobalContext;
 import logbook.update.data.Data;
-import logbook.util.JsonUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.JsonUtils;
+import logbook.utils.ToolUtils;
 
 public class RemodelRoom extends ApiRoom {
 	public void doRemodelSlot(Data data, JsonValue json) {

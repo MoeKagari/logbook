@@ -5,6 +5,8 @@ import java.io.Serializable;
 import javax.json.JsonObject;
 
 import logbook.dto.AbstractWord;
+import logbook.dto.translator.MasterDataTranslator;
+import logbook.dto.word.MasterDataDto.MasterSlotitemDto;
 
 /**
  * 玩家所持装备
@@ -17,13 +19,17 @@ public class ItemDto extends AbstractWord implements Serializable {
 	private boolean isLocked;
 	private int level;
 	private int alv;
+	private transient MasterSlotitemDto msdd;
 
 	public ItemDto(JsonObject json) {
 		this.id = json.getInt("api_id");
 		this.slotitemId = json.getInt("api_slotitem_id");
-		this.isLocked = json.containsKey("api_locked") ? (json.getInt("api_locked") == 1) : false;
-		this.level = json.containsKey("api_level") ? json.getInt("api_level") : 0;
-		this.alv = json.containsKey("api_alv") ? json.getInt("api_alv") : -1;
+
+		this.isLocked = json.getInt("api_locked", -1) == 1;
+		this.level = json.getInt("api_level", 0);
+		this.alv = json.getInt("api_alv", -1);
+
+		this.msdd = MasterDataTranslator.getMasterSlotitemDto(this.slotitemId);
 	}
 
 	public int getSlotitemId() {
@@ -45,6 +51,13 @@ public class ItemDto extends AbstractWord implements Serializable {
 
 	public int getLevel() {
 		return this.level;
+	}
+
+	public MasterSlotitemDto getMasterData() {
+		if (this.msdd == null) {
+			this.msdd = MasterDataTranslator.getMasterSlotitemDto(this.slotitemId);
+		}
+		return this.msdd;
 	}
 
 	/*-----------------------------------------------------------------------------------------*/

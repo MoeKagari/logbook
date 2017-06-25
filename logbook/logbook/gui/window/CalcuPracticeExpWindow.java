@@ -14,7 +14,7 @@ import logbook.gui.logic.CalcuPracticeExp;
 import logbook.gui.logic.data.ShipExpMap;
 import logbook.update.GlobalContext;
 import logbook.update.data.DataType;
-import logbook.util.SwtUtils;
+import logbook.utils.SwtUtils;
 
 public class CalcuPracticeExpWindow extends WindowBase {
 	private final String[] shipNames = { "对方旗舰", "对方2号舰", "对方3号舰", "对方4号舰", "对方5号舰", "对方6号舰" };

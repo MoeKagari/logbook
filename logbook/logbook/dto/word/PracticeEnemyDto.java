@@ -4,7 +4,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 
 import logbook.dto.AbstractWord;
-import logbook.dto.translator.ShipDtoTranslator;
+import logbook.dto.translator.MasterDataTranslator;
 
 /**
  * 演习对象
@@ -34,7 +34,7 @@ public class PracticeEnemyDto extends AbstractWord {
 		public PracticeEnemyShip(JsonObject json) {
 			this.id = json.getInt("api_id");
 			this.lv = json.getInt("api_level", 0);
-			this.name = this.exist() ? ShipDtoTranslator.getName(json.getInt("api_ship_id")) : "";
+			this.name = this.exist() ? MasterDataTranslator.getShipName(json.getInt("api_ship_id")) : "";
 		}
 
 		public boolean exist() {
@@ -48,7 +48,5 @@ public class PracticeEnemyDto extends AbstractWord {
 		public String getName() {
 			return this.name;
 		}
-
 	}
-
 }

@@ -6,27 +6,27 @@ import java.util.Map;
 import javax.json.JsonObject;
 
 import logbook.dto.AbstractWord;
-import logbook.util.JsonUtils;
+import logbook.utils.JsonUtils;
 
 public class MasterDataDto extends AbstractWord {
 	private final JsonObject json;
-	private final Map<Integer, MasterShipDataDto> masterShipDataMap = new HashMap<>();
-	private final Map<Integer, MasterSlotitemDataDto> masterSlotitemDataMap = new HashMap<>();
-	private final Map<Integer, MasterMissionDataDto> masterMissionDataMap = new HashMap<>();
+	private final Map<Integer, MasterShipDto> masterShipDataMap = new HashMap<>();
+	private final Map<Integer, MasterSlotitemDto> masterSlotitemDataMap = new HashMap<>();
+	private final Map<Integer, MasterMissionDto> masterMissionDataMap = new HashMap<>();
 	private final Map<Integer, MasterUserItemDto> masterUserItemDtoMap = new HashMap<>();
 
 	public MasterDataDto(JsonObject json) {
 		this.json = json;
 		json.getJsonArray("api_mst_ship").forEach(obj -> {
-			MasterShipDataDto ship = new MasterShipDataDto((JsonObject) obj);
+			MasterShipDto ship = new MasterShipDto((JsonObject) obj);
 			this.masterShipDataMap.put(ship.getId(), ship);
 		});
 		json.getJsonArray("api_mst_slotitem").forEach(obj -> {
-			MasterSlotitemDataDto item = new MasterSlotitemDataDto((JsonObject) obj);
+			MasterSlotitemDto item = new MasterSlotitemDto((JsonObject) obj);
 			this.masterSlotitemDataMap.put(item.getId(), item);
 		});
 		json.getJsonArray("api_mst_mission").forEach(obj -> {
-			MasterMissionDataDto item = new MasterMissionDataDto((JsonObject) obj);
+			MasterMissionDto item = new MasterMissionDto((JsonObject) obj);
 			this.masterMissionDataMap.put(item.getId(), item);
 		});
 		json.getJsonArray("api_mst_useitem").forEach(obj -> {
@@ -39,15 +39,15 @@ public class MasterDataDto extends AbstractWord {
 		return this.json;
 	}
 
-	public Map<Integer, MasterShipDataDto> getMasterShipDataMap() {
+	public Map<Integer, MasterShipDto> getMasterShipDataMap() {
 		return this.masterShipDataMap;
 	}
 
-	public Map<Integer, MasterSlotitemDataDto> getMasterSlotitemDataMap() {
+	public Map<Integer, MasterSlotitemDto> getMasterSlotitemDataMap() {
 		return this.masterSlotitemDataMap;
 	}
 
-	public Map<Integer, MasterMissionDataDto> getMasterMissionDataMap() {
+	public Map<Integer, MasterMissionDto> getMasterMissionDataMap() {
 		return this.masterMissionDataMap;
 	}
 
@@ -55,10 +55,10 @@ public class MasterDataDto extends AbstractWord {
 		return this.masterUserItemDtoMap;
 	}
 
-	public class MasterShipDataDto {
+	public class MasterShipDto {
 		private final JsonObject json;
 
-		public MasterShipDataDto(JsonObject json) {
+		public MasterShipDto(JsonObject json) {
 			this.json = json;
 		}
 
@@ -127,10 +127,10 @@ public class MasterDataDto extends AbstractWord {
 		}
 	}
 
-	public class MasterSlotitemDataDto {
+	public class MasterSlotitemDto {
 		private final JsonObject json;
 
-		public MasterSlotitemDataDto(JsonObject json) {
+		public MasterSlotitemDto(JsonObject json) {
 			this.json = json;
 		}
 
@@ -158,10 +158,10 @@ public class MasterDataDto extends AbstractWord {
 		}
 	}
 
-	public class MasterMissionDataDto {
+	public class MasterMissionDto {
 		private final JsonObject json;
 
-		public MasterMissionDataDto(JsonObject json) {
+		public MasterMissionDto(JsonObject json) {
 			this.json = json;
 		}
 

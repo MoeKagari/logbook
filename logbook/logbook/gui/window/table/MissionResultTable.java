@@ -12,7 +12,7 @@ import logbook.gui.logic.TimeString;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
 import logbook.update.GlobalContext;
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 远征记录
@@ -39,10 +39,10 @@ public class MissionResultTable extends AbstractTable<MissionResultDto> {
 		tcms.add(new TableColumnManager("弹", true, rd -> materialString.apply(rd.getMaterial()[1])));
 		tcms.add(new TableColumnManager("钢", true, rd -> materialString.apply(rd.getMaterial()[2])));
 		tcms.add(new TableColumnManager("铝", true, rd -> materialString.apply(rd.getMaterial()[3])));
-		tcms.add(new TableColumnManager("道具1", rd -> ToolUtils.notNullThenHandle(rd.getItems()[0], MissionResultItem::getName, "")));
-		tcms.add(new TableColumnManager("数量", true, rd -> ToolUtils.notNullThenHandle(rd.getItems()[0], MissionResultItem::getCount, "")));
-		tcms.add(new TableColumnManager("道具2", rd -> ToolUtils.notNullThenHandle(rd.getItems()[1], MissionResultItem::getName, "")));
-		tcms.add(new TableColumnManager("数量", true, rd -> ToolUtils.notNullThenHandle(rd.getItems()[1], MissionResultItem::getCount, "")));
+		tcms.add(new TableColumnManager("道具1", rd -> ToolUtils.notNull(rd.getItems()[0], MissionResultItem::getName, "")));
+		tcms.add(new TableColumnManager("数量", true, rd -> ToolUtils.notNull(rd.getItems()[0], MissionResultItem::getCount, "")));
+		tcms.add(new TableColumnManager("道具2", rd -> ToolUtils.notNull(rd.getItems()[1], MissionResultItem::getName, "")));
+		tcms.add(new TableColumnManager("数量", true, rd -> ToolUtils.notNull(rd.getItems()[1], MissionResultItem::getCount, "")));
 	}
 
 	@Override

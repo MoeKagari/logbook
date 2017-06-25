@@ -7,7 +7,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.util.SwtUtils;
+import logbook.utils.SwtUtils;
 
 /**
  * 舰队面板-全

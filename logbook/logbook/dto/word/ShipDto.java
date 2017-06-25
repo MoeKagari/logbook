@@ -4,8 +4,10 @@ import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import logbook.dto.AbstractWord;
+import logbook.dto.translator.MasterDataTranslator;
+import logbook.dto.word.MasterDataDto.MasterShipDto;
 import logbook.gui.logic.TimeString;
-import logbook.util.JsonUtils;
+import logbook.utils.JsonUtils;
 
 /**
  * 玩家所持舰娘
@@ -47,6 +49,8 @@ public class ShipDto extends AbstractWord {
 	private int[] raisou;
 	private int[] karyoku;
 
+	private MasterShipDto msd;
+
 	public ShipDto(JsonValue value) {
 		this((JsonObject) value);
 	}
@@ -79,6 +83,15 @@ public class ShipDto extends AbstractWord {
 		this.taiku = JsonUtils.getIntArray(json, "api_taiku");
 		this.raisou = JsonUtils.getIntArray(json, "api_raisou");
 		this.karyoku = JsonUtils.getIntArray(json, "api_karyoku");
+
+		this.msd = MasterDataTranslator.getMasterShipDto(this.shipId);
+	}
+
+	public MasterShipDto getMasterData() {
+		if (this.msd == null) {
+			this.msd = MasterDataTranslator.getMasterShipDto(this.shipId);
+		}
+		return this.msd;
 	}
 
 	/** 加入镇守府时的编号 */

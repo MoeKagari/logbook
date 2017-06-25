@@ -3,7 +3,7 @@ package logbook.dto.word;
 import javax.json.JsonObject;
 
 import logbook.dto.AbstractWord;
-import logbook.util.JsonUtils;
+import logbook.utils.JsonUtils;
 
 /**
  * 任务

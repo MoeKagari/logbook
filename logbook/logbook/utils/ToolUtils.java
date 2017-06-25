@@ -1,4 +1,4 @@
-package logbook.util;
+package logbook.utils;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;
@@ -16,19 +16,13 @@ import java.util.function.ToIntFunction;
 
 public class ToolUtils {
 
-	public static <S> Runnable getRunnable(S s, Consumer<S> con) {
-		return () -> con.accept(s);
+	public static interface BiIntObjFunction<T> {
+		public T apply(int a, int b);
 	}
 
-	public static <S, T> Runnable getRunnable(S s, T t, BiConsumer<S, T> con) {
-		return () -> con.accept(s, t);
+	public static int[] arrayCopy(int[] is) {
+		return Arrays.copyOf(is, is.length);
 	}
-
-	public static <S> Predicate<S> getPredicater(boolean flag, S s) {
-		return o -> flag;
-	}
-
-	/*----------------------------------------------------------------------------------------------------------*/
 
 	public static double division(int a, int b) {
 		return a * 1.0 / b;
@@ -42,8 +36,30 @@ public class ToolUtils {
 		return obj != null;
 	}
 
-	public static <S> S returnOneself(S s) {
+	public static boolean isTrue(boolean b) {
+		return b == true;
+	}
+
+	public static boolean isFalse(boolean b) {
+		return b == false;
+	}
+
+	public static <S> S returnSelf(S s) {
 		return s;
+	}
+
+	/*----------------------------------------------------------------------------------------------------------*/
+
+	public static Runnable getRunable(Runnable run) {
+		return run;
+	}
+
+	public static <S> Runnable getRunnable(S s, Consumer<S> con) {
+		return () -> con.accept(s);
+	}
+
+	public static <S, T> Runnable getRunnable(S s, T t, BiConsumer<S, T> con) {
+		return () -> con.accept(s, t);
 	}
 
 	/*----------------------------------------------------------------------------------------------------------*/
@@ -72,13 +88,7 @@ public class ToolUtils {
 		return ifHandle(!b, sup, defaultValue);
 	}
 
-	public static void ifHandle(int value, IntPredicate pre, IntConsumer con) {
-		if (pre.test(value)) con.accept(value);
-	}
-
-	public static void ifNotHandle(int value, IntPredicate pre, IntConsumer con) {
-		ifHandle(value, pre.negate(), con);
-	}
+	/*----------------------------------------------------------------------------------------------------------*/
 
 	public static <S> S ifHandle(int value, IntPredicate pre, IntFunction<S> fun, S defaultValue) {
 		return pre.test(value) ? fun.apply(value) : defaultValue;
@@ -104,47 +114,31 @@ public class ToolUtils {
 		ifHandle(s, pre.negate(), con);
 	}
 
-	public static <S, T> T ifHandle(S s, Predicate<S> pre, Function<S, T> fun, T defaultValue) {
-		return pre.test(s) ? fun.apply(s) : defaultValue;
-	}
-
-	public static <S, T> T ifNotHandle(S s, Predicate<S> pre, Function<S, T> fun, T defaultValue) {
-		return ifHandle(s, pre.negate(), fun, defaultValue);
-	}
-
 	/*----------------------------------------------------------------------------------------------------------*/
 
-	public static <S> boolean notNullThenHandle(S s, Predicate<S> pre, boolean defaultValue) {
+	public static <S> boolean notNull(S s, Predicate<S> pre, boolean defaultValue) {
 		return s != null ? pre.test(s) : defaultValue;
 	}
 
-	public static <S> int notNullThenHandle(S s, ToIntFunction<S> handler, int defaultValue) {
+	public static <S> int notNull(S s, ToIntFunction<S> handler, int defaultValue) {
 		return s != null ? handler.applyAsInt(s) : defaultValue;
 	}
 
-	public static <S, T> T notNullThenHandle(S s, Function<S, T> handler, T defaultValue) {
+	public static <S, T> T notNull(S s, Function<S, T> handler, T defaultValue) {
 		return s != null ? handler.apply(s) : defaultValue;
 	}
 
-	public static <S> void notNullThenHandle(S s, Consumer<S> handler) {
+	public static <S> void notNull(S s, Consumer<S> handler) {
 		if (s != null) handler.accept(s);
 	}
 
 	/*----------------------------------------------------------------------------------------------------------*/
 
-	public static <S, T> void forEach(S[] ss, T[] ts, BiConsumer<S, T> bc) {
-		if (ss.length != ts.length) return;
-		int len = ss.length;
-		for (int i = 0; i < len; i++) {
-			bc.accept(ss[i], ts[i]);
-		}
-	}
-
-	public static <S> void forEach(S[] ss, int[] is, ObjIntConsumer<S> bc) {
+	public static <S> void forEach(S[] ss, int[] is, ObjIntConsumer<S> consu) {
 		if (ss.length != is.length) return;
 		int len = ss.length;
 		for (int i = 0; i < len; i++) {
-			bc.accept(ss[i], is[i]);
+			consu.accept(ss[i], is[i]);
 		}
 	}
 
@@ -168,10 +162,6 @@ public class ToolUtils {
 
 	/*----------------------------------------------------------------------------------------------------------*/
 
-	public static int[] arrayCopy(int[] is) {
-		return Arrays.copyOf(is, is.length);
-	}
-
 	public static int[] doubleToInteger(double[] ds, DoubleToIntFunction fun) {
 		int len = ds.length;
 		int[] is = new int[len];
@@ -183,15 +173,6 @@ public class ToolUtils {
 
 	public static int[] doubleToIntegerFloor(double[] ds) {
 		return doubleToInteger(ds, d -> (int) Math.floor(d));
-	}
-
-	public static <S> int[] toIntArray(S[] ss, ToIntFunction<S> fun) {
-		int len = ss.length;
-		int[] is = new int[len];
-		for (int i = 0; i < len; i++) {
-			is[i] = fun.applyAsInt(ss[i]);
-		}
-		return is;
 	}
 
 	public static String[] toStringArray(int[] is, IntFunction<String> fun) {

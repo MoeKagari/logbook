@@ -18,7 +18,7 @@ public class CreateshipDto extends AbstractMemory {
 	private int emptyCount = -1;
 
 	public CreateshipDto(ShipDto secretary, int[] mm, long time) {
-		this.flagship = ShipDtoTranslator.getName(secretary.getShipId());
+		this.flagship = ShipDtoTranslator.getName(secretary);
 		this.flagshipLevel = secretary.getLevel();
 		this.mm = mm;
 		this.time = time;

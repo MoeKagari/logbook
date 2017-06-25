@@ -11,14 +11,15 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.dto.translator.ItemDtoTranslator;
+import logbook.dto.translator.MasterDataTranslator;
 import logbook.dto.translator.ShipDtoTranslator;
 import logbook.dto.word.ItemDto;
+import logbook.dto.word.MasterDataDto.MasterSlotitemDto;
 import logbook.dto.word.ShipDto;
 import logbook.gui.window.AbstractTable;
 import logbook.gui.window.ApplicationMain;
 import logbook.update.GlobalContext;
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 所有装备
@@ -36,8 +37,10 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 			TableColumnManager tcm = new TableColumnManager("种类", SortItem::getTypeString);
 			tcm.setComparator((a, b) -> {
 				int res = 0;
-				for (int i = 0; i < a.type.length; i++) {
-					res = Integer.compare(a.type[i], b.type[i]);
+				int[] type_a = a.getType();
+				int[] type_b = b.getType();
+				for (int i = 0; i < type_a.length; i++) {
+					res = Integer.compare(type_a[i], type_b[i]);
 					if (res != 0) return res;
 				}
 				return res;
@@ -45,10 +48,10 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 			tcms.add(tcm);
 		}
 		IntFunction<String> levelString = level -> level > 0 ? String.valueOf(level) : "";
-		tcms.add(new TableColumnManager("改修", true, rd -> levelString.apply(rd.getLevel())));
-		tcms.add(new TableColumnManager("熟练度", true, rd -> levelString.apply(rd.getAlv())));
+		tcms.add(new TableColumnManager("改修", true, rd -> levelString.apply(rd.level)));
+		tcms.add(new TableColumnManager("熟练度", true, rd -> levelString.apply(rd.alv)));
 		tcms.add(new TableColumnManager("个数", true, SortItem::getCount));
-		tcms.add(new TableColumnManager("装备着的舰娘", rd -> rd.getWhichShipWithItem()));
+		tcms.add(new TableColumnManager("装备着的舰娘", SortItem::getWhichShipWithItem));
 	}
 
 	@Override
@@ -69,7 +72,7 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 					alvResult.stream().map(whichShipWithItem).filter(ToolUtils::isNotNull).collect(Collectors.toMap(ship -> ship, ship -> 1, Integer::sum)).forEach((ship, count) -> {
 						sb.add(String.format("%s(Lv.%d)(%d)", ShipDtoTranslator.getName(ship), ship.getLevel(), count.intValue()));
 					});
-					datas.add(new SortItem(alvResult.size(), level, alv, slotitemId, StringUtils.join(sb, ",")));
+					datas.add(new SortItem(alvResult.size(), level, alv, StringUtils.join(sb, ","), MasterDataTranslator.getMasterSlotitemDto(slotitemId)));
 				});
 			});
 		});
@@ -79,23 +82,23 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 		private int count;
 		private int level;
 		private int alv;
-		private String typeString;
-		private int[] type;
-		private String name;
 		private String whichShipWithItem;
+		private MasterSlotitemDto msdd;
 
-		public SortItem(int count, int level, int alv, int slotitemId, String whichShipWithItem) {
+		public SortItem(int count, int level, int alv, String whichShipWithItem, MasterSlotitemDto msdd) {
 			this.count = count;
 			this.level = level;
 			this.alv = alv;
-			this.type = ItemDtoTranslator.getType(slotitemId);
-			this.typeString = ItemDtoTranslator.getTypeString(slotitemId);
-			this.name = ItemDtoTranslator.getName(slotitemId);
+			this.msdd = msdd;
 			this.whichShipWithItem = whichShipWithItem;
 		}
 
+		public int[] getType() {
+			return ToolUtils.notNull(this.msdd, MasterSlotitemDto::getType, null);
+		}
+
 		public String getTypeString() {
-			return this.typeString;
+			return ToolUtils.notNull(this.getType(), Arrays::toString, "");
 		}
 
 		public String getWhichShipWithItem() {
@@ -106,17 +109,8 @@ public class ItemListTable extends AbstractTable<ItemListTable.SortItem> {
 			return this.count;
 		}
 
-		public int getLevel() {
-			return this.level;
-		}
-
-		public int getAlv() {
-			return this.alv;
-		}
-
 		public String getName() {
-			return this.name;
+			return ToolUtils.notNull(this.msdd, MasterSlotitemDto::getName, "");
 		}
-
 	}
 }

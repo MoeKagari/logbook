@@ -19,8 +19,8 @@ import logbook.gui.window.ApplicationMain;
 import logbook.gui.window.WindowBase;
 import logbook.update.GlobalContext;
 import logbook.update.GlobalContext.PLTime;
-import logbook.util.SwtUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.SwtUtils;
+import logbook.utils.ToolUtils;
 
 public class AsyncExecApplicationMain extends Thread {
 	private static final LoggerHolder LOG = new LoggerHolder(AsyncExecApplicationMain.class);
@@ -44,7 +44,7 @@ public class AsyncExecApplicationMain extends Thread {
 					UpdateMaterialRecord.update(this.main, currentTime);
 					UpdateNewDayConsole.update(this.main, currentTime);
 					UpdateDeckNdockTask.update(this.main, box, currentTime);
-					ToolUtils.notNullThenHandle(GlobalContext.getAkashiTimer(), akashiTimer -> akashiTimer.update(box, currentTime));
+					ToolUtils.notNull(GlobalContext.getAkashiTimer(), akashiTimer -> akashiTimer.update(box, currentTime));
 					ToolUtils.forEach(this.main.getWindows(), WindowBase::storeWindowConfig);
 
 					TrayMessageBox.show(this.main, box);

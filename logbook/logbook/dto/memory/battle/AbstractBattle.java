@@ -12,9 +12,9 @@ import javax.json.JsonValue;
 import logbook.config.AppConstants;
 import logbook.dto.AbstractMemory;
 import logbook.dto.translator.DeckDtoTranslator;
-import logbook.dto.translator.ShipDtoTranslator;
-import logbook.util.JsonUtils;
-import logbook.util.ToolUtils;
+import logbook.dto.translator.MasterDataTranslator;
+import logbook.utils.JsonUtils;
+import logbook.utils.ToolUtils;
 
 public abstract class AbstractBattle extends BattleDto {
 	private static final long serialVersionUID = 1L;
@@ -63,11 +63,11 @@ public abstract class AbstractBattle extends BattleDto {
 		}
 		{//敌方
 			int[] ids = dissociateIntarray(json, "api_ship_ke");
-			this.eDeck.setNames(ToolUtils.toStringArray(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
+			this.eDeck.setNames(ToolUtils.toStringArray(Arrays.copyOfRange(ids, 1, 7), MasterDataTranslator::getShipName));
 		}
 		if (json.containsKey("api_ship_ke_combined")) {
 			int[] ids = dissociateIntarray(json, "api_ship_ke_combined");
-			this.eDeckCombine.setNames(ToolUtils.toStringArray(Arrays.copyOfRange(ids, 1, 7), ShipDtoTranslator::getName));
+			this.eDeckCombine.setNames(ToolUtils.toStringArray(Arrays.copyOfRange(ids, 1, 7), MasterDataTranslator::getShipName));
 		}
 
 		//索敌
@@ -158,7 +158,7 @@ public abstract class AbstractBattle extends BattleDto {
 	}
 
 	public static boolean existBattleDeck(BattleDeck deck) {
-		return ToolUtils.notNullThenHandle(deck, BattleDeck::exist, false);
+		return ToolUtils.notNull(deck, BattleDeck::exist, false);
 	}
 
 	/**

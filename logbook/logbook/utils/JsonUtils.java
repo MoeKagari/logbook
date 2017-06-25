@@ -1,4 +1,4 @@
-package logbook.util;
+package logbook.utils;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;

@@ -3,9 +3,9 @@ package logbook.gui.logic.data;
 import java.util.HashMap;
 import java.util.Map;
 
-import logbook.dto.word.MasterDataDto.MasterSlotitemDataDto;
+import logbook.dto.word.MasterDataDto.MasterSlotitemDto;
 import logbook.update.GlobalContext;
-import logbook.util.ToolUtils;
+import logbook.utils.ToolUtils;
 
 public class ItemDataMap {
 
@@ -326,8 +326,8 @@ public class ItemDataMap {
 
 	public static void main(String[] args) {
 		GlobalContext.load();
-		ToolUtils.notNullThenHandle(GlobalContext.getMasterData(), md -> {
-			Map<Integer, MasterSlotitemDataDto> map = md.getMasterSlotitemDataMap();
+		ToolUtils.notNull(GlobalContext.getMasterData(), md -> {
+			Map<Integer, MasterSlotitemDto> map = md.getMasterSlotitemDataMap();
 			map.forEach((id, msd) -> {
 				if (ITEMDATA.containsKey(id) == false) {
 					System.out.println(String.format("ITEMDATA.put(%d, new ItemData(%d, \"%s\", ' '));", id, id, msd.getName()));

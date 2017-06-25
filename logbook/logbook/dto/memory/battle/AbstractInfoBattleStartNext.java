@@ -12,7 +12,7 @@ import javax.json.JsonValue;
 
 import logbook.dto.AbstractMemory;
 import logbook.update.data.Data;
-import logbook.util.JsonUtils;
+import logbook.utils.JsonUtils;
 
 public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 	private static final long serialVersionUID = 1L;
@@ -241,7 +241,7 @@ public abstract class AbstractInfoBattleStartNext extends AbstractInfoBattle {
 		}
 
 		public int getBaseNumber() {
-			return (int) Arrays.stream(this.maxhps).filter(i -> i != -1).count();
+			return Arrays.stream(this.maxhps).filter(i -> i != -1).map(i -> 1).sum();
 		}
 
 		public String getSeiku() {

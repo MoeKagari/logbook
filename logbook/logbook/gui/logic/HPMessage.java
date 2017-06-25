@@ -5,7 +5,6 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
 
 import logbook.gui.window.ApplicationMain;
-import logbook.util.ToolUtils;
 
 public class HPMessage {
 	public static final String ESCAPE_STRING = "退避";
@@ -58,15 +57,10 @@ public class HPMessage {
 	}
 
 	public static void initColor(ApplicationMain main) {
-		RED = new Color(null, new RGB(255, 85, 17));
+		RED = new Color(main.getDisplay(), new RGB(255, 85, 17));
 		GRAY = main.getDisplay().getSystemColor(SWT.COLOR_GRAY);
-		BROWN = new Color(null, new RGB(119, 102, 34));
+		BROWN = new Color(main.getDisplay(), new RGB(119, 102, 34));
 		CYAN = main.getDisplay().getSystemColor(SWT.COLOR_CYAN);
 		ESCAPE_COLOR = main.getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY);
 	}
-
-	public static void dispose() {
-		ToolUtils.forEach(new Color[] { RED, BROWN }, Color::dispose);
-	}
-
 }

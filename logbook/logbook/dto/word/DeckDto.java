@@ -1,17 +1,15 @@
 package logbook.dto.word;
 
-import java.util.Arrays;
-
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 
 import logbook.dto.AbstractWord;
 import logbook.dto.translator.DeckDtoTranslator;
-import logbook.dto.translator.MasterDataDtoTranslator;
+import logbook.dto.translator.MasterDataTranslator;
 import logbook.gui.logic.TimeString;
 import logbook.internal.TimerCounter;
-import logbook.util.JsonUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.JsonUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 舰队编成
@@ -38,7 +36,7 @@ public class DeckDto extends AbstractWord {
 		}
 
 		int[] shipsTemp = ToolUtils.arrayCopy(this.ships);
-		int shipIndex = DeckDtoTranslator.isShipInDeck(this, shipId);
+		int shipIndex = DeckDtoTranslator.indexInDeck(this, shipId);
 		if (shipIndex != -1) {//交换两艘船
 			int temp = shipsTemp[index];
 			shipsTemp[index] = shipsTemp[shipIndex];
@@ -50,9 +48,9 @@ public class DeckDto extends AbstractWord {
 	}
 
 	public void remove(int shipId) {
-		int shipIndex = DeckDtoTranslator.isShipInDeck(this, shipId);
+		int shipIndex = DeckDtoTranslator.indexInDeck(this, shipId);
 		if (shipIndex != -1) {
-			int[] shipsTemp = Arrays.copyOf(this.ships, this.ships.length);
+			int[] shipsTemp = ToolUtils.arrayCopy(this.ships);
 			shipsTemp[shipIndex] = -1;
 			this.setShips(shipsTemp);
 		}
@@ -106,7 +104,7 @@ public class DeckDto extends AbstractWord {
 
 		public DeckMissionDto(JsonArray json) {
 			this.state = json.getJsonNumber(0).intValue();
-			this.name = MasterDataDtoTranslator.getMissionName(json.getJsonNumber(1).intValue());
+			this.name = MasterDataTranslator.getMissionName(json.getJsonNumber(1).intValue());
 			this.time = json.getJsonNumber(2).longValue();
 			this.timerCounter = new TimerCounter(this.time, 60, true, 2 * 60);
 		}

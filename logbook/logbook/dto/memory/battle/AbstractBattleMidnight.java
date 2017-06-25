@@ -6,7 +6,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 
 import logbook.update.data.Data;
-import logbook.util.JsonUtils;
+import logbook.utils.JsonUtils;
 
 public abstract class AbstractBattleMidnight extends AbstractBattle {
 	private static final long serialVersionUID = 1L;

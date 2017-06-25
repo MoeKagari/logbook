@@ -6,7 +6,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MenuItem;
 
-import logbook.util.SwtUtils;
+import logbook.utils.SwtUtils;
 
 public class FloatingWindow extends WindowBase {
 	private Label[] deckTimeLabels = new Label[4];

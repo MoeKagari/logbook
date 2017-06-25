@@ -16,8 +16,8 @@ import logbook.dto.memory.battle.info.InfoBattleShipdeckDto;
 import logbook.dto.translator.BattleDtoTranslator;
 import logbook.update.GlobalContext;
 import logbook.update.data.DataType;
-import logbook.util.SwtUtils;
-import logbook.util.ToolUtils;
+import logbook.utils.SwtUtils;
+import logbook.utils.ToolUtils;
 
 /**
  * 战斗窗口

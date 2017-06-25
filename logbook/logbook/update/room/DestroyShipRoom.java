@@ -6,7 +6,7 @@ import javax.json.JsonValue;
 import logbook.gui.logic.TimeString;
 import logbook.update.GlobalContext;
 import logbook.update.data.Data;
-import logbook.util.JsonUtils;
+import logbook.utils.JsonUtils;
 
 public class DestroyShipRoom extends ApiRoom {
 	public void doDestroyShip(Data data, JsonValue json) {
